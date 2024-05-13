@@ -10,7 +10,10 @@ SCHEDULER_MAPPING: Mapping[str,
                            Type[Scheduler]] = {'pbs': PbsScheduler,
                                                'torque': PbsScheduler,
                                                'slurm': SlurmScheduler,
-                                               'local': LocalScheduler}
+                                               'local': LocalScheduler,
+                                               'conda': LocalScheduler,
+                                               'docker': LocalScheduler,
+                                               'singularity': LocalScheduler,}
 
 
 def get_scheduler(scheduler_name: Optional[str] = None,
