@@ -1,0 +1,46 @@
+repos:
+- repo: https://github.com/pre-commit/mirrors-yapf
+  rev: v0.31.0
+  hooks:
+  - id: yapf
+    args: [--in-place --pep8]
+- repo: https://github.com/timothycrosley/isort
+  rev: 5.12.0
+  hooks:
+  - id: isort
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.1.0
+  hooks:
+  # - id: check-added-large-files
+  - id: check-case-conflict
+  - id: check-docstring-first
+  - id: check-yaml
+  - id: double-quote-string-fixer
+  - id: end-of-file-fixer
+    files: \.(py|txt|md|rst|yml|cfg|flake8|yapf|gitignore)$
+  - id: forbid-new-submodules
+  - id: mixed-line-ending
+  - id: requirements-txt-fixer
+  - id: trailing-whitespace
+- repo: https://github.com/pycqa/flake8
+  rev: 3.9.2
+  hooks:
+  - id: flake8
+    additional_dependencies: [pep8-naming]
+    args: [--config=.flake8, --max-line-length=79, '--per-file-ignores=__init__.py:F401' ]
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: v1.9.0
+  hooks:
+  - id: mypy
+    args: [--no-strict-optional, --ignore-missing-imports]
+    additional_dependencies: ['types-paramiko', 'types-PyYAML']
+- repo: https://github.com/PyCQA/doc8
+  rev: 0.11.1
+  hooks:
+  - id: doc8
+    args: ['--max-line-length=100', '--ignore=D001']
+- repo: https://github.com/PyCQA/pydocstyle
+  rev: 6.1.1
+  hooks:
+  - id: pydocstyle
+    args: ['--ignore=D100,D104,D107,D203,D213']

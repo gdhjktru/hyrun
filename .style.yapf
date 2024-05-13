@@ -1,0 +1,11 @@
+[style]
+arithmetic_precedence_indication = True
+blank_line_before_nested_class_or_def = True
+column_limit = 79
+each_dict_entry_on_separate_line = False
+indent_dictionary_value = True
+join_multiple_lines = False
+split_before_arithmetic_operator = True
+split_complex_comprehension = True
+split_penalty_excess_character = 200
+split_penalty_after_opening_bracket = 800

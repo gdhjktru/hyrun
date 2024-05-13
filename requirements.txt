@@ -1,0 +1,7 @@
+hydb @ git+https://gitlab.com/hylleraasplatform/hydb.git
+hytools @ git+https://gitlab.com/hylleraasplatform/hylleraas-tools.git
+nest_asyncio>=1.5.8
+patchwork>=1.0.1
+PyYAML>=6.0.1
+scp>=0.14.5
+tqdm>=4.66.1

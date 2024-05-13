@@ -1,0 +1,105 @@
+# This file is a template, and might need editing before it works on your project.
+# To contribute improvements to CI/CD templates, please follow the Development guide at:
+# https://docs.gitlab.com/ee/development/cicd/templates.html
+# This specific template is located at:
+# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
+
+# Official language image. Look for the different tagged releases at:
+# https://hub.docker.com/r/library/python/tags/
+image: python:latest
+
+# Change pip's cache directory to be inside the project directory since we can
+# only cache local items.
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+# Pip's cache doesn't store the python packages
+# https://pip.pypa.io/en/stable/reference/pip_install/#caching
+#
+# If you want to also cache the installed packages, you have to install
+# them in a virtualenv and cache it as well.
+# cache:
+#   paths:
+#     - .cache/pip
+#     - venv/
+
+before_script:
+  - python --version  # For debugging
+  - pip install virtualenv
+  - virtualenv venv
+  - source venv/bin/activate
+
+#test:
+ # script:
+    #- python setup.py test
+    #- pip install tox flake8  # you can also use tox
+    #- tox -e py36,flake8
+
+stages:
+#  - prebuild
+  - lint
+  - unit-test
+
+#increment_version:
+#  stage: prebuild
+#  image: python:3.10
+#  script:
+#    - pip install toml
+#    - python scripts/increment_patch.py
+#    - git config --global user.email "username@users.noreply.github.com"
+#    - git config --global user.name "HSP CI increment version"
+#    - git commit -am "Increment version number"
+#    - git push origin main
+#  only:
+#    - main
+
+lint:
+  stage: lint
+  image: python:3.10
+  interruptible: true
+  script:
+    - python -m venv gitlab-ci
+    - . gitlab-ci/bin/activate
+    - pip install --upgrade pip setuptools wheel pre-commit
+    - pip install -r requirements.txt
+    - pip install .
+    - pre-commit run --all-files
+    - deactivate
+
+unit-test:
+  stage: unit-test
+  image: python:3.10
+  needs:
+    - job: lint
+  interruptible: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: always
+  coverage: '/^TOTAL.+?(\d+\%)$/'
+  script:
+    - python -m venv gitlab-ci
+    - . gitlab-ci/bin/activate
+    - pip install --upgrade pip setuptools wheel
+    - pip install -r requirements.txt
+    - pip install -r tests/requirements.txt
+    - pip install .
+    - pytest --cov-report term-missing --cov=hyset --cov-fail-under=66 -sv tests/
+    - coverage xml
+    - coverage html -d coverage_html
+    - deactivate
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      - coverage_html/

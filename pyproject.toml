@@ -1,0 +1,45 @@
+[build-system]
+requires = [ "setuptools>=61.2",]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyrun"
+version = "0.1.0"
+description = "running calculations using the hylleraas software platform"
+readme = "README.md"
+requires-python = ">=3.9"
+dynamic = ["dependencies"]
+
+[project.optional-dependencies]
+core = []
+full = ["core"]
+
+[project.license]
+text = "LICENSE"
+
+[project.scripts]
+executable-name = "package.module:function"
+
+[tool.setuptools]
+zip-safe = true
+include-package-data = true
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.settings]
+known_third_party = ["fabric", "hyobj", "numpy", "paramiko", "patchwork", "scp", "tqdm"]
+
+[tool.setuptools.package-data]
+"*" = [ "*.txt", "*.rst", "*.yml", "*.yaml", ".ipynb", "*.md"]
+hello = [ "*.msg",]
+
+[tool.black]
+line-length = 79
+skip-string-normalization = 1
+
+[tool.pytest.ini_options]
+addopts = "--ignore=tests/test_regression"
+
+[tool.coverage.run]
+omit = ["tests/*"]
