@@ -3,10 +3,15 @@ from time import sleep
 from typing import Generator, List
 from hydb import Database, DatabaseDummy
 from hytools.logger import LoggerDummy
+from hytools.file import File
 from copy import deepcopy
 from dataclasses import replace
 import numpy as np
 from .array_job import ArrayJob
+from hyrun.job import Job
+from string import Template
+from functools import wraps
+from hyrun.decorators import list_exec, force_list
 
 class Runner:
     """Runner."""
@@ -62,11 +67,10 @@ class Runner:
         """Check if job is finished."""
         return self.scheduler.is_finished(status)
     
-    def get_status(self, jobs):
+    @force_list
+    def get_status(self, jobs) -> List[str]:
         """Get status."""
-        if not isinstance(jobs, list):
-            jobs = [jobs]
-        return [self.scheduler.get_status(j) for j in jobs]
+        return self.scheduler.get_status(jobs)
     
     def _increment_t(self, t, tmin=1, tmax=60 ) -> int:
         """Increment t."""
@@ -92,24 +96,46 @@ class Runner:
             statuses = [self.get_status(j) for j in jobs]
         return statuses
     
+    def write_files_local(self, run_settings, job_script):
+        files = [file for rs in run_settings for file in rs.files_to_write]
+        files += job_script   
+        files = self.replace_var_in_file_content(files)   
+
+        print('lcaol iles to write', files)
+
+
+    def replace_var_in_file_content(self, file):
+        """Replace variables in file content."""
+        if isinstance(file, list):
+            return [self.replace_var_in_file_content(f) for f in file]
+        if not isinstance(file, File):
+            return file
+        file.content = Template(file.content).safe_substitute(**file.variables)
+        return file
+
+    
     def run_single_job(self, run_settings):
         
-        # compute jobs sequentially
-        if isinstance(run_settings, list):
-            for rs in run_settings:
-                return self.run_single_job(rs)
+
         # check if job has already finished
         if self.scheduler.check_finished(run_settings):
             print("Job already finished")
 
-        # Generate input
-        input = self.scheduler.gen_cmd(run_settings)
-        print(input)
-        åokoko
-        run_settings = [replace(rss, **input) for rss in run_settings]
+        job_script = self.scheduler.gen_job_script(run_settings)
+        job = Job(run_settings=run_settings, job_script=job_script)
+        self.logger.debug(f"Job script: {job_script}")
+
+        local_files = self.write_files_local(run_settings, job_script) 
+
+
+        jijijiij
+
+        # # generate local files
+        # file_local, file_remote
+        # file_local.write()
 
         # Copy/send input
-        self.scheduler.send_files(run_settings)
+        self.scheduler.copy_files(run_settings, job_script)
 
         # Submit the job
         job_id = self.scheduler.submit(run_settings)
