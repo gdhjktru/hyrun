@@ -7,11 +7,9 @@ PathLike = Union[Path, str]
 PathLikeList = Union[PathLike, List[PathLike]]
 
 
-class ComputeResult(ABC):
-    """Base class for ComputeResult."""
 
 @dataclass
-class LocalResult(ComputeResult):
+class ResultContainer:
     """Container for local results."""
 
     files_to_parse: Optional[PathLikeList] = None
@@ -21,12 +19,6 @@ class LocalResult(ComputeResult):
     stderr: Optional[PathLike] = None
     returncode: Optional[int] = None
     error: Optional[Exception] = None
-
-
-@dataclass
-class RemoteResult(LocalResult):
-    """Container for remote results."""
-
     job_id: Optional[int] = None
     job_host: Optional[str] = None
     job_hash: Optional[str] = None

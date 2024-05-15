@@ -1,5 +1,5 @@
 
-from runner.runner import Runner
+from .runner import Runner
 
 def run(*args, **kwargs):
     """Run."""
