@@ -13,27 +13,27 @@ class Runner:
 
     def __init__(self, *args, **kwargs):
         """Initialize."""
+        
         a = ArrayJob(self.get_run_settings(*args), **kwargs)
-        self.run_settings, self.job_shape = a.run_settings, a.shape
-        self.run_settings0 = self.run_settings[0][0]
-        print(self.run_settings)
-        print(type(self.run_settings), type(self.job_shape))
-        self.wait_for_jobs_to_finish = self.run_settings[0][0].wait
-        self.database = self.get_database(**kwargs)
-        self.scheduler = self.get_scheduler(**kwargs)
+        self.run_array, self.job_shape = a.run_settings, a.shape
+        self.run_settings = self.run_array[0][0]
         self.logger = self.get_logger(**kwargs)
+
+        self.wait_for_jobs_to_finish = self.run_settings.wait
+        self.database = self.get_database(**kwargs)
+        self.scheduler = self.get_scheduler(logger=self.logger, **kwargs)
         self.logger.debug("Runner initialized.")
 
     def get_database(self, **kwargs):
         """Get database."""
         return kwargs.get('database',
-                          getattr(self.run_settings0, 'database', None)) or \
+                          getattr(self.run_settings, 'database', None)) or \
                           DatabaseDummy()
         
     def get_logger(self, **kwargs):
         """Get logger."""
         return kwargs.get('logger',
-                          getattr(self.run_settings0, 'logger', None)) or \
+                          getattr(self.run_settings, 'logger', None)) or \
                           LoggerDummy()
         
     def get_run_settings(self, *args):
@@ -43,19 +43,19 @@ class Runner:
                                 "got {}".format(len(args)))
         return args[0]
     
-    def get_scheduler(self, **kwargs):
+    def get_scheduler(self, logger=None, **kwargs):
         """Get scheduler."""
         scheduler = kwargs.get('scheduler',
-                               getattr(self.run_settings0, 'scheduler', None))
+                               getattr(self.run_settings, 'scheduler', None))
         if scheduler is None:
             raise ValueError("Scheduler not specified in kwargs or " +
                              "run_settings")
-        return gs(scheduler, **kwargs)
+        return gs(scheduler, logger=logger, **kwargs)
     
     def get_database(self, **kwargs):
         """Get database."""
         db = kwargs.get('database',
-                        getattr(self.run_settings0, 'database', None))
+                        getattr(self.run_settings, 'database', None))
         return db or DatabaseDummy()
 
     def is_finished(self, status) -> bool:
@@ -93,8 +93,19 @@ class Runner:
         return statuses
     
     def run_single_job(self, run_settings):
+        
+        # compute jobs sequentially
+        if isinstance(run_settings, list):
+            for rs in run_settings:
+                return self.run_single_job(rs)
+        # check if job has already finished
+        if self.scheduler.check_finished(run_settings):
+            print("Job already finished")
+
         # Generate input
-        input = self.scheduler.generate_input(run_settings)
+        input = self.scheduler.gen_cmd(run_settings)
+        print(input)
+        åokoko
         run_settings = [replace(rss, **input) for rss in run_settings]
 
         # Copy/send input
@@ -138,10 +149,10 @@ class Runner:
     
     def run(self, **kwargs):
         """Run."""
-        self.logger.debug("Running jobs.")
+        self.logger.info(f"Running {len(self.run_array)} job(s).")
         with self.scheduler.run_ctx():
-            jobs = [self.run_single_job(rs) for rs in self.run_settings]
-        if not  self.wait_for_jobs_to_finish:
+            jobs = [self.run_single_job(rs) for rs in self.run_array]
+        if not self.wait_for_jobs_to_finish:
             return jobs
         # Wait for the job to finish
         status = self.wait(jobs)

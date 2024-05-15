@@ -10,7 +10,8 @@ def get_docker_launcher(cpus_per_task: Optional[int] = None,
                    container_image: Optional[str] = None,
                    container_mounts: Optional[dict] = None,
                    container_executable: Optional[str] = None,
-                   work_dir_container: Optional[PathLike] = None) -> List[str]:
+                   work_dir_container: Optional[PathLike] = None,
+                   **kwargs) -> List[str]:
     """Return a command to run a Docker container.
 
     Parameters
@@ -39,7 +40,7 @@ def get_docker_launcher(cpus_per_task: Optional[int] = None,
     docker_mounts = container_mounts or {}
     container_executable = container_executable or 'docker'
     if not container_image:
-        raise ValueError('Container image not set.')
+        return []
 
     work_dir_container = work_dir_container or Path('/work')
 

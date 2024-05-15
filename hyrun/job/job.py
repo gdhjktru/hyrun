@@ -1,0 +1,16 @@
+
+from dataclasses import dataclass
+from .output import Output
+from .job_info import JobInfo
+import tqdm
+from typing import Optional
+from fabric.connection import Connection
+
+
+@dataclass
+class Job(JobInfo, Output):
+    """HSP job."""
+    db_id: Optional[int] = None
+    progress_bar: Optional[tqdm.tqdm] = None
+    run_settings = None
+    connection: Optional[Connection] = None
