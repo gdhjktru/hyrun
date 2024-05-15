@@ -27,20 +27,19 @@ class LocalScheduler:
                                       **run_settings.__dict__),
                                       *run_settings.launcher])
 
+
+    # @force_list
     def gen_job_script(self, run_settings):
         """Generate command."""
-        if isinstance(run_settings, list):
-            return [self.gen_job_script(rs) for rs in run_settings]
-        launcher = self.get_launcher(run_settings)
+        print(type(run_settings))
+        cmds = [' '.join([*self.get_launcher(rs), rs.program, *rs.args]) 
+                for rs in run_settings]
+        cmd = '\n'.join(cmds)
 
-        running_list: List[str] = [
-            *launcher, run_settings.program, *run_settings.args
-        ]
-        running_str = ' '.join(running_list)
-        job_script_name = ('job_script_' + 
-                           run_settings.get_hash(running_str) + '.sh')
-        job_script = File(name=job_script_name,
-                            content=running_str)
+        print(cmd)
+
+        job_script_name = 'job_script_' + run_settings[0].get_hash(cmd) + '.sh'
+        job_script = File(name=job_script_name, content=cmd)
         return job_script
         #         job_name = self._gen_job_name_bundle(jobs)
         # jobs = [replace(job, job_name=job_name) for job in jobs]

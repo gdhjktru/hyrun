@@ -12,6 +12,8 @@ from hyrun.job import Job
 from string import Template
 from functools import wraps
 from hyrun.decorators import list_exec, force_list
+from contextlib import nullcontext, suppress
+from pathlib import Path
 
 class Runner:
     """Runner."""
@@ -83,10 +85,9 @@ class Runner:
             sleep(t)
             t = self._increment_t(t)
 
+    @force_list
     def wait(self, jobs, timeout=60) -> List[str]:
         """Wait for job to finish."""
-        if not isinstance(jobs, list):
-            jobs = [jobs]
         timeout = max([j.walltime for j in jobs]) or timeout
         incrementer = self._increment_and_sleep(1)
         statuses = [self.get_status(j) for j in jobs]
@@ -96,21 +97,24 @@ class Runner:
             statuses = [self.get_status(j) for j in jobs]
         return statuses
     
-    def write_files_local(self, run_settings, job_script):
-        files = [file for rs in run_settings for file in rs.files_to_write]
-        files += job_script   
-        files = self.replace_var_in_file_content(files)   
-
-        print('lcaol iles to write', files)
 
 
+    @list_exec
+    def write_file_local(self, file, overwrite=True):
+        print(type(file))
+        p = Path(file.folder) / file.name if file.folder is not None else file.work_path_local
+        if p.exists() and not overwrite:
+            return file
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(self.replace_var_in_file_content(file))
+        return str(p)
+
+    @list_exec
     def replace_var_in_file_content(self, file):
         """Replace variables in file content."""
-        if isinstance(file, list):
-            return [self.replace_var_in_file_content(f) for f in file]
-        if not isinstance(file, File):
-            return file
-        file.content = Template(file.content).safe_substitute(**file.variables)
+        with suppress(AttributeError):
+            file.content = Template(file.content
+                                    ).safe_substitute(**file.variables)
         return file
 
     
@@ -122,13 +126,16 @@ class Runner:
             print("Job already finished")
 
         job_script = self.scheduler.gen_job_script(run_settings)
-        job = Job(run_settings=run_settings, job_script=job_script)
+        # job = Job(run_settings=run_settings, job_script=job_script)
         self.logger.debug(f"Job script: {job_script}")
+        ff=[f for rs in run_settings for f in rs.files_to_write]  + [job_script]
+        print('pijipj', ff) 
+        local_files = self.write_file_local(
+            [job_script] + [f for rs in run_settings for f in rs.files_to_write]    
+        )    
+        print(local_files)
 
-        local_files = self.write_files_local(run_settings, job_script) 
 
-
-        jijijiij
 
         # # generate local files
         # file_local, file_remote

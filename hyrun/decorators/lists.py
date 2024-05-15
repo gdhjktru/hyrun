@@ -10,12 +10,11 @@ def list_exec(func):
     return wrapper
 
 
-
 def force_list(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         if not isinstance(args[0], list):
-            return [args[0]]
+            return func([args[0]], *args[1:], **kwargs)
         else:
             return func(*args, **kwargs)
     return wrapper
