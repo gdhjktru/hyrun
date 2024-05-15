@@ -77,10 +77,9 @@ class LocalScheduler:
 
     def gen_job(self, job_id, run_settings):
         return job_id
-    
 
     def check_finished(self, run_settings) -> bool:
-        """Check if output file exists and return if it does."""
+        """Check if output file exists and return True if it does."""
                 # compute jobs sequentially
         if isinstance(run_settings, list):
             return all(self.check_finished(rs) for rs in run_settings)

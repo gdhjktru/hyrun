@@ -21,12 +21,11 @@ class Runner:
     def __init__(self, *args, **kwargs):
         """Initialize."""
         
-        a = ArrayJob(self.get_run_settings(*args), **kwargs)
-        self.run_array, self.job_shape = a.run_settings, a.shape
-        self.run_settings = self.run_array[0][0]
+        self.run_array = ArrayJob(self.get_run_settings(*args), **kwargs).run_settings
+        self.global_settings = self.run_array[0][0]
         self.logger = self.get_logger(**kwargs)
 
-        self.wait_for_jobs_to_finish = self.run_settings.wait
+        self.wait_for_jobs_to_finish = self.global_settings.wait
         self.database = self.get_database(**kwargs)
         self.scheduler = self.get_scheduler(logger=self.logger, **kwargs)
         self.logger.debug("Runner initialized.")
@@ -34,13 +33,13 @@ class Runner:
     def get_database(self, **kwargs):
         """Get database."""
         return kwargs.get('database',
-                          getattr(self.run_settings, 'database', None)) or \
+                          getattr(self.global_settings, 'database', None)) or \
                           DatabaseDummy()
         
     def get_logger(self, **kwargs):
         """Get logger."""
         return kwargs.get('logger',
-                          getattr(self.run_settings, 'logger', None)) or \
+                          getattr(self.global_settings, 'logger', None)) or \
                           LoggerDummy()
         
     def get_run_settings(self, *args):
@@ -53,7 +52,7 @@ class Runner:
     def get_scheduler(self, logger=None, **kwargs):
         """Get scheduler."""
         scheduler = kwargs.get('scheduler',
-                               getattr(self.run_settings, 'scheduler', None))
+                               getattr(self.global_settings, 'scheduler', None))
         if scheduler is None:
             raise ValueError("Scheduler not specified in kwargs or " +
                              "run_settings")
@@ -62,7 +61,7 @@ class Runner:
     def get_database(self, **kwargs):
         """Get database."""
         db = kwargs.get('database',
-                        getattr(self.run_settings, 'database', None))
+                        getattr(self.global_settings, 'database', None))
         return db or DatabaseDummy()
 
     def is_finished(self, status) -> bool:
@@ -101,7 +100,6 @@ class Runner:
 
     @list_exec
     def write_file_local(self, file, overwrite=True):
-        print(type(file))
         if isinstance(file, list):
             for f in file:
                 print(type(f))
@@ -109,7 +107,7 @@ class Runner:
         if p.exists() and not overwrite:
             return file
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(self.replace_var_in_file_content(file))
+        p.write_text(self.replace_var_in_file_content(file).content)
         return str(p)
 
     @list_exec
@@ -119,6 +117,21 @@ class Runner:
             file.content = Template(file.content
                                     ).safe_substitute(**file.variables)
         return file
+    
+
+    @list_exec
+    def prepare_jobs(self, job: list):
+        job_script = self.scheduler.gen_job_script(job.run_settings)
+        # job = Job(run_settings=run_settings, job_script=job_script)
+        local_files = self.write_file_local(
+            [f for rs in job.run_settings for f in rs.files_to_write]  + [job_script]
+        )    
+        return {'local_files': local_files, 'job_script': job_script}
+        
+
+    @list_exec
+    def check_finished(self, run_settings):
+        return self.scheduler.check_finished(run_settings)
 
     
     def run_single_job(self, run_settings):
@@ -183,9 +196,26 @@ class Runner:
     
     def run(self, **kwargs):
         """Run."""
-        self.logger.info(f"Running {len(self.run_array)} job(s).")
+        # filter jobs that are not finished
+        jobs = [Job(run_settings=rs)
+                for rs, b in zip(self.run_array,
+                                 self.check_finished(self.run_array)) if not b]
+        self.logger.info(f"Running {len(jobs)} job(s).")
+
+
+
         with self.scheduler.run_ctx():
-            jobs = [self.run_single_job(rs) for rs in self.run_array]
+            ll= self.prepare_jobs(jobs)
+            print('prep results', ll)
+            # 1. Prepare jobs
+            # dry run exit
+            # 2. write files 
+            # 3. copy files
+            # 4. submit jobs
+            # db exit
+            # 5. wait for jobs to finish
+            # jobs = [self.prepare_single_job(rs) for rs in self.run_array]
+            # jobs = [self.run_single_job(rs) for rs in self.run_array]
         if not self.wait_for_jobs_to_finish:
             return jobs
         # Wait for the job to finish
