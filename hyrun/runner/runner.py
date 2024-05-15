@@ -102,6 +102,9 @@ class Runner:
     @list_exec
     def write_file_local(self, file, overwrite=True):
         print(type(file))
+        if isinstance(file, list):
+            for f in file:
+                print(type(f))
         p = Path(file.folder) / file.name if file.folder is not None else file.work_path_local
         if p.exists() and not overwrite:
             return file
@@ -128,10 +131,8 @@ class Runner:
         job_script = self.scheduler.gen_job_script(run_settings)
         # job = Job(run_settings=run_settings, job_script=job_script)
         self.logger.debug(f"Job script: {job_script}")
-        ff=[f for rs in run_settings for f in rs.files_to_write]  + [job_script]
-        print('pijipj', ff) 
         local_files = self.write_file_local(
-            [job_script] + [f for rs in run_settings for f in rs.files_to_write]    
+            [f for rs in run_settings for f in rs.files_to_write]  + [job_script]
         )    
         print(local_files)
 
