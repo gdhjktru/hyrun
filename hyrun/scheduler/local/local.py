@@ -62,7 +62,9 @@ class LocalScheduler:
 
     def check_finished(self, run_settings) -> bool:
         """Check if output file exists and return if it does."""
-        print(run_settings.__dict__.keys())
+                # compute jobs sequentially
+        if isinstance(run_settings, list):
+            return all[self.check_finished(rs) for rs in run_settings]
         files_to_check = [getattr(f, 'work_path_local')
                           for f in [run_settings.output_file,
                                     run_settings.stdout_file,
