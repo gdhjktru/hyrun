@@ -13,6 +13,7 @@ from .output import Output
 @dataclass
 class Job(JobInfo, Output):
     """HSP job."""
+
     db_id: Optional[int] = None
     # progress_bar: Optional[tqdm] = None
     run_settings: Any = None

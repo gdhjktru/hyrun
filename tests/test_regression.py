@@ -1,9 +1,7 @@
 # requires pytest-regressions installed (pip install pytest-regressions)
-import os
 from pathlib import Path
 
 import pytest
-import yaml
 from hyif import Xtb
 from hyobj import Molecule
 from hyset import create_compute_settings as ccs

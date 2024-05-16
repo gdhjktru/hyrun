@@ -6,14 +6,14 @@ from .local import LocalScheduler
 from .pbs import PbsScheduler
 from .slurm import SlurmScheduler
 
-SCHEDULER_MAPPING: Mapping[str,
-                           Type[Scheduler]] = {'pbs': PbsScheduler,
-                                               'torque': PbsScheduler,
-                                               'slurm': SlurmScheduler,
-                                               'local': LocalScheduler,
-                                               'conda': LocalScheduler,
-                                               'docker': LocalScheduler,
-                                               'singularity': LocalScheduler}
+SCHEDULER_MAPPING: Mapping[str, Type[Scheduler]]
+SCHEDULER_MAPPING = {'pbs': PbsScheduler,  # type: ignore
+                     'torque': PbsScheduler,  # type: ignore
+                     'slurm': SlurmScheduler,  # type: ignore
+                     'local': LocalScheduler,  # type: ignore
+                     'conda': LocalScheduler,  # type: ignore
+                     'docker': LocalScheduler,  # type: ignore
+                     'singularity': LocalScheduler}  # type: ignore
 
 
 def get_scheduler(scheduler_name: Optional[str] = None,

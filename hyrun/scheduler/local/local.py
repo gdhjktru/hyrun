@@ -9,11 +9,13 @@ from hytools.logger import LoggerDummy
 
 from hyrun.decorators import list_exec
 
+from ..abc import Scheduler
 from .conda import get_conda_launcher
 from .docker import get_docker_launcher
 
 
-class LocalScheduler:
+class LocalScheduler(Scheduler):
+    """Local scheduler."""
 
     def __init__(self, **kwargs):
         """Initialize."""

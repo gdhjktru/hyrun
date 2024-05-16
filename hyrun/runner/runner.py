@@ -149,7 +149,7 @@ class Runner:
         job_script = self.scheduler.gen_job_script(job.run_settings)
         try:
             file_list = [f for rs in job.run_settings
-                        for f in rs.files_to_write] + [job_script]
+                         for f in rs.files_to_write] + [job_script]
         except TypeError:
             file_list = [f for f in job.run_settings.files_to_write] \
                 + [job_script]
