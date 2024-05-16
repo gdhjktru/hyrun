@@ -75,8 +75,12 @@ class Runner:
         """Add job to database."""
         if isinstance(job, list):
             return [self.add_to_db(j) for j in job]
+        purge_attrs = ['local_files', 'remote_files', 'run_settings']
+        job_db = replace(job, db_id=None)
+        for attr in purge_attrs:
+            job_db.__dict__.pop(attr, None)
         self.logger.debug(f'adding job {job} to database {self.database}')
-        id = self.database.add(job)
+        id = self.database.add(job_db)
         return replace(job, db_id=id)
 
     @list_exec
@@ -193,7 +197,7 @@ class Runner:
     def run(self, **kwargs):
         """Run."""
         # filter jobs that are not finished
-        jobs = [Job(run_settings=rs)
+        jobs = [Job(run_settings=rs, scheduler=rs.scheduler)
                 for rs, b in zip(self.run_array,
                                  self.check_finished(self.run_array)) if not b]
         self.logger.info(f'Running {len(jobs)} job(s).')

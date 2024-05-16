@@ -1,5 +1,6 @@
 import subprocess
 from contextlib import nullcontext
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -11,13 +12,12 @@ from hyrun.job import Job, Output
 
 from .conda import get_conda_launcher
 from .docker import get_docker_launcher
-from dataclasses import replace
 
 
 class LocalScheduler:
 
     def __init__(self, **kwargs):
-    
+
         self.logger = kwargs.get('logger', LoggerDummy())
         self.logger.debug('Local scheduler initialized\n')
         self.default_data_path = 'data_path_local'

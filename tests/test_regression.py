@@ -29,7 +29,8 @@ default_tolerance = dict(atol=1e-6, rtol=1e-6)
 keys_to_extract = ['energy']
 
 default_cs = {'print_level': 'debug',
-              'force_recompute': True}
+              'force_recompute': True,
+              'database': 'mydb'}
 compute_settings = {
     'local': ccs('local', **default_cs),
     # 'docker': ccs('docker', container_image='xtb', **default_cs),
