@@ -24,11 +24,10 @@ class Runner:
         self.run_array = ArrayJob(self.get_run_settings(*args), **kwargs).run_settings
         self.global_settings = self.run_array[0][0]
         self.logger = self.get_logger(**kwargs)
-
         self.wait_for_jobs_to_finish = self.global_settings.wait
         self.database = self.get_database(**kwargs)
         self.scheduler = self.get_scheduler(logger=self.logger, **kwargs)
-        self.logger.debug("Runner initialized.")
+        self.logger.debug("Runner initialized.") 
 
     def get_database(self, **kwargs):
         """Get database."""
@@ -73,6 +72,19 @@ class Runner:
         """Get status."""
         return self.scheduler.get_status(jobs)
     
+    @list_exec
+    def add_to_db(self, job):
+        """Add job to database."""
+        self.logger.debug(f'adding job {job} to database {self.database}')
+        return self.database.add(job)
+
+    @list_exec
+    def copy_files(self, job, ctx):
+        """Copy files."""
+        return self.scheduler.copy_files(job.local_files,
+                                         job.remote_files,
+                                         ctx)
+    
     def _increment_t(self, t, tmin=1, tmax=60 ) -> int:
         """Increment t."""
         return min(max(2*t, tmin), tmax)
@@ -100,9 +112,7 @@ class Runner:
 
     @list_exec
     def write_file_local(self, file, overwrite=True):
-        if isinstance(file, list):
-            for f in file:
-                print(type(f))
+        """Write file locally."""
         p = Path(file.folder) / file.name if file.folder is not None else file.work_path_local
         if p.exists() and not overwrite:
             return file
@@ -121,52 +131,59 @@ class Runner:
 
     @list_exec
     def prepare_jobs(self, job: list):
+        """Prepare jobs."""
         job_script = self.scheduler.gen_job_script(job.run_settings)
-        # job = Job(run_settings=run_settings, job_script=job_script)
-        local_files = self.write_file_local(
-            [f for rs in job.run_settings for f in rs.files_to_write]  + [job_script]
-        )    
-        return {'local_files': local_files, 'job_script': job_script}
-        
+        file_list = [f for rs in job.run_settings for f in rs.files_to_write]  + [job_script]
+        job.local_files = self.write_file_local(file_list)
+        job.remote_files = [str(f.work_path_remote) for f in job.local_files if hasattr(f, 'work_path_remote')]
+        job.job_script = job_script.content
+        return job
 
     @list_exec
     def check_finished(self, run_settings):
+        """Check if job has finished."""
         return self.scheduler.check_finished(run_settings)
+    
+
+    @list_exec
+    def submit_jobs(self, job: list):
+        """Submit jobs."""
+        return self.scheduler.submit(job)
 
     
-    def run_single_job(self, run_settings):
+    # def run_single_job(self, run_settings):
         
 
-        # check if job has already finished
-        if self.scheduler.check_finished(run_settings):
-            print("Job already finished")
+    #     # check if job has already finished
+    #     if self.scheduler.check_finished(run_settings):
+    #         print("Job already finished")
 
-        job_script = self.scheduler.gen_job_script(run_settings)
-        # job = Job(run_settings=run_settings, job_script=job_script)
-        self.logger.debug(f"Job script: {job_script}")
-        local_files = self.write_file_local(
-            [f for rs in run_settings for f in rs.files_to_write]  + [job_script]
-        )    
-        print(local_files)
+    #     job_script = self.scheduler.gen_job_script(run_settings)
+    #     # job = Job(run_settings=run_settings, job_script=job_script)
+    #     self.logger.debug(f"Job script: {job_script}")
+    #     local_files = self.write_file_local(
+    #         [f for rs in run_settings for f in rs.files_to_write]  + [job_script]
+    #     )    
+    #     print(local_files)
 
 
 
-        # # generate local files
-        # file_local, file_remote
-        # file_local.write()
+    #     # # generate local files
+    #     # file_local, file_remote
+    #     # file_local.write()
 
-        # Copy/send input
-        self.scheduler.copy_files(run_settings, job_script)
+    #     # Copy/send input
+    #     self.scheduler.copy_files(run_settings, job_script)
 
-        # Submit the job
-        job_id = self.scheduler.submit(run_settings)
-        job = self.scheduler.gen_job(job_id, run_settings)
+    #     # Submit the job
+    #     job_id = self.scheduler.submit(run_settings)
+    #     job = self.scheduler.gen_job(job_id, run_settings)
 
-        # Log and return job
-        db_id = self.database.add(job)
-        self.logger.debug(f"Job submitted: {job}")
-        self.logger.debug(f"Database ID: {db_id}")
-        return job
+    #     # Log and return job
+    #     db_id = self.database.add(job)
+    #     self.logger.debug(f"Job submitted: {job}")
+    #     self.logger.debug(f"Database ID: {db_id}")
+    #     return job
     
     def finish_single_job(self, job, status='FINISHED'):
         """Finnish single job."""
@@ -204,12 +221,15 @@ class Runner:
 
 
 
-        with self.scheduler.run_ctx():
-            ll= self.prepare_jobs(jobs)
-            print('prep results', ll)
-            # 1. Prepare jobs
-            # dry run exit
-            # 2. write files 
+        with self.scheduler.run_ctx() as ctx:
+            jobs = self.prepare_jobs(jobs)
+            if self.global_settings.dry_run:
+                return jobs
+            self.copy_files(jobs, ctx)
+            jobs = self.submit_jobs(jobs)
+            db_ids = self.add_to_db(jobs)
+
+        print('db_ids', db_ids)
             # 3. copy files
             # 4. submit jobs
             # db exit

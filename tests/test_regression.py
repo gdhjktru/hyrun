@@ -45,8 +45,14 @@ def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
     x = Xtb(compute_settings=compute_settings,
             check_version=False, properties=['gradient'])
     setup = x.setup(mol)
-    print(compute_settings.scheduler)
-    results = run(setup)
+    output = run(setup)
+    for j in output:
+        for r in j:
+            results = x.parse(r)
+
+    print(results)
+    return results
+
     # return {key: result[key] for key in keys_to_extract}
 
 

@@ -7,7 +7,8 @@ from .conda import get_conda_launcher
 from .docker import get_docker_launcher
 from pathlib import Path
 from hyrun.decorators import list_exec, force_list
-
+from hyrun.job import Job
+import subprocess
 
 class LocalScheduler:
     
@@ -34,27 +35,83 @@ class LocalScheduler:
                 for rs in run_settings]
         cmd = '\n'.join(cmds)
         job_script_name = 'job_script_' + run_settings[0].get_hash(cmd) + '.sh'
-        job_script = File(name=job_script_name, content=cmd)
+        job_script = File(name=job_script_name,
+                          content=cmd,
+                          handler=run_settings[0].file_handler)
         return job_script
-        #         job_name = self._gen_job_name_bundle(jobs)
-        # jobs = [replace(job, job_name=job_name) for job in jobs]
-        # job_script_name = 'job_script_' + job_name + '.sh'
-        # job_script = jobs[0].run_settings.file_handler.file(
-        #     name=job_script_name,
-        #     content=self._gen_job_script_bundle(jobs))
-        # return running_list
-
-
     
     
-    def copy_files(self, *args, **kwargs):
-        #1. create directories
-        #2. resolve paths
-        #3. write files
+    def copy_files(self, local_files: List[str], remote_files: List[str], ctx):
         pass
 
-    def submit(self, run_settings):
-        return 0
+    def gen_output(self,result, run_settings):
+        output_dict: Dict[str, Any]
+        files_to_parse = run_settings.files_to_parse
+        for i, f in enumerate(files_to_parse):
+            if isinstance(f, File):
+                if hasattr(f, 'work_path_local'):
+                    files_to_parse[i] = f.work_path_local  # type: ignore
+        output_dict = {
+            'files_to_parse': files_to_parse,
+            'output_folder':  (run_settings.work_dir_local if run_settings.output_folder
+                               else None),
+        }
+
+        if run_settings.output_file:
+            if hasattr(run_settings.output_file, 'work_path_local'):
+                f = run_settings.output_file.work_path_local  # type: ignore
+            else:
+                f = run_settings.output_file
+            output_dict.update({'output_file': f})  # type: ignore
+        if result is None:
+            return output_dict
+
+        output_dict.update({'returncode': result.returncode})
+
+        exceptions = ['normal termination of xtb']
+        if result.stderr:
+            stderr_file = (
+                run_settings.stderr_file.work_path_local  # type: ignore
+            )
+            Path(stderr_file).write_text(result.stderr)
+            self.logger.debug('STDERR: %s', result.stderr) if any(
+                e in result.stderr for e in exceptions
+            ) else self.logger.error('STDERR: %s', result.stderr)
+            output_dict['stderr'] = result.stderr
+
+        if result.stdout:
+            stdout_file = (
+                run_settings.stdout_file.work_path_local  # type: ignore
+            )
+            Path(stdout_file).write_text(result.stdout)
+            output_dict['stdout'] = stdout_file
+
+        return output_dict
+
+
+    def submit(self, jobs):
+        cmds = jobs.job_script.split('\n')
+        run_settings = [rs for rs in jobs.run_settings]
+        results = []
+        for cmd, rs in zip(cmds, run_settings):
+            self.logger.debug(f'Running command: {cmd}')
+            result = subprocess.run(
+                cmd.split(),  # type: ignore
+                capture_output=True,
+                text=True,
+                cwd=rs.work_dir_local,
+                env=rs.env,
+                shell=False)
+            job = Job(**self.gen_output(result, rs))
+            job.job_finished = True
+            results.append(job)
+        # job.finished = True
+        # job.files_to_parse = [file for rs in results for file in rs.files_to_parse]
+        # job.output_file = [r.output_file for r in results]
+        # job.stdout = [r.stdout for r in results]
+        # job.stderr = [r.stderr for r in results]
+        # job.returncode = sum([r.returncode for r in results])
+        return results
     
     def is_finished(self, status) -> bool:
         return True
@@ -64,12 +121,12 @@ class LocalScheduler:
         return 'finished'   
     
     def cancel(self):   
-        pass
+        self.logger.error('Cancel not implemented for local scheduler\n')
 
     def quick_return(self):
         pass
 
-    def fetch_results(self):
+    def fetch_results(self, jobs):
         pass
 
     def teardown(self):
