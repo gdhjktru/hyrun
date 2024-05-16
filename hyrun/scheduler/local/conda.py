@@ -23,7 +23,7 @@ def get_conda_launcher(conda_env: Optional[str] = None,
     return launcher
 
 
-def get_conda_path(conda_env: Optional[str]= None,
+def get_conda_path(conda_env: Optional[str] = None,
                    path: Optional[List[str]] = None,
                    **kwargs
                    ) -> List[str]:

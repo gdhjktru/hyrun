@@ -7,8 +7,7 @@ from typing import Any, Dict, List, Optional
 from hytools.file import File
 from hytools.logger import LoggerDummy
 
-from hyrun.decorators import force_list, list_exec
-from hyrun.job import Job, Output
+from hyrun.decorators import list_exec
 
 from .conda import get_conda_launcher
 from .docker import get_docker_launcher
@@ -17,12 +16,13 @@ from .docker import get_docker_launcher
 class LocalScheduler:
 
     def __init__(self, **kwargs):
-
+        """Initialize."""
         self.logger = kwargs.get('logger', LoggerDummy())
         self.logger.debug('Local scheduler initialized\n')
         self.default_data_path = 'data_path_local'
 
     def run_ctx(self, arg: Optional[Any] = None):
+        """Return context manager."""
         return nullcontext(arg)
 
     def get_launcher(self, run_settings):
@@ -32,7 +32,6 @@ class LocalScheduler:
                                   [*get_docker_launcher(
                                       **run_settings.__dict__),
                                       *run_settings.launcher])
-
 
     def gen_job_script(self, run_settings):
         """Generate command."""
@@ -45,11 +44,12 @@ class LocalScheduler:
                           handler=run_settings.file_handler)
         return job_script
 
-
     def copy_files(self, local_files: List[str], remote_files: List[str], ctx):
+        """Copy files."""
         pass
 
     def gen_output(self, result, run_settings) -> dict:
+        """Generate output."""
         output_dict: Dict[str, Any]
         files_to_parse = run_settings.files_to_parse
         for i, f in enumerate(files_to_parse):
@@ -58,8 +58,9 @@ class LocalScheduler:
                     files_to_parse[i] = f.work_path_local  # type: ignore
         output_dict = {
             'files_to_parse': files_to_parse,
-            'output_folder':  (run_settings.work_dir_local if run_settings.output_folder
-                               else None),
+            'output_folder': (run_settings.work_dir_local
+                              if run_settings.output_folder
+                              else None),
         }
 
         if run_settings.output_file:
@@ -90,9 +91,7 @@ class LocalScheduler:
             )
             Path(stdout_file).write_text(result.stdout)
             output_dict['stdout'] = stdout_file
-
         return output_dict
-
 
     def submit(self, job):
         """Submit job."""
@@ -116,7 +115,8 @@ class LocalScheduler:
             job.job_finished = True
             results.append(job)
         # job.finished = True
-        # job.files_to_parse = [file for rs in results for file in rs.files_to_parse]
+        # job.files_to_parse = [file for rs in results for file
+        # in rs.files_to_parse]
         # job.output_file = [r.output_file for r in results]
         # job.stdout = [r.stdout for r in results]
         # job.stderr = [r.stderr for r in results]
@@ -124,30 +124,36 @@ class LocalScheduler:
         return results if len(results) > 1 else results[0]
 
     def is_finished(self, status) -> bool:
+        """Check if job is finished."""
         return True
 
     @list_exec
     def get_status(self, job) -> str:
+        """Get status."""
         return 'finished'
 
     def cancel(self):
+        """Cancel job."""
         self.logger.error('Cancel not implemented for local scheduler\n')
 
     def quick_return(self):
+        """Quick return."""
         pass
 
     def fetch_results(self, jobs):
+        """Fetch results."""
         return jobs
 
     @list_exec
     def teardown(self, jobs):
+        """Teardown."""
         for rs in jobs:
             for f in rs.scratch_dir_local + rs.files_to_remove:
                 f.unlink()
 
     def check_finished(self, run_settings) -> bool:
         """Check if output file exists and return True if it does."""
-                # compute jobs sequentially
+        # compute jobs sequentially
         if isinstance(run_settings, list):
             return all(self.check_finished(rs) for rs in run_settings)
         files_to_check = [getattr(f, 'work_path_local')
@@ -164,6 +170,6 @@ class LocalScheduler:
 
         force_recompute = run_settings.force_recompute
         self.logger.info('force_recompute is %s, will %srecompute\n',
-                    'set' if force_recompute else 'not set',
-                    '' if force_recompute else 'not ')
+                         'set' if force_recompute else 'not set',
+                         '' if force_recompute else 'not ')
         return not force_recompute

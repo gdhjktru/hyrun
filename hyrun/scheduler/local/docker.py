@@ -6,12 +6,12 @@ PathLike = Union[str, Path, None]
 
 
 def get_docker_launcher(cpus_per_task: Optional[int] = None,
-                   env_vars: Optional[dict] = None,
-                   container_image: Optional[str] = None,
-                   container_mounts: Optional[dict] = None,
-                   container_executable: Optional[str] = None,
-                   work_dir_container: Optional[PathLike] = None,
-                   **kwargs) -> List[str]:
+                        env_vars: Optional[dict] = None,
+                        container_image: Optional[str] = None,
+                        container_mounts: Optional[dict] = None,
+                        container_executable: Optional[str] = None,
+                        work_dir_container: Optional[PathLike] = None,
+                        **kwargs) -> List[str]:
     """Return a command to run a Docker container.
 
     Parameters
