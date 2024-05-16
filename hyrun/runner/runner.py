@@ -137,7 +137,7 @@ class Runner:
         return file
 
     @list_exec
-    def prepare_jobs(self, job: list):
+    def prepare_jobs(self, job: Job):
         """Prepare jobs."""
         job_script = self.scheduler.gen_job_script(job.run_settings)
         file_list = [f for rs in job.run_settings
@@ -155,7 +155,7 @@ class Runner:
         return self.scheduler.check_finished(run_settings)
 
     @list_exec
-    def submit_jobs(self, job: list):
+    def submit_jobs(self, job: Job):
         """Submit jobs."""
         return self.scheduler.submit(job)
 
