@@ -52,5 +52,3 @@ class ArrayJob:
             all(getattr(rrs, k, None) == getattr(rs[0], k, None) for rrs in rs)
             for k in keys for rs in self.run_settings
         )
-
-

@@ -132,8 +132,11 @@ class LocalScheduler:
     def fetch_results(self, jobs):
         return jobs
 
+    @list_exec
     def teardown(self, jobs):
-        pass
+        for rs in jobs:
+            for f in rs.scratch_dir_local + rs.files_to_remove:
+                f.unlink()
 
     def check_finished(self, run_settings) -> bool:
         """Check if output file exists and return True if it does."""

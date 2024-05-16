@@ -38,4 +38,3 @@ def get_conda_path(conda_env: Optional[str]= None,
             Path(shutil.which('python')).parents[2] / t_dir  # type: ignore
         )
     return [conda_bin_dir] + path if conda_bin_dir else path
-
