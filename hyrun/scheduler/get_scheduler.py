@@ -3,8 +3,8 @@ from typing import Mapping, Optional, Type
 
 from .abc import Scheduler
 from .local import LocalScheduler
-from .slurm import SlurmScheduler
 from .pbs import PbsScheduler
+from .slurm import SlurmScheduler
 
 SCHEDULER_MAPPING: Mapping[str,
                            Type[Scheduler]] = {'pbs': PbsScheduler,

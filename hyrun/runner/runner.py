@@ -1,62 +1,66 @@
-from hyrun.scheduler import get_scheduler as gs
-from time import sleep
-from typing import Generator, List
-from hydb import Database, DatabaseDummy
-from hytools.logger import LoggerDummy
-from hytools.file import File
+from contextlib import nullcontext, suppress
 from copy import deepcopy
 from dataclasses import replace
-import numpy as np
-from .array_job import ArrayJob
-from hyrun.job import Job
-from string import Template
 from functools import wraps
-from hyrun.decorators import list_exec, force_list
-from contextlib import nullcontext, suppress
 from pathlib import Path
+from string import Template
+from time import sleep
+from typing import Generator, List
+
+import numpy as np
+from hydb import Database, DatabaseDummy
+from hytools.file import File
+from hytools.logger import LoggerDummy
+
+from hyrun.decorators import force_list, list_exec
+from hyrun.job import Job
+from hyrun.scheduler import get_scheduler as gs
+
+from .array_job import ArrayJob
+
 
 class Runner:
     """Runner."""
 
     def __init__(self, *args, **kwargs):
         """Initialize."""
-        
+
         self.run_array = ArrayJob(self.get_run_settings(*args), **kwargs).run_settings
         self.global_settings = self.run_array[0][0]
         self.logger = self.get_logger(**kwargs)
         self.wait_for_jobs_to_finish = self.global_settings.wait
         self.database = self.get_database(**kwargs)
         self.scheduler = self.get_scheduler(logger=self.logger, **kwargs)
-        self.logger.debug("Runner initialized.") 
+        self.logger.debug('Runner initialized.')
 
     def get_database(self, **kwargs):
         """Get database."""
         return kwargs.get('database',
                           getattr(self.global_settings, 'database', None)) or \
                           DatabaseDummy()
-        
+
     def get_logger(self, **kwargs):
         """Get logger."""
         return kwargs.get('logger',
                           getattr(self.global_settings, 'logger', None)) or \
                           LoggerDummy()
-        
+
     def get_run_settings(self, *args):
         """Get run settings."""
         if len(args) > 1:
-            raise ValueError("run() takes at most 1 positional argument, " +
-                                "got {}".format(len(args)))
+            raise ValueError('run() takes at most 1 positional argument, ' +
+                                'got {}'.format(len(args)))
         return args[0]
-    
+
     def get_scheduler(self, logger=None, **kwargs):
         """Get scheduler."""
         scheduler = kwargs.get('scheduler',
                                getattr(self.global_settings, 'scheduler', None))
         if scheduler is None:
-            raise ValueError("Scheduler not specified in kwargs or " +
-                             "run_settings")
+            raise ValueError('Scheduler not specified in kwargs or ' +
+                             'run_settings')
         return gs(scheduler, logger=logger, **kwargs)
-    
+
     def get_database(self, **kwargs):
         """Get database."""
         db = kwargs.get('database',
@@ -66,12 +70,12 @@ class Runner:
     def is_finished(self, status) -> bool:
         """Check if job is finished."""
         return self.scheduler.is_finished(status)
-    
+
     @force_list
     def get_status(self, jobs) -> List[str]:
         """Get status."""
         return self.scheduler.get_status(jobs)
-    
+
     @list_exec
     def add_to_db(self, job):
         """Add job to database."""
@@ -84,7 +88,7 @@ class Runner:
         return self.scheduler.copy_files(job.local_files,
                                          job.remote_files,
                                          ctx)
-    
+
     def _increment_t(self, t, tmin=1, tmax=60 ) -> int:
         """Increment t."""
         return min(max(2*t, tmin), tmax)
@@ -107,7 +111,7 @@ class Runner:
                 break
             statuses = [self.get_status(j) for j in jobs]
         return statuses
-    
+
 
 
     @list_exec
@@ -127,7 +131,7 @@ class Runner:
             file.content = Template(file.content
                                     ).safe_substitute(**file.variables)
         return file
-    
+
 
     @list_exec
     def prepare_jobs(self, job: list):
@@ -143,16 +147,16 @@ class Runner:
     def check_finished(self, run_settings):
         """Check if job has finished."""
         return self.scheduler.check_finished(run_settings)
-    
+
 
     @list_exec
     def submit_jobs(self, job: list):
         """Submit jobs."""
         return self.scheduler.submit(job)
 
-    
+
     # def run_single_job(self, run_settings):
-        
+
 
     #     # check if job has already finished
     #     if self.scheduler.check_finished(run_settings):
@@ -163,7 +167,7 @@ class Runner:
     #     self.logger.debug(f"Job script: {job_script}")
     #     local_files = self.write_file_local(
     #         [f for rs in run_settings for f in rs.files_to_write]  + [job_script]
-    #     )    
+    #     )
     #     print(local_files)
 
 
@@ -184,10 +188,10 @@ class Runner:
     #     self.logger.debug(f"Job submitted: {job}")
     #     self.logger.debug(f"Database ID: {db_id}")
     #     return job
-    
+
     def finish_single_job(self, job, status='FINISHED'):
         """Finnish single job."""
-        self.logger.debug(f"Job status: {status}")
+        self.logger.debug(f'Job status: {status}')
         # Update the status
         job = replace(job, status=status)
         # Fetch the results
@@ -195,7 +199,7 @@ class Runner:
         try:
             r = self.scheduler.fetch_results(job)
         except Exception as e:
-            self.logger.error(f"Error fetching results: {e}")
+            self.logger.error(f'Error fetching results: {e}')
         else:
             # Update the database
             self.database.update(job.db_id, job)
@@ -210,14 +214,14 @@ class Runner:
             jobs = [jobs]
         return [self.finish_single_job(j) for j in jobs]
 
-    
+
     def run(self, **kwargs):
         """Run."""
         # filter jobs that are not finished
         jobs = [Job(run_settings=rs)
                 for rs, b in zip(self.run_array,
                                  self.check_finished(self.run_array)) if not b]
-        self.logger.info(f"Running {len(jobs)} job(s).")
+        self.logger.info(f'Running {len(jobs)} job(s).')
 
 
 
@@ -242,4 +246,3 @@ class Runner:
         status = self.wait(jobs)
         # Fetch the results
         return self.fetch_results(jobs)
-

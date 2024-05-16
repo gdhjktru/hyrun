@@ -1,5 +1,6 @@
 from functools import wraps
 
+
 def list_exec(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):

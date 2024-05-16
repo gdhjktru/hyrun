@@ -26,7 +26,7 @@ class Scheduler(ABC):
     @abstractmethod
     def run_ctx(self, arg: Optional[Any] = None):
         """Run context manager."""
-    
+
     @abstractmethod
     def teardown(self):
         """Teardown job."""

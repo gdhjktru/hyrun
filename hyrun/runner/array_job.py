@@ -1,6 +1,8 @@
-import numpy as np
-from typing import Optional
 from contextlib import suppress
+from typing import Optional
+
+import numpy as np
+
 
 class ArrayJob:
     """Array job."""
@@ -13,7 +15,7 @@ class ArrayJob:
         self.run_settings = self.get_settings(
             run_settings=run_settings, shape=shape)
         self.common_keys = self.check_common_keys(**kwargs)
-    
+
     def flatten_to_2d_list(self, l):
         """Flatten a deeply nested list to a 2D list."""
         result = []
@@ -28,7 +30,7 @@ class ArrayJob:
                 result.append([sublist])
         return result
 
-    def get_settings(self, run_settings=None, shape=None): 
+    def get_settings(self, run_settings=None, shape=None):
         """Get settings."""
         if not isinstance(run_settings, list):
             run_settings = [[run_settings]]
@@ -41,8 +43,8 @@ class ArrayJob:
             shape = shape or (len(run_settings), 1)
             run_settings = np.array(run_settings).reshape(shape).tolist()
         return run_settings
-       
-        
+
+
     def check_common_keys(self, keys: Optional[list] = None) -> bool:
         """Prepare array job."""
         keys = keys or []
@@ -50,5 +52,5 @@ class ArrayJob:
             all(getattr(rrs, k, None) == getattr(rs[0], k, None) for rrs in rs)
             for k in keys for rs in self.run_settings
         )
-        
-        
+
+

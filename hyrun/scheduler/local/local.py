@@ -1,17 +1,20 @@
+import subprocess
 from contextlib import nullcontext
-from typing import Any, Optional, List
-from hyrun.job import Output
-from hytools.logger import LoggerDummy
+from pathlib import Path
+from typing import Any, List, Optional
+
 from hytools.file import File
+from hytools.logger import LoggerDummy
+
+from hyrun.decorators import force_list, list_exec
+from hyrun.job import Job, Output
+
 from .conda import get_conda_launcher
 from .docker import get_docker_launcher
-from pathlib import Path
-from hyrun.decorators import list_exec, force_list
-from hyrun.job import Job
-import subprocess
+
 
 class LocalScheduler:
-    
+
     def __init__(self, **kwargs):
         self.logger = kwargs.get('logger', LoggerDummy())
         self.logger.debug('Local scheduler initialized\n')
@@ -19,7 +22,7 @@ class LocalScheduler:
 
     def run_ctx(self, arg: Optional[Any] = None):
         return nullcontext(arg)
-    
+
     def get_launcher(self, run_settings):
         """Get launcher."""
         # allows conda in docker but not docker in conda
@@ -31,7 +34,7 @@ class LocalScheduler:
 
     def gen_job_script(self, run_settings):
         """Generate command."""
-        cmds = [' '.join([*self.get_launcher(rs), rs.program, *rs.args]) 
+        cmds = [' '.join([*self.get_launcher(rs), rs.program, *rs.args])
                 for rs in run_settings]
         cmd = '\n'.join(cmds)
         job_script_name = 'job_script_' + run_settings[0].get_hash(cmd) + '.sh'
@@ -39,8 +42,8 @@ class LocalScheduler:
                           content=cmd,
                           handler=run_settings[0].file_handler)
         return job_script
-    
-    
+
+
     def copy_files(self, local_files: List[str], remote_files: List[str], ctx):
         pass
 
@@ -112,28 +115,25 @@ class LocalScheduler:
         # job.stderr = [r.stderr for r in results]
         # job.returncode = sum([r.returncode for r in results])
         return results
-    
+
     def is_finished(self, status) -> bool:
         return True
-    
+
     @list_exec
     def get_status(self, job) -> str:
-        return 'finished'   
-    
-    def cancel(self):   
+        return 'finished'
+
+    def cancel(self):
         self.logger.error('Cancel not implemented for local scheduler\n')
 
     def quick_return(self):
         pass
 
     def fetch_results(self, jobs):
-        pass
+        return jobs
 
-    def teardown(self):
+    def teardown(self, jobs):
         pass
-
-    def gen_job(self, job_id, run_settings):
-        return job_id
 
     def check_finished(self, run_settings) -> bool:
         """Check if output file exists and return True if it does."""

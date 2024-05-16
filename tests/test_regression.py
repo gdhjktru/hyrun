@@ -6,9 +6,10 @@ import pytest
 import yaml
 from hyif import Xtb
 from hyobj import Molecule
-
 from hyset import create_compute_settings as ccs
+
 from hyrun import run
+
 
 @pytest.fixture(scope='session')
 def original_datadir(request) -> Path:
@@ -73,4 +74,3 @@ def test_all(cs, mol, num_regression, request):
     num_regression.check(data,
                          basename=f'{mol.hash}',
                          default_tolerance=default_tolerance)
-

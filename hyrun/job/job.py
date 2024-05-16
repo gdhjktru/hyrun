@@ -1,12 +1,14 @@
 
 from dataclasses import dataclass
-from .output import Output
-from .job_info import JobInfo
-from tqdm import tqdm
-from typing import Optional, Any, List, Union
+from pathlib import Path
+from typing import Any, List, Optional, Union
+
 from fabric.connection import Connection
 from hytools.file import File
-from pathlib import Path
+from tqdm import tqdm
+
+from .job_info import JobInfo
+from .output import Output
 
 
 @dataclass

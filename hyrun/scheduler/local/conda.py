@@ -1,7 +1,7 @@
-from typing import Optional, List
-from pathlib import Path
-from contextlib import suppress
 import shutil
+from contextlib import suppress
+from pathlib import Path
+from typing import List, Optional
 
 
 def get_conda_launcher(conda_env: Optional[str] = None,
@@ -21,7 +21,7 @@ def get_conda_launcher(conda_env: Optional[str] = None,
     conda_launcher = ['conda', 'run', '-n', conda_env]
     launcher.extend(conda_launcher)
     return launcher
-   
+
 
 def get_conda_path(conda_env: Optional[str]= None,
                    path: Optional[List[str]] = None,
@@ -38,4 +38,4 @@ def get_conda_path(conda_env: Optional[str]= None,
             Path(shutil.which('python')).parents[2] / t_dir  # type: ignore
         )
     return [conda_bin_dir] + path if conda_bin_dir else path
-   
+
