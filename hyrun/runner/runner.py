@@ -28,6 +28,9 @@ class Runner:
         self.database = self.get_database(**kwargs)
         self.scheduler = self.get_scheduler(logger=self.logger, **kwargs)
         self.logger.debug('Runner initialized.')
+        # flatten run_array if LocalScheduler
+        if self.scheduler.__class__.__name__ == 'LocalScheduler':
+            self.run_array = [item for job in self.run_array for item in job]
 
     def get_database(self, **kwargs):
         """Get database."""
@@ -94,18 +97,18 @@ class Runner:
             sleep(t)
             t = self._increment_t(t)
 
-    def flatten_arbitrary_nested_list(self, ll):
-        """Flatten a nested list."""
-        return [item for sublist in ll
-                for item in (self.flatten_arbitrary_nested_list(sublist)
-                             if isinstance(sublist, list)
-                             else [sublist])]
+    # def flatten_arbitrary_nested_list(self, ll):
+    #     """Flatten a nested list."""
+    #     return [item for sublist in ll
+    #             for item in (self.flatten_arbitrary_nested_list(sublist)
+    #                          if isinstance(sublist, list)
+    #                          else [sublist])]
 
     @force_list
     def wait(self, jobs, timeout=60) -> list:
         """Wait for job to finish."""
         # flatten jobs
-        jobs = self.flatten_arbitrary_nested_list(jobs)
+        # jobs = self.flatten_arbitrary_nested_list(jobs)
         timeout = max([j.walltime for j in jobs]) or timeout
         incrementer = self._increment_and_sleep(1)
         statuses = [self.get_status(j) for j in jobs]
@@ -140,8 +143,12 @@ class Runner:
     def prepare_jobs(self, job: Job):
         """Prepare jobs."""
         job_script = self.scheduler.gen_job_script(job.run_settings)
-        file_list = [f for rs in job.run_settings
-                     for f in rs.files_to_write] + [job_script]
+        try:
+            file_list = [f for rs in job.run_settings
+                        for f in rs.files_to_write] + [job_script]
+        except TypeError:
+            file_list = [f for f in job.run_settings.files_to_write] \
+                + [job_script]
         job.local_files = self.write_file_local(file_list)
         job.remote_files = [str(f.work_path_remote)
                             for f in job.local_files

@@ -11,11 +11,13 @@ from hyrun.job import Job, Output
 
 from .conda import get_conda_launcher
 from .docker import get_docker_launcher
+from dataclasses import replace
 
 
 class LocalScheduler:
 
     def __init__(self, **kwargs):
+    
         self.logger = kwargs.get('logger', LoggerDummy())
         self.logger.debug('Local scheduler initialized\n')
         self.default_data_path = 'data_path_local'
@@ -34,13 +36,13 @@ class LocalScheduler:
 
     def gen_job_script(self, run_settings):
         """Generate command."""
-        cmds = [' '.join([*self.get_launcher(rs), rs.program, *rs.args])
-                for rs in run_settings]
-        cmd = '\n'.join(cmds)
-        job_script_name = 'job_script_' + run_settings[0].get_hash(cmd) + '.sh'
+        cmd = ' '.join([*self.get_launcher(run_settings),
+                        run_settings.program,
+                        *run_settings.args])
+        job_script_name = 'job_script_' + run_settings.get_hash(cmd) + '.sh'
         job_script = File(name=job_script_name,
                           content=cmd,
-                          handler=run_settings[0].file_handler)
+                          handler=run_settings.file_handler)
         return job_script
 
 
@@ -92,11 +94,16 @@ class LocalScheduler:
         return output_dict
 
 
-    def submit(self, jobs):
-        cmds = jobs.job_script.split('\n')
-        run_settings = [rs for rs in jobs.run_settings]
+    def submit(self, job):
+        """Submit job."""
+        # warning might return a list of lists
+        cmds = job.job_script.split('\n')
+        if len(cmds) > 1:
+            self.logger.warning('Multiple commands in job script, '
+                                'will run sequentially\n')
+        rs = job.run_settings
         results = []
-        for cmd, rs in zip(cmds, run_settings):
+        for cmd in cmds:
             self.logger.debug(f'Running command: {cmd}')
             result = subprocess.run(
                 cmd.split(),  # type: ignore
@@ -105,7 +112,7 @@ class LocalScheduler:
                 cwd=rs.work_dir_local,
                 env=rs.env,
                 shell=False)
-            job = Job(**self.gen_output(result, rs))
+            job = replace(job, **self.gen_output(result, rs))
             job.job_finished = True
             results.append(job)
         # job.finished = True
@@ -114,7 +121,7 @@ class LocalScheduler:
         # job.stdout = [r.stdout for r in results]
         # job.stderr = [r.stderr for r in results]
         # job.returncode = sum([r.returncode for r in results])
-        return results
+        return results if len(results) > 1 else results[0]
 
     def is_finished(self, status) -> bool:
         return True

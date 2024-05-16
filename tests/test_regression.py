@@ -48,13 +48,9 @@ def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
     setup = x.setup(mol)
     output = run(setup)
     for j in output:
-        for r in j:
-            results = x.parse(r)
+        result = x.parse(j)
 
-    print(results)
-    return results
-
-    # return {key: result[key] for key in keys_to_extract}
+    return {key: result[key] for key in keys_to_extract}
 
 
 @pytest.mark.parametrize('mol',
