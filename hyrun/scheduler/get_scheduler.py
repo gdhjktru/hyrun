@@ -13,7 +13,7 @@ SCHEDULER_MAPPING: Mapping[str,
                                                'local': LocalScheduler,
                                                'conda': LocalScheduler,
                                                'docker': LocalScheduler,
-                                               'singularity': LocalScheduler,}
+                                               'singularity': LocalScheduler}
 
 
 def get_scheduler(scheduler_name: Optional[str] = None,

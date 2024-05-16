@@ -16,13 +16,14 @@ class ArrayJob:
             run_settings=run_settings, shape=shape)
         self.common_keys = self.check_common_keys(**kwargs)
 
-    def flatten_to_2d_list(self, l):
+    def flatten_to_2d_list(self, ll):
         """Flatten a deeply nested list to a 2D list."""
         result = []
-        for sublist in l:
+        for sublist in ll:
             if isinstance(sublist, list):
                 flat_sublist = [item for subsublist in sublist
-                                for item in (self.flatten_to_2d_list(subsublist)
+                                for item in (self.flatten_to_2d_list(
+                                    subsublist)
                                              if isinstance(subsublist, list)
                                              else [subsublist])]
                 result.append(flat_sublist)
@@ -43,7 +44,6 @@ class ArrayJob:
             shape = shape or (len(run_settings), 1)
             run_settings = np.array(run_settings).reshape(shape).tolist()
         return run_settings
-
 
     def check_common_keys(self, keys: Optional[list] = None) -> bool:
         """Prepare array job."""

@@ -1,7 +1,7 @@
 import subprocess
 from contextlib import nullcontext
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from hytools.file import File
 from hytools.logger import LoggerDummy
@@ -47,7 +47,7 @@ class LocalScheduler:
     def copy_files(self, local_files: List[str], remote_files: List[str], ctx):
         pass
 
-    def gen_output(self,result, run_settings):
+    def gen_output(self, result, run_settings) -> dict:
         output_dict: Dict[str, Any]
         files_to_parse = run_settings.files_to_parse
         for i, f in enumerate(files_to_parse):
