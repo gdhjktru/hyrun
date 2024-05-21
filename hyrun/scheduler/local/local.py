@@ -46,9 +46,11 @@ class LocalScheduler(Scheduler):
             else:
                 cmd += ' && '.join(pre_command) + '\n'
             
+        cmd += 'echo "job start ;"'
         cmd += ' '.join([*self.get_launcher(run_settings),
                         run_settings.program,
                         *run_settings.args])
+        cmd += '; echo "job end"'
         cmd += '\n'
 
         if run_settings.post_cmd:
@@ -130,6 +132,9 @@ class LocalScheduler(Scheduler):
                 cwd=rs.work_dir_local,
                 env=rs.env,
                 shell=False)
+            # try to separate the pre and post commands
+            if not all(c in result.stdout for c in ['job start', 'job end']):
+                continue
             job = replace(job, **self.gen_output(result, rs))
             job.job_finished = True
             results.append(job)
