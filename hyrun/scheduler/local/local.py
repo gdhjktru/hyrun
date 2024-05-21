@@ -37,9 +37,26 @@ class LocalScheduler(Scheduler):
 
     def gen_job_script(self, run_settings):
         """Generate command."""
-        cmd = ' '.join([*self.get_launcher(run_settings),
+        cmd = ''
+
+        if run_settings.pre_cmd:
+            pre_command = run_settings.pre_cmd
+            if isinstance(pre_command, str):
+                cmd += pre_command + '\n'
+            else:
+                cmd += ' && '.join(pre_command) + '\n'
+            
+        cmd += ' '.join([*self.get_launcher(run_settings),
                         run_settings.program,
                         *run_settings.args])
+        cmd += '\n'
+
+        if run_settings.post_cmd:
+            post_command = run_settings.post_cmd
+            if isinstance(post_command, str):
+                cmd += post_command + '\n'
+            else:
+                cmd += ' && '.join(post_command) + '\n'
         job_script_name = 'job_script_' + run_settings.get_hash(cmd) + '.sh'
         job_script = File(name=job_script_name,
                           content=cmd,
