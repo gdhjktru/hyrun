@@ -80,26 +80,41 @@ class Runner:
     def get_status(self, jobs) -> List[str]:
         """Get status."""
         return self.scheduler.get_status(jobs)
-
-    @list_exec
-    def add_to_db(self, job):
-        """Add job to database."""
-        if isinstance(job, list):
-            return [self.add_to_db(j) for j in job]
+    
+    def prepare_job_for_db(self, job):
+        """Prepare job for database."""
         purge_attrs = ['local_files', 'remote_files', 'run_settings']
         job_db = replace(job, db_id=None)
         for attr in purge_attrs:
             job_db.__dict__.pop(attr, None)
-        self.logger.debug(f'adding job {job} to database {self.database}')
-        id = self.database.add(job_db)
-        return replace(job, db_id=id)
+        return job_db
+    
+    def handle_db(self, job, operation):
+        """Handle job in database based on operation."""
+        if isinstance(job, list):
+            return [self.handle_db(j, operation) for j in job]
+        job_db = self.prepare_job_for_db(job)
+        self.logger.debug(f'{operation} job {job} in database {self.database}')
+        if operation == 'add':
+            id = self.database.add(job_db)
+            return replace(job, db_id=id)
+        elif operation == 'update':
+            self.database.update(job.db_id, job_db)
+            return job
 
     @list_exec
-    def copy_files(self, job, ctx):
+    def add_to_db(self, job):
+        """Add job to database."""
+        return self.handle_db(job, 'add')
+    
+    @list_exec
+    def update_db(self, job):
+        """Update job in database."""
+        return self.handle_db(job, 'update')
+
+    def copy_files(self, jobs, ctx):
         """Copy files."""
-        return self.scheduler.copy_files(job.local_files,
-                                         job.remote_files,
-                                         ctx)
+        return self.scheduler.copy_files(jobs, ctx)
 
     def _increment_t(self, t, tmin=1, tmax=60) -> int:
         """Increment t."""
@@ -202,12 +217,9 @@ class Runner:
             self.scheduler.teardown(job)
         return r
 
-    # @force_list
     def fetch_results(self, jobs):
         """Fetch results."""
-        print('fetichung results from scheduler')
         return self.scheduler.fetch_results(jobs)
-        # return [self.scheduler.fetch_results for j in jobs]
 
     def run(self, **kwargs):
         """Run."""
@@ -218,15 +230,15 @@ class Runner:
         self.logger.info(f'Running {len(jobs)} job(s).')
         with self.scheduler.run_ctx() as ctx:
             jobs = self.prepare_jobs(jobs)
+            jobs = self.add_to_db(jobs)
+
             if self.global_settings.dry_run:
                 return jobs
             self.copy_files(jobs, ctx)
             jobs = self.submit_jobs(jobs)
-            jobs = self.add_to_db(jobs)
         # if not self.wait_for_jobs_to_finish:
         #     return jobs
         # Wait for the job to finish
         jobs = self.wait(jobs)
-        print('wating over')
         # Fetch the results
         return self.fetch_results(jobs)

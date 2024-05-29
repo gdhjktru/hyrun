@@ -81,10 +81,7 @@ class LocalScheduler(Scheduler):
                           handler=run_settings.file_handler)
         return job_script
 
-    def copy_files(self,
-                   local_files: List[str],
-                   remote_files: List[str],
-                   ctx):
+    def copy_files(self, *args, **kwargs):
         """Copy files."""
         pass
 
