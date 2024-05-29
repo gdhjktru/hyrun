@@ -2,6 +2,7 @@ import subprocess
 from contextlib import nullcontext
 from dataclasses import replace
 from pathlib import Path
+from shlex import split
 from typing import Any, Dict, List, Optional
 
 from hytools.file import File
@@ -45,7 +46,7 @@ class LocalScheduler(Scheduler):
                 cmd += pre_command + '\n'
             else:
                 cmd += ' && '.join(pre_command) + '\n'
-            
+
         cmd += 'echo "job start ;"'
         cmd += ' '.join([*self.get_launcher(run_settings),
                         run_settings.program,

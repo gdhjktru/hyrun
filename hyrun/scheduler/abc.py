@@ -10,9 +10,9 @@ class Scheduler(ABC):
     def cancel(self):
         """Cancel job."""
 
-    @abstractmethod
-    def run(self):
-        """Run job."""
+    # @abstractmethod
+    # def run(self):
+    #     """Run job."""
 
     @abstractmethod
     def quick_return(self):

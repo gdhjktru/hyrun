@@ -20,13 +20,17 @@ class Runner:
 
     def __init__(self, *args, **kwargs):
         """Initialize."""
+        self.logger = self.get_logger(*args, **kwargs)
+        self.scheduler = self.get_scheduler(*args, logger=self.logger, **kwargs)
+        print('oiioqefj, ', self.scheduler)
+
         self.run_array = ArrayJob(self.get_run_settings(*args),
+                                  logger=self.logger,
+                                  scheduler=self.scheduler,
                                   **kwargs).run_settings
         self.global_settings = self.run_array[0][0]
-        self.logger = self.get_logger(**kwargs)
         self.wait_for_jobs_to_finish = self.global_settings.wait
         self.database = self.get_database(**kwargs)
-        self.scheduler = self.get_scheduler(logger=self.logger, **kwargs)
         self.logger.debug('Runner initialized.')
         # flatten run_array if LocalScheduler
         if self.scheduler.__class__.__name__ == 'LocalScheduler':
@@ -38,11 +42,24 @@ class Runner:
                           getattr(self.global_settings,
                                   'database', None)) or DatabaseDummy()
 
-    def get_logger(self, **kwargs):
+    def _get_attr(self, attr_name, *args, **kwargs):
+        """Get attribute."""
+        print(attr_name)
+        a = kwargs.get(attr_name, None)
+        if a or not args:
+            print('ojpojpojpojpjpjjojoj')
+            return a
+        print('not found in kwargs')
+        a = args[0][0] if isinstance(args[0], list) else args[0]
+        print(type(a), attr_name)
+        print(hasattr(a, attr_name))
+        return getattr(a, attr_name, None)
+
+    def get_logger(self,*args, **kwargs):
         """Get logger."""
-        return kwargs.get('logger',
-                          getattr(self.global_settings,
-                                  'logger', None)) or LoggerDummy()
+        if not args:
+            return kwargs.get('logger', LoggerDummy())
+        return self._get_attr('logger', *args, **kwargs) or LoggerDummy()
 
     def get_run_settings(self, *args):
         """Get run settings."""
@@ -51,11 +68,13 @@ class Runner:
                              'got {}'.format(len(args)))
         return args[0]
 
-    def get_scheduler(self, logger=None, **kwargs):
+    def get_scheduler(self, *args, logger=None, **kwargs):
         """Get scheduler."""
-        scheduler = kwargs.get('scheduler',
-                               getattr(self.global_settings,
-                                       'scheduler', None))
+        scheduler = self._get_attr('scheduler', *args,  **kwargs)
+        print('scheduler: ', scheduler)
+        # scheduler = kwargs.get('scheduler',
+        #                        getattr(self.global_settings,
+        #                                'scheduler', None))
         if scheduler is None:
             raise ValueError('Scheduler not specified in kwargs or ' +
                              'run_settings')
