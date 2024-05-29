@@ -124,6 +124,8 @@ class Runner:
         """Wait for job to finish."""
         # flatten jobs
         # jobs = self.flatten_arbitrary_nested_list(jobs)
+        if 'local' in self.scheduler.__class__.__name__.lower():
+            return jobs
         timeout = max([j.walltime for j in jobs]) or timeout
         incrementer = self._increment_and_sleep(1)
         statuses = [self.get_status(j) for j in jobs]
@@ -200,10 +202,12 @@ class Runner:
             self.scheduler.teardown(job)
         return r
 
-    @force_list
+    # @force_list
     def fetch_results(self, jobs):
         """Fetch results."""
-        return [self.finish_single_job(j) for j in jobs]
+        print('fetichung results from scheduler')
+        return self.scheduler.fetch_results(jobs)
+        # return [self.scheduler.fetch_results for j in jobs]
 
     def run(self, **kwargs):
         """Run."""
@@ -219,9 +223,10 @@ class Runner:
             self.copy_files(jobs, ctx)
             jobs = self.submit_jobs(jobs)
             jobs = self.add_to_db(jobs)
-        if not self.wait_for_jobs_to_finish:
-            return jobs
+        # if not self.wait_for_jobs_to_finish:
+        #     return jobs
         # Wait for the job to finish
         jobs = self.wait(jobs)
+        print('wating over')
         # Fetch the results
         return self.fetch_results(jobs)
