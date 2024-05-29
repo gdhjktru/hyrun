@@ -21,8 +21,9 @@ class Runner:
     def __init__(self, *args, **kwargs):
         """Initialize."""
         self.logger = self.get_logger(*args, **kwargs)
-        self.scheduler = self.get_scheduler(*args, logger=self.logger, **kwargs)
-        print('oiioqefj, ', self.scheduler)
+        self.scheduler = self.get_scheduler(*args,
+                                            logger=self.logger,
+                                            **kwargs)
 
         self.run_array = ArrayJob(self.get_run_settings(*args),
                                   logger=self.logger,
@@ -44,18 +45,13 @@ class Runner:
 
     def _get_attr(self, attr_name, *args, **kwargs):
         """Get attribute."""
-        print(attr_name)
         a = kwargs.get(attr_name, None)
         if a or not args:
-            print('ojpojpojpojpjpjjojoj')
             return a
-        print('not found in kwargs')
         a = args[0][0] if isinstance(args[0], list) else args[0]
-        print(type(a), attr_name)
-        print(hasattr(a, attr_name))
         return getattr(a, attr_name, None)
 
-    def get_logger(self,*args, **kwargs):
+    def get_logger(self, *args, **kwargs):
         """Get logger."""
         if not args:
             return kwargs.get('logger', LoggerDummy())
@@ -71,10 +67,6 @@ class Runner:
     def get_scheduler(self, *args, logger=None, **kwargs):
         """Get scheduler."""
         scheduler = self._get_attr('scheduler', *args,  **kwargs)
-        print('scheduler: ', scheduler)
-        # scheduler = kwargs.get('scheduler',
-        #                        getattr(self.global_settings,
-        #                                'scheduler', None))
         if scheduler is None:
             raise ValueError('Scheduler not specified in kwargs or ' +
                              'run_settings')

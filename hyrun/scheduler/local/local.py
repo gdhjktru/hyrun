@@ -2,7 +2,8 @@ import subprocess
 from contextlib import nullcontext
 from dataclasses import replace
 from pathlib import Path
-from shlex import split
+from shlex import quote, split
+from sys import executable as python_ex
 from typing import Any, Dict, List, Optional
 
 from hytools.file import File
@@ -36,37 +37,54 @@ class LocalScheduler(Scheduler):
                                       **run_settings.__dict__),
                                       *run_settings.launcher])
 
+    def _gen_running_list(self, run_settings,
+                          cwd: Path) -> List[str]:
+        """Generate running list."""
+        running_list: List[str] = [
+            *run_settings.launcher,
+            run_settings.program,
+            *run_settings.args  # type: ignore
+        ]  # type: ignore #14891
+        running_list = [str(x).strip() for x in running_list]
+
+        if not all([isinstance(x, str) for x in running_list]):
+            raise TypeError(
+                'subprocess call command must be a list of strings ',
+                running_list)
+
+        running_list = [c.replace('python', python_ex)
+                        if 'python' in c
+                        else c for c in running_list]
+        return running_list
+
     def gen_job_script(self, run_settings):
         """Generate command."""
-        cmd = ''
+        cwd = run_settings.work_dir_local
+        running_list = self._gen_running_list(run_settings, cwd)
 
-        if run_settings.pre_cmd:
-            pre_command = run_settings.pre_cmd
-            if isinstance(pre_command, str):
-                cmd += pre_command + '\n'
-            else:
-                cmd += ' && '.join(pre_command) + '\n'
+        if getattr(run_settings, 'pre_cmd', None):
+            pre_cmd = (split(quote(run_settings.pre_cmd))
+                       if not isinstance(run_settings.pre_cmd, list)
+                       else run_settings.pre_cmd)
+            running_list = pre_cmd + [';'] + running_list
 
-        cmd += 'echo "job start ;"'
-        cmd += ' '.join([*self.get_launcher(run_settings),
-                        run_settings.program,
-                        *run_settings.args])
-        cmd += '; echo "job end"'
-        cmd += '\n'
+        if getattr(run_settings, 'post_cmd', None):
+            post_cmd = (split(quote(run_settings.post_cmd))
+                        if not isinstance(run_settings.post_cmd, list)
+                        else run_settings.pre_cmd)
+            running_list = running_list + ['&&'] + post_cmd
 
-        if run_settings.post_cmd:
-            post_command = run_settings.post_cmd
-            if isinstance(post_command, str):
-                cmd += post_command + '\n'
-            else:
-                cmd += ' && '.join(post_command) + '\n'
+        cmd = ' '.join(running_list)
         job_script_name = 'job_script_' + run_settings.get_hash(cmd) + '.sh'
         job_script = File(name=job_script_name,
                           content=cmd,
                           handler=run_settings.file_handler)
         return job_script
 
-    def copy_files(self, local_files: List[str], remote_files: List[str], ctx):
+    def copy_files(self,
+                   local_files: List[str],
+                   remote_files: List[str],
+                   ctx):
         """Copy files."""
         pass
 
@@ -115,30 +133,32 @@ class LocalScheduler(Scheduler):
             output_dict['stdout'] = stdout_file
         return output_dict
 
+    @list_exec
     def submit(self, job):
         """Submit job."""
         # warning might return a list of lists
-        cmds = job.job_script.split('\n')
-        if len(cmds) > 1:
-            self.logger.warning('Multiple commands in job script, '
-                                'will run sequentially\n')
+        print(type(job))
         rs = job.run_settings
-        results = []
-        for cmd in cmds:
-            self.logger.debug(f'Running command: {cmd}')
-            result = subprocess.run(
-                cmd.split(),  # type: ignore
-                capture_output=True,
-                text=True,
-                cwd=rs.work_dir_local,
-                env=rs.env,
-                shell=False)
-            # try to separate the pre and post commands
-            if not all(c in result.stdout for c in ['job start', 'job end']):
-                continue
-            job = replace(job, **self.gen_output(result, rs))
-            job.job_finished = True
-            results.append(job)
+        js = job.job_script
+        cmd = split(js.content
+                    if isinstance(js, File) and js.content
+                    else str(js) if isinstance(js, str)
+                    else Path(js).read_text())
+        self.logger.debug('Running command: %s\n', cmd)
+        self.logger.debug('Working directory: %s\n', rs.work_dir_local)
+        run_opts = {'capture_output': True,
+                    'text': True,
+                    'cwd': rs.work_dir_local,
+                    'env': rs.env,
+                    'shell': False}
+        if ';' in cmd or '&&' in cmd:
+            run_opts['shell'] = True
+            cmd = ' '.join(cmd)
+        result = subprocess.run(cmd, **run_opts)
+
+        job = replace(job, **self.gen_output(result, rs))
+        job.job_finished = True
+        return job
         # job.finished = True
         # job.files_to_parse = [file for rs in results for file
         # in rs.files_to_parse]
@@ -146,7 +166,7 @@ class LocalScheduler(Scheduler):
         # job.stdout = [r.stdout for r in results]
         # job.stderr = [r.stderr for r in results]
         # job.returncode = sum([r.returncode for r in results])
-        return results if len(results) > 1 else results[0]
+        # return result
 
     def is_finished(self, status) -> bool:
         """Check if job is finished."""
