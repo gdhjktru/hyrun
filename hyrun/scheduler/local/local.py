@@ -185,9 +185,11 @@ class LocalScheduler(Scheduler):
         """Quick return."""
         pass
 
+
+    @list_exec
     def fetch_results(self, jobs):
         """Fetch results."""
-        return jobs
+        print(jobs.__dict__.keys())
 
     @list_exec
     def teardown(self, jobs):
