@@ -191,7 +191,6 @@ class LocalScheduler(Scheduler):
         print('getting resultss')
         print(type(jobs))
         print(jobs.__dict__.keys())
-        opjpjjjp
 
     @list_exec
     def teardown(self, jobs):
