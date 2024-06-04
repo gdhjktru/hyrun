@@ -46,8 +46,12 @@ def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
             check_version=False, properties=['gradient'])
     setup = x.setup(mol)
     output = run(setup)
+    if not isinstance(output, list):
+        output = [output]
     for j in output:
         result = x.parse(j)
+    
+    print('parsed result', result)
 
     return {key: result[key] for key in keys_to_extract}
 

@@ -29,14 +29,14 @@ class Runner:
                                   logger=self.logger,
                                   scheduler=self.scheduler,
                                   **kwargs).run_settings
+        
         self.global_settings = self.run_array[0][0]
         self.wait_for_jobs_to_finish = self.global_settings.wait
         self.database = self.get_database(**kwargs)
-        self.logger.debug('Runner initialized.')
-        # flatten run_array if LocalScheduler
-        if self.scheduler.__class__.__name__ == 'LocalScheduler':
-            self.run_array = [item for job in self.run_array for item in job]
-
+        self.logger.debug(f'Run array: {len(self.run_array)} jobs.')
+        for i, rs in enumerate(self.run_array):
+            self.logger.debug(f'   job {i} task(s): {len(rs)} tasks.')
+ 
     def get_database(self, **kwargs):
         """Get database."""
         return kwargs.get('database',
@@ -94,9 +94,12 @@ class Runner:
         if isinstance(job, list):
             return [self.handle_db(j, operation) for j in job]
         job_db = self.prepare_job_for_db(job)
-        self.logger.debug(f'{operation} job {job} in database {self.database}')
+        self.logger.debug(f'{operation} job to database')
         if operation == 'add':
             id = self.database.add(job_db)
+            if id < 0:
+                self.logger.error('Error adding job to database')
+                return job
             return replace(job, db_id=id)
         elif operation == 'update':
             self.database.update(job.db_id, job_db)
@@ -137,8 +140,6 @@ class Runner:
     @force_list
     def wait(self, jobs, timeout=60) -> list:
         """Wait for job to finish."""
-        # flatten jobs
-        # jobs = self.flatten_arbitrary_nested_list(jobs)
         if 'local' in self.scheduler.__class__.__name__.lower():
             return jobs
         timeout = max([j.walltime for j in jobs]) or timeout
@@ -174,6 +175,7 @@ class Runner:
     @list_exec
     def prepare_jobs(self, job: Job):
         """Prepare jobs."""
+        print('ohoqhfouehfehwfu', type(job))
         job_script = self.scheduler.gen_job_script(job.run_settings)
         try:
             file_list = [f for rs in job.run_settings
@@ -193,7 +195,6 @@ class Runner:
         """Check if job has finished."""
         return self.scheduler.check_finished(run_settings)
 
-    @list_exec
     def submit_jobs(self, job: Job):
         """Submit jobs."""
         return self.scheduler.submit(job)
@@ -217,28 +218,47 @@ class Runner:
             self.scheduler.teardown(job)
         return r
 
+    @list_exec
     def fetch_results(self, jobs):
         """Fetch results."""
         return self.scheduler.fetch_results(jobs)
+    
+    def _return_jobs(self, jobs):
+        print('returning', type(jobs))
+        if not isinstance(jobs, list):
+            return jobs
+        if len(jobs) == 1:
+            return self._return_jobs(jobs[0])
+        if all(len(j) == 1 for j in jobs):
+            return [j[0] for j in jobs]
 
-    def run(self, **kwargs):
+    def run(self, *args, **kwargs):
         """Run."""
         # filter jobs that are not finished
         jobs = [Job(run_settings=rs, scheduler=rs.scheduler)
-                for rs, b in zip(self.run_array,
-                                 self.check_finished(self.run_array)) if not b]
+                for j in self.run_array if not any(self.check_finished(j)) for rs in j]
+        # jobs = [Job(run_settings=rs, scheduler=rs.scheduler)]
+        #         for rs, b in zip(self.run_array,
+        #                          self.check_finished(self.run_array)) if not b]
         self.logger.info(f'Running {len(jobs)} job(s).')
         with self.scheduler.run_ctx() as ctx:
             jobs = self.prepare_jobs(jobs)
             jobs = self.add_to_db(jobs)
-
-            if self.global_settings.dry_run:
-                return jobs
+            # potential exit point
+            # if self.global_settings.dry_run:
+            #     return jobs
+            #
             self.copy_files(jobs, ctx)
             jobs = self.submit_jobs(jobs)
+            jobs = self.update_db(jobs)
         # if not self.wait_for_jobs_to_finish:
         #     return jobs
         # Wait for the job to finish
         jobs = self.wait(jobs)
+
         # Fetch the results
-        return self.fetch_results(jobs)
+        jobs = self.fetch_results(jobs)
+        self.copy_files(jobs, ctx) # copy somewhere else or leave it there,...
+        # Teardown
+        # self.scheduler.teardown(jobs)
+        return self._return_jobs(jobs)

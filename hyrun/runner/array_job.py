@@ -2,6 +2,9 @@ from typing import Optional
 
 from hytools.logger import LoggerDummy
 
+import itertools
+
+
 
 class ArrayJob:
     """Array job."""
@@ -14,39 +17,37 @@ class ArrayJob:
         self.run_settings = self.get_settings(run_settings,
                                               kwargs.pop('scheduler', None))
         self.common_keys = self.check_common_keys(**kwargs)
+ 
 
-    def flatten_to_2d_list(self, ll):
-        """Flatten a deeply nested list to a 2D list."""
-        return [[item for subsublist in sublist
-                 for item in (self.flatten_to_2d_list(subsublist)
-                              if isinstance(subsublist, list)
-                              else [subsublist])]
-                for sublist in ll]
-
-    def fix_1d_list(self, ll, scheduler) -> list:
-        """Fix 1d list."""
-        return (ll if any(isinstance(item, list) for item in ll)
-                else [[item] for item in ll]
-                if 'local' in scheduler.__class__.__name__.lower()
-                else [ll])
-
+    def flatten_any_list(self, ll):
+        """Flatten any list."""
+        if not isinstance(ll, list):
+            return [ll]
+        while any(isinstance(item, list) for item in ll):
+            ll = [item if isinstance(item, list) else [item] for item in ll]  
+            return list(itertools.chain.from_iterable(ll)) 
+        return ll if isinstance(ll, list) else [ll]
+     
+    def _check_nested_levels(self, run_settings):
+        """Check nested levels."""
+        for rs in run_settings:
+            if isinstance(rs, list):
+                for item in rs:
+                    if isinstance(item, list):
+                        raise ValueError('Run settings must be at most 2D list') 
     def get_settings(self, run_settings, scheduler) -> list:
         """Get settings."""
         if not isinstance(run_settings, list):
-            run_settings = [[run_settings]]
-
-        run_settings = self.flatten_to_2d_list(
-            self.fix_1d_list(run_settings, scheduler))
-
-        self.logger.info(
-            f'{len(run_settings)} job(s) with ' +
-            f'{scheduler.__class__.__name__} scheduler detected.')
-
-        for i, rs in enumerate(run_settings):
-            self.logger.debug(
-                f'   job {i} task(s): {len(rs)}')
-        return run_settings
-
+            return [[run_settings]]
+        self._check_nested_levels(run_settings)
+                        
+        if  'local' in scheduler.__class__.__name__.lower():
+            return [[item] for item in self.flatten_any_list(run_settings)]
+        else:
+            if not any(isinstance(item, list) for item in run_settings):
+                return [run_settings]
+            return [self.flatten_any_list(item) for item in run_settings]
+            
     def check_common_keys(self, keys: Optional[list] = None, **kwargs) -> bool:
         """Prepare array job."""
         keys = keys or []

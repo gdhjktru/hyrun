@@ -1,5 +1,5 @@
 import subprocess
-from contextlib import nullcontext
+from contextlib import nullcontext, contextmanager
 from dataclasses import replace
 from pathlib import Path
 from shlex import quote, split
@@ -25,10 +25,17 @@ class LocalScheduler(Scheduler):
         self.logger.debug('Local scheduler initialized\n')
         self.default_data_path = 'data_path_local'
 
-    def run_ctx(self, arg: Optional[Any] = None):
-        """Return context manager."""
-        return nullcontext(arg)
-
+    # def run_ctx(self, arg: Optional[Any] = None):
+    #     """Return context manager."""
+    #     return nullcontext(arg)
+    @contextmanager
+    def run_ctx(self, *args, **kwargs): 
+        print('in context')
+        try:
+            yield
+        finally:
+            return None
+    
     def get_launcher(self, run_settings):
         """Get launcher."""
         # allows conda in docker but not docker in conda
@@ -59,6 +66,7 @@ class LocalScheduler(Scheduler):
 
     def gen_job_script(self, run_settings):
         """Generate command."""
+        print('oijiojij', type(run_settings))
         cwd = run_settings.work_dir_local
         running_list = self._gen_running_list(run_settings, cwd)
 
@@ -185,9 +193,7 @@ class LocalScheduler(Scheduler):
     @list_exec
     def fetch_results(self, jobs):
         """Fetch results."""
-        print('getting resultss')
-        print(type(jobs))
-        print(jobs.__dict__.keys())
+        return jobs
 
     @list_exec
     def teardown(self, jobs):
@@ -198,9 +204,6 @@ class LocalScheduler(Scheduler):
 
     def check_finished(self, run_settings) -> bool:
         """Check if output file exists and return True if it does."""
-        # compute jobs sequentially
-        if isinstance(run_settings, list):
-            return all(self.check_finished(rs) for rs in run_settings)
         files_to_check = [getattr(f, 'work_path_local')
                           for f in [run_settings.output_file,
                                     run_settings.stdout_file,
@@ -208,11 +211,11 @@ class LocalScheduler(Scheduler):
                           if getattr(f, 'work_path_local', None) is not None]
         files_to_check = [f for f in files_to_check
                           if f.name not in ['stdout.out', 'stderr.out']]
-        if not any(f.exists() for f in files_to_check if f is not None):
+        if any(f.exists() for f in files_to_check if f is not None):
+            self.logger.debug(f'(one of) output file(s) {files_to_check} exists')
+        else:
             return False
-
-        self.logger.debug(f'(one of) output file(s) {files_to_check} exists')
-
+        
         force_recompute = run_settings.force_recompute
         self.logger.info('force_recompute is %s, will %srecompute\n',
                          'set' if force_recompute else 'not set',
