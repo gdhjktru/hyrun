@@ -1,4 +1,4 @@
-hydb @ git+https://gitlab.com/hylleraasplatform/hydb.git
+hydb @ git+https://gitlab.com/hylleraasplatform/hydb.git@db_dummy
 hytools @ git+https://gitlab.com/hylleraasplatform/hylleraas-tools.git
 nest_asyncio>=1.5.8
 patchwork>=1.0.1

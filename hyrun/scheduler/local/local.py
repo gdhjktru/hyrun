@@ -1,5 +1,5 @@
 import subprocess
-from contextlib import nullcontext, contextmanager
+from contextlib import nullcontext
 from dataclasses import replace
 from pathlib import Path
 from shlex import quote, split
@@ -25,17 +25,17 @@ class LocalScheduler(Scheduler):
         self.logger.debug('Local scheduler initialized\n')
         self.default_data_path = 'data_path_local'
 
-    # def run_ctx(self, arg: Optional[Any] = None):
-    #     """Return context manager."""
-    #     return nullcontext(arg)
-    @contextmanager
-    def run_ctx(self, *args, **kwargs): 
-        print('in context')
-        try:
-            yield
-        finally:
-            return None
-    
+    def run_ctx(self, arg: Optional[Any] = None):
+        """Return context manager."""
+        return nullcontext(arg)
+    # @contextmanager
+    # def run_ctx(self, *args, **kwargs):
+    #     print('in context')
+    #     try:
+    #         yield
+    #     finally:
+    #         return None
+
     def get_launcher(self, run_settings):
         """Get launcher."""
         # allows conda in docker but not docker in conda
@@ -212,10 +212,11 @@ class LocalScheduler(Scheduler):
         files_to_check = [f for f in files_to_check
                           if f.name not in ['stdout.out', 'stderr.out']]
         if any(f.exists() for f in files_to_check if f is not None):
-            self.logger.debug(f'(one of) output file(s) {files_to_check} exists')
+            self.logger.debug(f'(one of) output file(s) {files_to_check} ' +
+                              'exists')
         else:
             return False
-        
+
         force_recompute = run_settings.force_recompute
         self.logger.info('force_recompute is %s, will %srecompute\n',
                          'set' if force_recompute else 'not set',

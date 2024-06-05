@@ -50,7 +50,7 @@ def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
         output = [output]
     for j in output:
         result = x.parse(j)
-    
+
     print('parsed result', result)
 
     return {key: result[key] for key in keys_to_extract}

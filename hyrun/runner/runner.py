@@ -29,14 +29,14 @@ class Runner:
                                   logger=self.logger,
                                   scheduler=self.scheduler,
                                   **kwargs).run_settings
-        
+
         self.global_settings = self.run_array[0][0]
         self.wait_for_jobs_to_finish = self.global_settings.wait
         self.database = self.get_database(**kwargs)
         self.logger.debug(f'Run array: {len(self.run_array)} jobs.')
         for i, rs in enumerate(self.run_array):
             self.logger.debug(f'   job {i} task(s): {len(rs)} tasks.')
- 
+
     def get_database(self, **kwargs):
         """Get database."""
         return kwargs.get('database',
@@ -80,7 +80,7 @@ class Runner:
     def get_status(self, jobs) -> List[str]:
         """Get status."""
         return self.scheduler.get_status(jobs)
-    
+
     def prepare_job_for_db(self, job):
         """Prepare job for database."""
         purge_attrs = ['local_files', 'remote_files', 'run_settings']
@@ -88,7 +88,7 @@ class Runner:
         for attr in purge_attrs:
             job_db.__dict__.pop(attr, None)
         return job_db
-    
+
     def handle_db(self, job, operation):
         """Handle job in database based on operation."""
         if isinstance(job, list):
@@ -109,7 +109,7 @@ class Runner:
     def add_to_db(self, job):
         """Add job to database."""
         return self.handle_db(job, 'add')
-    
+
     @list_exec
     def update_db(self, job):
         """Update job in database."""
@@ -222,7 +222,7 @@ class Runner:
     def fetch_results(self, jobs):
         """Fetch results."""
         return self.scheduler.fetch_results(jobs)
-    
+
     def _return_jobs(self, jobs):
         print('returning', type(jobs))
         if not isinstance(jobs, list):
@@ -236,10 +236,8 @@ class Runner:
         """Run."""
         # filter jobs that are not finished
         jobs = [Job(run_settings=rs, scheduler=rs.scheduler)
-                for j in self.run_array if not any(self.check_finished(j)) for rs in j]
-        # jobs = [Job(run_settings=rs, scheduler=rs.scheduler)]
-        #         for rs, b in zip(self.run_array,
-        #                          self.check_finished(self.run_array)) if not b]
+                for j in self.run_array
+                if not any(self.check_finished(j)) for rs in j]
         self.logger.info(f'Running {len(jobs)} job(s).')
         with self.scheduler.run_ctx() as ctx:
             jobs = self.prepare_jobs(jobs)
@@ -258,7 +256,7 @@ class Runner:
 
         # Fetch the results
         jobs = self.fetch_results(jobs)
-        self.copy_files(jobs, ctx) # copy somewhere else or leave it there,...
+        self.copy_files(jobs, ctx)
         # Teardown
         # self.scheduler.teardown(jobs)
         return self._return_jobs(jobs)
