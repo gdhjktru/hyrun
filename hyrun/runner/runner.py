@@ -202,10 +202,14 @@ class Runner:
         return file
 
     @list_exec
-    def prepare_jobs(self, job: Job):
+    def prepare_jobs(self, job: Job, execute=True):
         """Prepare jobs."""
+        if not execute:
+            return job
         job_script = job.scheduler.gen_job_script(  # type: ignore
-            job.run_settings)
+            job)
+        print(job_script)
+        popoopkpokpokkkkkkkkkkkkkkkkkkkkk
         try:
             file_list = [f for rs in job.run_settings
                          for f in rs.files_to_write] + [job_script]
@@ -281,6 +285,7 @@ class Runner:
                               f'{scheduler.name}')  # type: ignore
             with scheduler.run_ctx() as ctx:  # tpye: ignore
                 self.logger.debug(f'Context manager opened, ctx: {ctx}')
+                jobs = [self.prepare_jobs(j, execute=j.scheduler.name==scheduler.name) for j in jobs]
 
         #     jobs = self.prepare_jobs(jobs)
         #     jobs = self.add_to_db(jobs)

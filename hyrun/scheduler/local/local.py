@@ -70,9 +70,12 @@ class LocalScheduler(Scheduler):
                         else c for c in running_list]
         return running_list
 
-    def gen_job_script(self, run_settings):
+    def gen_job_script(self, job):
         """Generate command."""
-        print('oijiojij', type(run_settings))
+        tasks = job.tasks
+        if len(tasks) > 1:
+            raise ValueError('Local scheduler only supports one task')
+        run_settings = tasks[0] 
         cwd = run_settings.work_dir_local
         running_list = self._gen_running_list(run_settings, cwd)
 

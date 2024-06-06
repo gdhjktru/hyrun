@@ -1,11 +1,14 @@
 from hytools.logger import LoggerDummy
 
 from hyrun.remote import connect_to_remote
-
+from .job_script import gen_job_script as gjs
 from ..abc import Scheduler
 
 ssh_kws = ['host', 'user', 'port', 'config', 'gateway', 'forward_agent',
            'connect_timeout', 'connect_kwargs', 'inline_ssh_env']
+
+
+
 
 
 class SlurmScheduler(Scheduler):
@@ -37,12 +40,17 @@ class SlurmScheduler(Scheduler):
 
     def check_job_params(self, job):
         """Check job params."""
-        keys_to_be_identical = ssh_kws
+        keys_to_be_identical = ssh_kws + ['memory_per_cpu', 'cpus_per_task',
+                                          'ntasks', 'slurm_account']
         for k in keys_to_be_identical:
             for t in job.tasks:
                 if getattr(t, k) != getattr(job.tasks[0], k):
                     raise ValueError(f'All slurm tasks must have the same {k}')
         return job
+    
+    def gen_job_script(self, job):
+        """Generate job script."""
+        return gjs(job)
 
     def cancel(self, *args, **kwargs):
         """Cancel job."""
