@@ -26,10 +26,7 @@ def gen_jobs(arg, **kwargs) -> list[Job]:
                                             connection=c))
             for job, c in zip(jobs, connections)]
     jobs = aj._check_job_params(jobs)
-
     return jobs
-
-
 
 
 @force_list

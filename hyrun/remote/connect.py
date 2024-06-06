@@ -1,6 +1,5 @@
-import time
 from contextlib import contextmanager
-from functools import singledispatch, wraps
+from functools import singledispatch
 from typing import Optional, Union
 
 from fabric import Connection
@@ -51,7 +50,7 @@ def connect(connection: connection_type, **kwargs) -> Connection:
 
     """
     if connection is None:
-        raise ValueError('connection must be a dict or fabric.Connection '+
+        raise ValueError('connection must be a dict or fabric.Connection ' +
                          f'not {type(connection)}')
     try:
         c_dict = connection.__dict__
