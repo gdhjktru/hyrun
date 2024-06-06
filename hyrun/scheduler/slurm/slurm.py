@@ -1,11 +1,12 @@
+import hashlib
+
+from hytools.file import File
 from hytools.logger import LoggerDummy
 
 from hyrun.remote import connect_to_remote
-from .job_script import gen_job_script as gjs
-from ..abc import Scheduler
-import hashlib
-from hytools.file import File
 
+from ..abc import Scheduler
+from .job_script import gen_job_script as gjs
 
 ssh_kws = ['host', 'user', 'port', 'config', 'gateway', 'forward_agent',
            'connect_timeout', 'connect_kwargs', 'inline_ssh_env']
@@ -51,7 +52,7 @@ class SlurmScheduler(Scheduler):
                 if getattr(t, k) != getattr(job.tasks[0], k):
                     raise ValueError(f'All slurm tasks must have the same {k}')
         return job
-    
+
     def gen_job_script(self, job):
         """Generate job script."""
         return gjs(job)

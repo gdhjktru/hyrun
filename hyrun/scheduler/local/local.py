@@ -75,7 +75,7 @@ class LocalScheduler(Scheduler):
         tasks = job.tasks
         if len(tasks) > 1:
             raise ValueError('Local scheduler only supports one task')
-        run_settings = tasks[0] 
+        run_settings = tasks[0]
         cwd = run_settings.work_dir_local
         running_list = self._gen_running_list(run_settings, cwd)
 

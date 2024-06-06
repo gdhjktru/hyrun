@@ -1,20 +1,19 @@
+import hashlib
 from contextlib import suppress
+from copy import deepcopy
 from dataclasses import replace
 from pathlib import Path
 from string import Template
 from time import sleep
 from typing import Generator, List, Union
-from string import Template
-from copy import deepcopy
-from hytools.logger import LoggerDummy
-import hashlib
+
 from hytools.file import File
+from hytools.logger import LoggerDummy
 
 from hyrun.decorators import force_list, list_exec
 from hyrun.job import Job
 
 from .array_job import gen_jobs
-
 
 FILE_TRANSFER = {'pre': {'from': [], 'to': []},
                  'post': {'from': [], 'to': []}}
@@ -122,7 +121,7 @@ class Runner:
         for attr in purge_attrs:
             job_db.__dict__.pop(attr, None)
         return job_db
-    
+
     @list_exec
     def prepare_tasks_for_db(self, tasks):
         """Prepare tasks for database."""
@@ -207,7 +206,7 @@ class Runner:
         for j, s in zip(jobs, statuses):
             j.status = s
         return jobs
-    
+
     # @list_exec
     # def resolve_files(self, job):
     #     """Resolve files."""
@@ -228,7 +227,7 @@ class Runner:
             file.content = Template(file.content
                                     ).safe_substitute(**file.variables)
         return file
-    
+
     def gen_job_script(self, job: Job) -> Job:
         """Generate job script."""
         job_script_str = job.scheduler.gen_job_script(  # type: ignore
@@ -270,7 +269,7 @@ class Runner:
                             for f in job.local_files
                             if hasattr(f, 'work_path_remote')]
         return job
-    
+
     @list_exec
     def write_file_local(self, file, parent='work_path_local', overwrite=True):
         """Write file locally."""
@@ -282,7 +281,7 @@ class Runner:
         p.write_text(self.replace_var_in_file_content(file).content)
         return str(p)
 
-    
+
     def resolve_files(self, job) -> Job:
         """Resolve files."""
         mapping = {'files_to_write': 'work_path_local'}
@@ -313,7 +312,7 @@ class Runner:
                     files_to_transfer['post']['from'].append(str(p_remote))
                     files_to_transfer['post']['to'].append(str(p))
                     setattr(t, f, p)
-            
+
         job.files_to_transfer = files_to_transfer
         return job
 
@@ -322,7 +321,7 @@ class Runner:
         p = (Path(file.folder) / file.name if file.folder is not None
              else getattr(file, parent, None))
         return p
-   
+
 
     @list_exec
     def check_finished(self, job: Job):
@@ -391,7 +390,7 @@ class Runner:
             self.logger.info(f'   job {i} ({j.job_hash}) task(s): {len(j.tasks)} tasks')
 
 
-        
+
 
         for scheduler in schedulers:
             self.logger.debug('Using scheduler: ' +
@@ -399,7 +398,7 @@ class Runner:
             with scheduler.run_ctx() as ctx:  # tpye: ignore
                 self.logger.debug(f'Context manager opened, ctx: {ctx}')
 
-  
+
         #     self.copy_files(jobs, ctx)
         #     jobs = self.submit_jobs(jobs)
         #     jobs = self.update_db(jobs)

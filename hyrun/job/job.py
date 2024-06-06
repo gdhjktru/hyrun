@@ -21,5 +21,3 @@ class Job(JobInfo, Output):
     connection: Optional[Connection] = None
     job_script: Optional[str] = None
     files_to_transfer: Optional[dict] = None
-
-

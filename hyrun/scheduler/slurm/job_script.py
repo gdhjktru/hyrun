@@ -1,8 +1,10 @@
 
 from datetime import datetime, timedelta
-from typing import List
-from .timedelta import timedelta_to_slurmtime
 from pathlib import Path
+from typing import List
+
+from .timedelta import timedelta_to_slurmtime
+
 
 def gen_job_script(job):
     return  SlurmJobScript().job_script(job)
@@ -194,7 +196,7 @@ class SlurmJobScript:
         job_names = [t.job_name for t in job.tasks]
         if len(set(job_names)) == 1 and job_names[0] is not None:
             return job_names[0]
-        
+
         program = 'slurm_job' if len(job_names) == 1 else 'slurm_bundle'
         return (
             f"{program}_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}")
