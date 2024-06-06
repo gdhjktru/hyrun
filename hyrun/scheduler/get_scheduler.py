@@ -20,7 +20,7 @@ def get_scheduler(scheduler_name: Optional[str] = None,
                   **kwargs) -> Scheduler:
     """Get scheduler."""
     if scheduler_name not in SCHEDULER_MAPPING:
-        raise ValueError(f'Invalid scheduler: {scheduler_name}.'
+        raise ValueError(f'Invalid scheduler: {scheduler_name}. '
                          'Available schedulers: ',
                          f'{list(SCHEDULER_MAPPING.keys())}')
     return SCHEDULER_MAPPING[scheduler_name](**kwargs)

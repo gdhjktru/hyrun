@@ -1,7 +1,7 @@
 from .abc import Scheduler
-from .get_scheduler import get_scheduler
+from .get_scheduler import SCHEDULER_MAPPING, get_scheduler
 
 __all__ = [
     'Scheduler',
-    'get_scheduler',
+    'get_scheduler', 'SCHEDULER_MAPPING'
 ]

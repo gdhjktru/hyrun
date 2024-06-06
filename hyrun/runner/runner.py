@@ -3,7 +3,7 @@ from dataclasses import replace
 from pathlib import Path
 from string import Template
 from time import sleep
-from typing import Generator, List
+from typing import Generator, List, Union
 
 from hydb import DatabaseDummy
 from hytools.logger import LoggerDummy
@@ -12,7 +12,7 @@ from hyrun.decorators import force_list, list_exec
 from hyrun.job import Job
 from hyrun.scheduler import get_scheduler as gs
 
-from .array_job import ArrayJob
+from .array_job import gen_jobs
 
 
 class Runner:
@@ -21,21 +21,50 @@ class Runner:
     def __init__(self, *args, **kwargs):
         """Initialize."""
         self.logger = self.get_logger(*args, **kwargs)
-        self.scheduler = self.get_scheduler(*args,
-                                            logger=self.logger,
-                                            **kwargs)
+        # self.scheduler = self.get_scheduler(*args,
+        #                                     logger=self.logger,
+        #                                     **kwargs)
+        self.jobs = gen_jobs(*args, **kwargs)
+        self.jobs = self.get_scheduler(self.jobs)
+        self.jobs = self.check_job_params(self.jobs)
 
-        self.run_array = ArrayJob(self.get_run_settings(*args),
-                                  logger=self.logger,
-                                  scheduler=self.scheduler,
-                                  **kwargs).run_settings
+        self.logger.debug(f'Job overview: {len(self.jobs)} jobs.')
+        for i, j in enumerate(self.jobs):
+            self.logger.debug(f'   job {i} task(s): {len(j.tasks)} tasks.')
+        pijipji
+        # self.schedu
+        # print(self.jobs, 'self.jobs')
+        # joijioji
+        # # array_job = ArrayJob(self.get_run_settings(*args),
+        # #                      logger=self.logger,
+        # #                      **kwargs)
+        # self.run_array = array_job.run_array
+        # self.schedulers = array_job.schedulers
+        # print(self.schedulers, 'scihef')
+        # poioi
 
-        self.global_settings = self.run_array[0][0]
-        self.wait_for_jobs_to_finish = self.global_settings.wait
-        self.database = self.get_database(**kwargs)
-        self.logger.debug(f'Run array: {len(self.run_array)} jobs.')
-        for i, rs in enumerate(self.run_array):
-            self.logger.debug(f'   job {i} task(s): {len(rs)} tasks.')
+        # self.global_settings = self.run_array[0][0]
+        # self.wait_for_jobs_to_finish = self.global_settings.wait
+        # self.database = self.get_database(**kwargs)
+        # self.logger.debug(f'Run array: {len(self.run_array)} jobs.')
+        # for i, rs in enumerate(self.run_array):
+        #     self.logger.debug(f'   job {i} task(s): {len(rs)} tasks.')
+
+    def check_job_params(self, jobs) -> List[Job]:
+        """Check job parameters."""
+        return self.flatten_2d_list(
+            [job.scheduler.check_job_params(job) for job in jobs])
+
+    def flatten_2d_list(self, list_):
+        """Flatten a 2D list."""
+        if any(isinstance(item, list) for item in list_):
+            return [item for sublist in list_ for item in sublist]
+        return list_
+
+    @list_exec
+    def get_scheduler(self, job):
+        """Get scheduler."""
+        return replace(job, scheduler=gs(job.scheduler, logger=self.logger))
 
     def get_database(self, **kwargs):
         """Get database."""
@@ -53,33 +82,33 @@ class Runner:
 
     def get_logger(self, *args, **kwargs):
         """Get logger."""
-        if not args:
-            return kwargs.get('logger', LoggerDummy())
-        return self._get_attr('logger', *args, **kwargs) or LoggerDummy()
+        return kwargs.get('logger',
+                          self._get_attr('logger', *args, **kwargs)
+                          or LoggerDummy())
 
-    def get_run_settings(self, *args):
-        """Get run settings."""
-        if len(args) > 1:
-            raise ValueError('run() takes at most 1 positional argument, ' +
-                             'got {}'.format(len(args)))
+    # def get_run_settings(self, *args):
+    #     """Get run settings."""
+    #     if len(args) > 1:
+    #         raise ValueError('run() takes at most 1 positional argument, ' +
+    #                          'got {}'.format(len(args)))
         return args[0]
 
-    def get_scheduler(self, *args, logger=None, **kwargs):
-        """Get scheduler."""
-        scheduler = self._get_attr('scheduler', *args,  **kwargs)
-        if scheduler is None:
-            raise ValueError('Scheduler not specified in kwargs or ' +
-                             'run_settings')
-        return gs(scheduler, logger=logger, **kwargs)
+    # def get_scheduler(self, *args, logger=None, **kwargs):
+    #     """Get scheduler."""
+    #     scheduler = self._get_attr('scheduler', *args,  **kwargs)
+    #     if scheduler is None:
+    #         raise ValueError('Scheduler not specified in kwargs or ' +
+    #                          'run_settings')
+    #     return gs(scheduler, logger=logger, **kwargs)
 
-    def is_finished(self, status) -> bool:
-        """Check if job is finished."""
-        return self.scheduler.is_finished(status)
+    # def is_finished(self, status) -> bool:
+    #     """Check if job is finished."""
+    #     return self.scheduler.is_finished(status)
 
-    @force_list
-    def get_status(self, jobs) -> List[str]:
+    @list_exec
+    def get_status(self, job) -> Union[str, List[str]]:
         """Get status."""
-        return self.scheduler.get_status(jobs)
+        return job.scheduler.get_status(job)
 
     def prepare_job_for_db(self, job):
         """Prepare job for database."""
@@ -176,7 +205,7 @@ class Runner:
     def prepare_jobs(self, job: Job):
         """Prepare jobs."""
         print('ohoqhfouehfehwfu', type(job))
-        job_script = self.scheduler.gen_job_script(job.run_settings)
+        job_script = job.scheduler.gen_job_script(job.run_settings)
         try:
             file_list = [f for rs in job.run_settings
                          for f in rs.files_to_write] + [job_script]
@@ -191,37 +220,37 @@ class Runner:
         return job
 
     @list_exec
-    def check_finished(self, run_settings):
+    def check_finished(self, job: Job):
         """Check if job has finished."""
-        return self.scheduler.check_finished(run_settings)
+        return job.scheduler.check_finished(job)
 
     def submit_jobs(self, job: Job):
         """Submit jobs."""
-        return self.scheduler.submit(job)
+        return job.scheduler.submit(job)
 
-    def finish_single_job(self, job, status='FINISHED'):
-        """Finnish single job."""
-        self.logger.debug(f'Job status: {status}')
-        # Update the status
-        job = replace(job, status=status)
-        # Fetch the results
-        r = None
-        try:
-            r = self.scheduler.fetch_results(job)
-        except Exception as e:
-            self.logger.error(f'Error fetching results: {e}')
-        else:
-            # Update the database
-            self.database.update(job.db_id, job)
-        finally:
-            # Teardown the scheduler
-            self.scheduler.teardown(job)
-        return r
+    # def finish_single_job(self, job, status='FINISHED'):
+    #     """Finnish single job."""
+    #     self.logger.debug(f'Job status: {status}')
+    #     # Update the status
+    #     job = replace(job, status=status)
+    #     # Fetch the results
+    #     r = None
+    #     try:
+    #         r = self.scheduler.fetch_results(job)
+    #     except Exception as e:
+    #         self.logger.error(f'Error fetching results: {e}')
+    #     else:
+    #         # Update the database
+    #         self.database.update(job.db_id, job)
+    #     finally:
+    #         # Teardown the scheduler
+    #         self.scheduler.teardown(job)
+    #     return r
 
     @list_exec
-    def fetch_results(self, jobs):
+    def fetch_results(self, job):
         """Fetch results."""
-        return self.scheduler.fetch_results(jobs)
+        return job.scheduler.fetch_results(job)
 
     def _return_jobs(self, jobs):
         print('returning', type(jobs))

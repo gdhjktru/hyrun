@@ -24,6 +24,11 @@ class LocalScheduler(Scheduler):
         self.logger = kwargs.get('logger', LoggerDummy())
         self.logger.debug('Local scheduler initialized\n')
         self.default_data_path = 'data_path_local'
+        self.name = 'local'
+
+    def check_job_params(self, job):
+        """Check job params."""
+        return [replace(job, tasks=[t]) for t in job.tasks]
 
     def run_ctx(self, arg: Optional[Any] = None):
         """Return context manager."""
