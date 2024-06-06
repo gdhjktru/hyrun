@@ -41,7 +41,8 @@ class SlurmScheduler(Scheduler):
     def check_job_params(self, job):
         """Check job params."""
         keys_to_be_identical = ssh_kws + ['memory_per_cpu', 'cpus_per_task',
-                                          'ntasks', 'slurm_account']
+                                          'ntasks', 'slurm_account',
+                                          'submit_dir_remote']
         for k in keys_to_be_identical:
             for t in job.tasks:
                 if getattr(t, k) != getattr(job.tasks[0], k):

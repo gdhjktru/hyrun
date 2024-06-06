@@ -55,11 +55,10 @@ class SlurmJobScript:
                         for t in job.tasks])
         slurm_job_time = timedelta_to_slurmtime(timedelta(seconds=job_time))
 
-        print('slurm_job_time', slurm_job_time)
-        # åokokokoåko
+   
 
-        # job_name = self._gen_job_name_bundle(jobs)
-        # s = run_settings.submit_dir_remote
+        job_name = self._gen_job_name_bundle(jobs)
+        s = global_run_settings.submit_dir_remote
 
         # job_script = '#!/bin/bash\n'
         # job_script += f'#SBATCH --job-name={job_name}\n'
@@ -182,28 +181,28 @@ class SlurmJobScript:
     #             return False
     #     return True
 
-    # def _gen_job_name_bundle(self, jobs: list) -> str:
-    #     """Generate SLURM job name.
+    def _gen_job_name_bundle(self, job: list) -> str:
+        """Generate SLURM job name.
 
-    #     Parameters
-    #     ----------
-    #     jobs : List[JobInfo]
-    #         Information about the jobs
+        Parameters
+        ----------
+        jobs : List[Job]
+            Information about the jobs
 
-    #     Returns
-    #     -------
-    #     str
-    #         Job name generated from the current time and date.
+        Returns
+        -------
+        str
+            Job name generated from the current time and date.
 
-    #     """
-    #     job_names = [job.run_settings.job_name for job in jobs]
-    #     if len(set(job_names)) == 1:
-    #         if job_names[0] is not None:
-    #             return job_names[0]
+        """
+        job_names = [t.job_name for t in job.tasks]
+        if len(set(job_names)) == 1:
+            if job_names[0] is not None:
+                return job_names[0]
 
-    #     program = 'slurm_bundle'
-    #     job_name: str = (
-    #         f"{program}_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}")
-    #     if self.debug:  # type: ignore
-    #         print(f'\nDEBUG: Generating job name: {job_name}')
-    #     return job_name
+        program = 'slurm_bundle'
+        job_name: str = (
+            f"{program}_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}")
+        if self.debug:  # type: ignore
+            print(f'\nDEBUG: Generating job name: {job_name}')
+        return job_name
