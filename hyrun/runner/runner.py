@@ -5,8 +5,7 @@ from string import Template
 from time import sleep
 from typing import Generator, List, Union
 
-from hydb import DatabaseDummy
-from hytools.logger import LoggerDummy, get_logger
+from hytools.logger import LoggerDummy
 
 from hyrun.decorators import force_list, list_exec
 from hyrun.job import Job
@@ -262,7 +261,6 @@ class Runner:
         if all(len(j) == 1 for j in jobs):
             return [j[0] for j in jobs]
 
-
     def get_schedulers(self, jobs):
         """Get schedulers."""
         return list(set([j.scheduler for j in jobs]))
@@ -279,11 +277,10 @@ class Runner:
             self.logger.info(f'   job {i} task(s): {len(j.tasks)} tasks.')
 
         for scheduler in schedulers:
-            self.logger.debug(f'Using scheduler: {scheduler.name}')
-            with scheduler.run_ctx() as ctx:
+            self.logger.debug('Using scheduler: ' +
+                              f'{scheduler.name}')  # type: ignore
+            with scheduler.run_ctx() as ctx:  # tpye: ignore
                 self.logger.debug(f'Context manager opened, ctx: {ctx}')
-
-
 
         #     jobs = self.prepare_jobs(jobs)
         #     jobs = self.add_to_db(jobs)
