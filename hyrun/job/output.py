@@ -15,6 +15,8 @@ class Output:
     output_folder: Optional[PathLike] = None
     stdout: Optional[PathLike] = None
     stderr: Optional[PathLike] = None
+    stdout_file: Optional[PathLike] = None
+    stderr_file: Optional[PathLike] = None
     returncode: Optional[int] = None
     error: Optional[Exception] = None
     host: Optional[str] = None

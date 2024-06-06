@@ -10,7 +10,6 @@ from hytools.logger import LoggerDummy
 
 from hyrun.decorators import force_list, list_exec
 from hyrun.job import Job
-from hyrun.scheduler import get_scheduler as gs
 
 from .array_job import gen_jobs
 
@@ -21,50 +20,49 @@ class Runner:
     def __init__(self, *args, **kwargs):
         """Initialize."""
         self.logger = self.get_logger(*args, **kwargs)
-        # self.scheduler = self.get_scheduler(*args,
-        #                                     logger=self.logger,
-        #                                     **kwargs)
-        self.jobs = gen_jobs(*args, **kwargs)
-        self.jobs = self.get_scheduler(self.jobs)
-        self.jobs = self.check_job_params(self.jobs)
+        # # self.scheduler = self.get_scheduler(*args,
+        # #                                     logger=self.logger,
+        # #                                     **kwargs)
+        # self.jobs = gen_jobs(*args, **kwargs)
+        # # self.jobs = self.get_scheduler(self.jobs)
 
-        self.logger.debug(f'Job overview: {len(self.jobs)} jobs.')
-        for i, j in enumerate(self.jobs):
-            self.logger.debug(f'   job {i} task(s): {len(j.tasks)} tasks.')
-        pijipji
-        # self.schedu
-        # print(self.jobs, 'self.jobs')
-        # joijioji
-        # # array_job = ArrayJob(self.get_run_settings(*args),
-        # #                      logger=self.logger,
-        # #                      **kwargs)
-        # self.run_array = array_job.run_array
-        # self.schedulers = array_job.schedulers
-        # print(self.schedulers, 'scihef')
-        # poioi
+        # self.logger.debug(f'Job overview: {len(self.jobs)} jobs.')
+        # for i, j in enumerate(self.jobs):
+        #     self.logger.debug(f'   job {i} task(s): {len(j.tasks)} tasks.')
 
-        # self.global_settings = self.run_array[0][0]
-        # self.wait_for_jobs_to_finish = self.global_settings.wait
-        # self.database = self.get_database(**kwargs)
-        # self.logger.debug(f'Run array: {len(self.run_array)} jobs.')
-        # for i, rs in enumerate(self.run_array):
-        #     self.logger.debug(f'   job {i} task(s): {len(rs)} tasks.')
+        # # self.schedu
+        # # print(self.jobs, 'self.jobs')
+        # # joijioji
+        # # # array_job = ArrayJob(self.get_run_settings(*args),
+        # # #                      logger=self.logger,
+        # # #                      **kwargs)
+        # # self.run_array = array_job.run_array
+        # # self.schedulers = array_job.schedulers
+        # # print(self.schedulers, 'scihef')
+        # # poioi
 
-    def check_job_params(self, jobs) -> List[Job]:
-        """Check job parameters."""
-        return self.flatten_2d_list(
-            [job.scheduler.check_job_params(job) for job in jobs])
+        # # self.global_settings = self.run_array[0][0]
+        # # self.wait_for_jobs_to_finish = self.global_settings.wait
+        # # self.database = self.get_database(**kwargs)
+        # # self.logger.debug(f'Run array: {len(self.run_array)} jobs.')
+        # # for i, rs in enumerate(self.run_array):
+        # #     self.logger.debug(f'   job {i} task(s): {len(rs)} tasks.')
 
-    def flatten_2d_list(self, list_):
-        """Flatten a 2D list."""
-        if any(isinstance(item, list) for item in list_):
-            return [item for sublist in list_ for item in sublist]
-        return list_
+    # def check_job_params(self, jobs) -> List[Job]:
+    #     """Check job parameters."""
+    #     return self.flatten_2d_list(
+    #         [job.scheduler.check_job_params(job) for job in jobs])
 
-    @list_exec
-    def get_scheduler(self, job):
-        """Get scheduler."""
-        return replace(job, scheduler=gs(job.scheduler, logger=self.logger))
+    # def flatten_2d_list(self, list_):
+    #     """Flatten a 2D list."""
+    #     if any(isinstance(item, list) for item in list_):
+    #         return [item for sublist in list_ for item in sublist]
+    #     return list_
+
+    # @list_exec
+    # def get_scheduler(self, job):
+    #     """Get scheduler."""
+    #     return replace(job, scheduler=gs(job.scheduler, logger=self.logger))
 
     def get_database(self, **kwargs):
         """Get database."""
@@ -108,7 +106,7 @@ class Runner:
     @list_exec
     def get_status(self, job) -> Union[str, List[str]]:
         """Get status."""
-        return job.scheduler.get_status(job)
+        return job.scheduler.get_status(job)  # type: ignore
 
     def prepare_job_for_db(self, job):
         """Prepare job for database."""
@@ -166,12 +164,15 @@ class Runner:
     #                          if isinstance(sublist, list)
     #                          else [sublist])]
 
+    def is_finished(self, statuses) -> bool:
+        """Check if job is finished."""
+        pass
+        # return all(self.scheduler.is_finished(s) for s in statuses)
+
     @force_list
     def wait(self, jobs, timeout=60) -> list:
         """Wait for job to finish."""
-        if 'local' in self.scheduler.__class__.__name__.lower():
-            return jobs
-        timeout = max([j.walltime for j in jobs]) or timeout
+        timeout = max([j.job_time for j in jobs]) or timeout
         incrementer = self._increment_and_sleep(1)
         statuses = [self.get_status(j) for j in jobs]
         for t in incrementer:
@@ -205,7 +206,8 @@ class Runner:
     def prepare_jobs(self, job: Job):
         """Prepare jobs."""
         print('ohoqhfouehfehwfu', type(job))
-        job_script = job.scheduler.gen_job_script(job.run_settings)
+        job_script = job.scheduler.gen_job_script(  # type: ignore
+            job.run_settings)
         try:
             file_list = [f for rs in job.run_settings
                          for f in rs.files_to_write] + [job_script]
@@ -222,11 +224,11 @@ class Runner:
     @list_exec
     def check_finished(self, job: Job):
         """Check if job has finished."""
-        return job.scheduler.check_finished(job)
+        return job.scheduler.check_finished(job)  # type: ignore
 
     def submit_jobs(self, job: Job):
         """Submit jobs."""
-        return job.scheduler.submit(job)
+        return job.scheduler.submit(job)  # type: ignore
 
     # def finish_single_job(self, job, status='FINISHED'):
     #     """Finnish single job."""
@@ -264,8 +266,9 @@ class Runner:
     def run(self, *args, **kwargs):
         """Run."""
         # filter jobs that are not finished
+        jobs = gen_jobs(*args, **kwargs)
         jobs = [Job(run_settings=rs, scheduler=rs.scheduler)
-                for j in self.run_array
+                for j in jobs
                 if not any(self.check_finished(j)) for rs in j]
         self.logger.info(f'Running {len(jobs)} job(s).')
         with self.scheduler.run_ctx() as ctx:

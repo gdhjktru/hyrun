@@ -1,10 +1,8 @@
 
 from dataclasses import dataclass
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional
 
 from fabric.connection import Connection
-
-from hyrun.scheduler.abc import Scheduler
 
 from .job_info import JobInfo
 from .output import Output
@@ -24,6 +22,3 @@ class Job(JobInfo, Output):
     job_script: Optional[str] = None
     local_files: Optional[List[str]] = None
     remote_files: Optional[List[str]] = None
-    database: Optional[Any] = None
-    scheduler: Optional[Union[str, Scheduler]] = None
-    metadata: Optional[dict] = None
