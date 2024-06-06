@@ -92,10 +92,13 @@ class LocalScheduler(Scheduler):
             running_list = running_list + ['&&'] + post_cmd
 
         cmd = ' '.join(running_list)
-        job_script_name = 'job_script_' + run_settings.get_hash(cmd) + '.sh'
+        return cmd
+        hash = run_settings.get_hash(cmd)
+        job_script_name = f'job_script_{hash}.sh'
         job_script = File(name=job_script_name,
                           content=cmd,
                           handler=run_settings.file_handler)
+        job_script.hash = hash
         return job_script
 
     def copy_files(self, *args, **kwargs):

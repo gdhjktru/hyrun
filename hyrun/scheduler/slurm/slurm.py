@@ -3,6 +3,9 @@ from hytools.logger import LoggerDummy
 from hyrun.remote import connect_to_remote
 from .job_script import gen_job_script as gjs
 from ..abc import Scheduler
+import hashlib
+from hytools.file import File
+
 
 ssh_kws = ['host', 'user', 'port', 'config', 'gateway', 'forward_agent',
            'connect_timeout', 'connect_kwargs', 'inline_ssh_env']

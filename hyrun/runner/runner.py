@@ -4,14 +4,20 @@ from pathlib import Path
 from string import Template
 from time import sleep
 from typing import Generator, List, Union
-
+from string import Template
+from copy import deepcopy
 from hytools.logger import LoggerDummy
+import hashlib
+from hytools.file import File
 
 from hyrun.decorators import force_list, list_exec
 from hyrun.job import Job
 
 from .array_job import gen_jobs
 
+
+FILE_TRANSFER = {'pre': {'from': [], 'to': []},
+                 'post': {'from': [], 'to': []}}
 
 class Runner:
     """Runner."""
@@ -109,11 +115,19 @@ class Runner:
 
     def prepare_job_for_db(self, job):
         """Prepare job for database."""
-        purge_attrs = ['local_files', 'remote_files', 'run_settings']
-        job_db = replace(job, db_id=None)
+        # purge_attrs = ['local_files', 'remote_files', 'run_settings']
+        purge_attrs = []
+        tasks = self.prepare_tasks_for_db(job.tasks)
+        job_db = replace(job, tasks=tasks, db_id=None)
         for attr in purge_attrs:
             job_db.__dict__.pop(attr, None)
         return job_db
+    
+    @list_exec
+    def prepare_tasks_for_db(self, tasks):
+        """Prepare tasks for database."""
+        purge_attrs = ['cluster_settings', 'file_handler']
+        return [self.prepare_job_for_db(t) for t in tasks]
 
     # def handle_db(self, job, operation):
     #     """Handle job in database based on operation."""
@@ -130,7 +144,19 @@ class Runner:
     #     elif operation == 'update':
     #         self.database.update(job.db_id, job_db)
     #         return job
-
+    @list_exec
+    def add_to_db(self, job):
+        """Add job to database."""
+        job_db = self.prepare_job_for_db(job)
+        db = job_db.database
+        db_id = db.add(job_db)
+        if db_id < 0:
+            self.logger.error('Error adding job to database')
+            return job
+        else:
+            self.logger.info(f'Added job to database with id {db_id}')
+            self.logger.debug(f'db entry: {db.get(db_id)}')
+        return replace(job, db_id=db_id)
     # @list_exec
     # def add_to_db(self, job):
     #     """Add job to database."""
@@ -181,17 +207,19 @@ class Runner:
         for j, s in zip(jobs, statuses):
             j.status = s
         return jobs
+    
+    # @list_exec
+    # def resolve_files(self, job):
+    #     """Resolve files."""
+    #    for t in job.tasks:
+    #         t.files_to_write = [self._resolve_file(f, parent='work_path_local') for f in t.files_to_write]
 
-    @list_exec
-    def write_file_local(self, file, overwrite=True):
-        """Write file locally."""
-        p = (Path(file.folder) / file.name if file.folder is not None
-             else file.work_path_local)
-        if p.exists() and not overwrite:
-            return file
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(self.replace_var_in_file_content(file).content)
-        return str(p)
+    # def _resolve_file(self, file, parent='work_path_local'):
+    #     p = (Path(file.folder) / file.name if file.folder is not None
+    #          else getattr(file, parent))
+    #     return p
+
+
 
     @list_exec
     def replace_var_in_file_content(self, file):
@@ -200,28 +228,101 @@ class Runner:
             file.content = Template(file.content
                                     ).safe_substitute(**file.variables)
         return file
+    
+    def gen_job_script(self, job: Job) -> Job:
+        """Generate job script."""
+        job_script_str = job.scheduler.gen_job_script(  # type: ignore
+            job)
+        job_hash = hashlib.sha256(job_script_str.encode()).hexdigest()
+        job_script_name = (getattr(job.tasks[0],
+                                  'job_script_filename', None)
+                                  or f'job_script_{job_hash}.sh')
+        job_script = File(name=job_script_name,
+                          content=job_script_str,
+                          handler=job.tasks[0].file_handler)  # type: ignore
+        # print(job_script)
+        p = job_script.submit_path_local
+        # p = (getattr(job_script, 'submit_path_local', None)
+        #      or job_script.work_path_local)
+        # print('pjpjp', p)
+        # pojklopiiåpoåø
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(job_script.content)
+        p_remote = getattr(job_script, 'submit_path_remote', None) or p
+        file_transfer = job.files_to_transfer or FILE_TRANSFER
+        file_transfer['pre']['from'].append(str(p))
+        file_transfer['pre']['to'].append(str(p_remote))
+        return replace(job, job_script=str(p),
+                       job_hash=job_hash,
+                       files_to_transfer=file_transfer)
 
     @list_exec
-    def prepare_jobs(self, job: Job, execute=True):
+    def prepare_jobs(self, job: Job) -> Job:
         """Prepare jobs."""
-        if not execute:
-            return job
-        job_script = job.scheduler.gen_job_script(  # type: ignore
-            job)
-        print(job_script)
-        popoopkpokpokkkkkkkkkkkkkkkkkkkkk
-        try:
-            file_list = [f for rs in job.run_settings
-                         for f in rs.files_to_write] + [job_script]
-        except TypeError:
-            file_list = [f for f in job.run_settings.files_to_write] \
-                + [job_script]
+        job = self.gen_job_script(job)
+        job = self.resolve_files(job)
+        print(job)
+        lklklkk
+        file_list = [f for t in job.tasks
+                        for f in t.files_to_write] + [job_script]
         job.local_files = self.write_file_local(file_list)
         job.remote_files = [str(f.work_path_remote)
                             for f in job.local_files
                             if hasattr(f, 'work_path_remote')]
-        job.job_script = job_script.content
         return job
+    
+    @list_exec
+    def write_file_local(self, file, parent='work_path_local', overwrite=True):
+        """Write file locally."""
+        p = (Path(file.folder) / file.name if file.folder is not None
+             else getattr(file, parent))
+        if p.exists() and not overwrite:
+            return file
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(self.replace_var_in_file_content(file).content)
+        return str(p)
+
+    
+    def resolve_files(self, job) -> Job:
+        """Resolve files."""
+        mapping = {'files_to_write': 'work_path_local'}
+        files_to_transfer = job.files_to_transfer or FILE_TRANSFER
+        for t in job.tasks:
+            # for k,v in t.__dict__.items():
+            #     if 'file' in k:
+            #         print(k)
+            # mlkmkmkmklmk
+            for name in ['files_to_write', 'files_to_send']:
+                list_ = getattr(t, name, [])
+                for i, f in enumerate(list_):
+                    parent_local = mapping.get(name, 'work_path_local')
+                    parent_remote = parent_local.replace('local', 'remote')
+                    p = self._resolve_file(f, parent=parent_local)
+                    if 'files_to_write' in name:
+                        self.write_file_local(f, parent=parent_local)
+                    list_[i] = p
+
+                    if name == 'files_to_transfer':
+                        files_to_transfer['pre']['from'].append(p)
+                        files_to_transfer['pre']['to'].append(getattr(f,
+                                                                  parent_remote))
+            for f in ['output_file', 'stdout_file', 'stderr_file']:
+                if getattr(t, f, None) is not None:
+                    p = self._resolve_file(getattr(t, f), parent='work_path_local')
+                    p_remote = self._resolve_file(getattr(t, f), parent='work_path_remote')
+                    files_to_transfer['post']['from'].append(str(p_remote))
+                    files_to_transfer['post']['to'].append(str(p))
+                    setattr(t, f, p)
+            
+        job.files_to_transfer = files_to_transfer
+        return job
+
+
+    def _resolve_file(self, file, parent='work_path_local'):
+        p = (Path(file.folder) / file.name if file.folder is not None
+             else getattr(file, parent, None))
+        return p
+   
 
     @list_exec
     def check_finished(self, job: Job):
@@ -274,25 +375,31 @@ class Runner:
         # filter jobs that are not finished
         jobs = [j for j in gen_jobs(*args, **kwargs)
                 if not any(self.check_finished(j))]
+        rs = jobs[0].tasks[0]  # type: ignore
+        jobs = [self.prepare_jobs(j) for j in jobs]
+        jobs = self.add_to_db(jobs)
+        if rs.dry_run:
+            self.logger.warning('Dry run found in first task of first job, '
+                               'exiting...')
+            return jobs
+        # potential exit point
+
         schedulers = list(set([j.scheduler for j in jobs]))
 
         self.logger.info(f'Running {len(jobs)} job(s).')
         for i, j in enumerate(jobs):
-            self.logger.info(f'   job {i} task(s): {len(j.tasks)} tasks.')
+            self.logger.info(f'   job {i} ({j.job_hash}) task(s): {len(j.tasks)} tasks')
+
+
+        
 
         for scheduler in schedulers:
             self.logger.debug('Using scheduler: ' +
                               f'{scheduler.name}')  # type: ignore
             with scheduler.run_ctx() as ctx:  # tpye: ignore
                 self.logger.debug(f'Context manager opened, ctx: {ctx}')
-                jobs = [self.prepare_jobs(j, execute=j.scheduler.name==scheduler.name) for j in jobs]
 
-        #     jobs = self.prepare_jobs(jobs)
-        #     jobs = self.add_to_db(jobs)
-        #     # potential exit point
-        #     # if self.global_settings.dry_run:
-        #     #     return jobs
-        #     #
+  
         #     self.copy_files(jobs, ctx)
         #     jobs = self.submit_jobs(jobs)
         #     jobs = self.update_db(jobs)
