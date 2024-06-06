@@ -16,7 +16,8 @@ class SlurmScheduler(Scheduler):
         self.logger = kwargs.get('logger', LoggerDummy())
         self.name = 'slurm'
         self.default_data_path = 'data_path_remote'
-        self.connection = kwargs.get('connection', self.get_connection(**kwargs))
+        self.connection = kwargs.get('connection',
+                                     self.get_connection(**kwargs))
 
     def __eq__(self, other):
         """Check equality."""
@@ -58,7 +59,6 @@ class SlurmScheduler(Scheduler):
     def run_ctx(self, *args, **kwargs):
         """Run context manager."""
         return connect_to_remote(self.connection)
-
 
     def teardown(self, *args, **kwargs):
         """Teardown job."""

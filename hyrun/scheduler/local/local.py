@@ -26,7 +26,6 @@ class LocalScheduler(Scheduler):
         self.default_data_path = 'data_path_local'
         self.name = 'local'
 
-
     def __eq__(self, other):
         """Check equality."""
         return self.name == other.name
@@ -42,13 +41,6 @@ class LocalScheduler(Scheduler):
     def run_ctx(self, arg: Optional[Any] = None):
         """Return context manager."""
         return nullcontext(arg)
-    # @contextmanager
-    # def run_ctx(self, *args, **kwargs):
-    #     print('in context')
-    #     try:
-    #         yield
-    #     finally:
-    #         return None
 
     def get_launcher(self, run_settings):
         """Get launcher."""
