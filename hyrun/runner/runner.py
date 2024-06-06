@@ -6,7 +6,7 @@ from time import sleep
 from typing import Generator, List, Union
 
 from hydb import DatabaseDummy
-from hytools.logger import LoggerDummy
+from hytools.logger import LoggerDummy, get_logger
 
 from hyrun.decorators import force_list, list_exec
 from hyrun.job import Job
@@ -64,11 +64,11 @@ class Runner:
     #     """Get scheduler."""
     #     return replace(job, scheduler=gs(job.scheduler, logger=self.logger))
 
-    def get_database(self, **kwargs):
-        """Get database."""
-        return kwargs.get('database',
-                          getattr(self.global_settings,
-                                  'database', None)) or DatabaseDummy()
+    # def get_database(self, **kwargs):
+    #     """Get database."""
+    #     return kwargs.get('database',
+    #                       getattr(self.global_settings,
+    #                               'database', None)) or DatabaseDummy()
 
     def _get_attr(self, attr_name, *args, **kwargs):
         """Get attribute."""
@@ -89,7 +89,7 @@ class Runner:
     #     if len(args) > 1:
     #         raise ValueError('run() takes at most 1 positional argument, ' +
     #                          'got {}'.format(len(args)))
-        return args[0]
+        # return args[0]
 
     # def get_scheduler(self, *args, logger=None, **kwargs):
     #     """Get scheduler."""
@@ -116,35 +116,35 @@ class Runner:
             job_db.__dict__.pop(attr, None)
         return job_db
 
-    def handle_db(self, job, operation):
-        """Handle job in database based on operation."""
-        if isinstance(job, list):
-            return [self.handle_db(j, operation) for j in job]
-        job_db = self.prepare_job_for_db(job)
-        self.logger.debug(f'{operation} job to database')
-        if operation == 'add':
-            id = self.database.add(job_db)
-            if id < 0:
-                self.logger.error('Error adding job to database')
-                return job
-            return replace(job, db_id=id)
-        elif operation == 'update':
-            self.database.update(job.db_id, job_db)
-            return job
+    # def handle_db(self, job, operation):
+    #     """Handle job in database based on operation."""
+    #     if isinstance(job, list):
+    #         return [self.handle_db(j, operation) for j in job]
+    #     job_db = self.prepare_job_for_db(job)
+    #     self.logger.debug(f'{operation} job to database')
+    #     if operation == 'add':
+    #         id = self.database.add(job_db)
+    #         if id < 0:
+    #             self.logger.error('Error adding job to database')
+    #             return job
+    #         return replace(job, db_id=id)
+    #     elif operation == 'update':
+    #         self.database.update(job.db_id, job_db)
+    #         return job
 
-    @list_exec
-    def add_to_db(self, job):
-        """Add job to database."""
-        return self.handle_db(job, 'add')
+    # @list_exec
+    # def add_to_db(self, job):
+    #     """Add job to database."""
+    #     return self.handle_db(job, 'add')
 
-    @list_exec
-    def update_db(self, job):
-        """Update job in database."""
-        return self.handle_db(job, 'update')
+    # @list_exec
+    # def update_db(self, job):
+    #     """Update job in database."""
+    #     return self.handle_db(job, 'update')
 
-    def copy_files(self, jobs, ctx):
-        """Copy files."""
-        return self.scheduler.copy_files(jobs, ctx)
+    # def copy_files(self, jobs, ctx):
+    #     """Copy files."""
+    #     return self.scheduler.copy_files(jobs, ctx)
 
     def _increment_t(self, t, tmin=1, tmax=60) -> int:
         """Increment t."""
@@ -166,7 +166,7 @@ class Runner:
 
     def is_finished(self, statuses) -> bool:
         """Check if job is finished."""
-        pass
+        return True
         # return all(self.scheduler.is_finished(s) for s in statuses)
 
     @force_list
@@ -205,7 +205,6 @@ class Runner:
     @list_exec
     def prepare_jobs(self, job: Job):
         """Prepare jobs."""
-        print('ohoqhfouehfehwfu', type(job))
         job_script = job.scheduler.gen_job_script(  # type: ignore
             job.run_settings)
         try:
@@ -223,8 +222,9 @@ class Runner:
 
     @list_exec
     def check_finished(self, job: Job):
-        """Check if job has finished."""
-        return job.scheduler.check_finished(job)  # type: ignore
+        """Check if all tasks of a job have finished."""
+        return [job.scheduler.check_finished(t)  # type: ignore
+                for t in job.tasks]
 
     def submit_jobs(self, job: Job):
         """Submit jobs."""
@@ -249,7 +249,6 @@ class Runner:
     #         self.scheduler.teardown(job)
     #     return r
 
-    @list_exec
     def fetch_results(self, job):
         """Fetch results."""
         return job.scheduler.fetch_results(job)
@@ -263,32 +262,46 @@ class Runner:
         if all(len(j) == 1 for j in jobs):
             return [j[0] for j in jobs]
 
+
+    def get_schedulers(self, jobs):
+        """Get schedulers."""
+        return list(set([j.scheduler for j in jobs]))
+
     def run(self, *args, **kwargs):
         """Run."""
         # filter jobs that are not finished
-        jobs = gen_jobs(*args, **kwargs)
-        jobs = [Job(run_settings=rs, scheduler=rs.scheduler)
-                for j in jobs
-                if not any(self.check_finished(j)) for rs in j]
-        self.logger.info(f'Running {len(jobs)} job(s).')
-        with self.scheduler.run_ctx() as ctx:
-            jobs = self.prepare_jobs(jobs)
-            jobs = self.add_to_db(jobs)
-            # potential exit point
-            # if self.global_settings.dry_run:
-            #     return jobs
-            #
-            self.copy_files(jobs, ctx)
-            jobs = self.submit_jobs(jobs)
-            jobs = self.update_db(jobs)
-        # if not self.wait_for_jobs_to_finish:
-        #     return jobs
-        # Wait for the job to finish
-        jobs = self.wait(jobs)
+        jobs = [j for j in gen_jobs(*args, **kwargs)
+                if not any(self.check_finished(j))]
+        schedulers = list(set([j.scheduler for j in jobs]))
 
-        # Fetch the results
-        jobs = self.fetch_results(jobs)
-        self.copy_files(jobs, ctx)
-        # Teardown
-        # self.scheduler.teardown(jobs)
-        return self._return_jobs(jobs)
+        self.logger.info(f'Running {len(jobs)} job(s).')
+        for i, j in enumerate(jobs):
+            self.logger.info(f'   job {i} task(s): {len(j.tasks)} tasks.')
+
+        for scheduler in schedulers:
+            self.logger.debug(f'Using scheduler: {scheduler.name}')
+            with scheduler.run_ctx() as ctx:
+                self.logger.debug(f'Context manager opened, ctx: {ctx}')
+
+
+
+        #     jobs = self.prepare_jobs(jobs)
+        #     jobs = self.add_to_db(jobs)
+        #     # potential exit point
+        #     # if self.global_settings.dry_run:
+        #     #     return jobs
+        #     #
+        #     self.copy_files(jobs, ctx)
+        #     jobs = self.submit_jobs(jobs)
+        #     jobs = self.update_db(jobs)
+        # # if not self.wait_for_jobs_to_finish:
+        # #     return jobs
+        # # Wait for the job to finish
+        # jobs = self.wait(jobs)
+
+        # # Fetch the results
+        # jobs = self.fetch_results(jobs)
+        # self.copy_files(jobs, ctx)
+        # # Teardown
+        # # self.scheduler.teardown(jobs)
+        # return self._return_jobs(jobs)

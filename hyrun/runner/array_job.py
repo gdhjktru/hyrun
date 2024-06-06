@@ -20,10 +20,16 @@ def gen_jobs(arg, **kwargs) -> list[Job]:
     arg = [aj._flatten_list(a) for a in arg]
     databases = aj._get_databases(dim=len(arg), **kwargs)
     jobs = [aj._get_job(a, d) for a, d in zip(arg, databases)]
-    jobs = [replace(job, scheduler=get_scheduler(aj._check_schedulers(job)))
-            for job in jobs]
+    connections = aj.extract_connections(jobs)
+    jobs = [replace(job,
+                    scheduler=get_scheduler(aj._check_schedulers(job),
+                                            connection=c))
+            for job, c in zip(jobs, connections)]
     jobs = aj._check_job_params(jobs)
+
     return jobs
+
+
 
 
 @force_list
@@ -38,6 +44,18 @@ class ArrayJob:
     def __init__(self, *args, **kwargs):
         """Initialize."""
         pass
+
+    def extract_connections(self, jobs):
+        """Extract connections."""
+        connections = []
+        for job in jobs:
+            if hasattr(job.tasks[0], 'connection'):
+                connections.append(job.tasks[0].connection)
+            elif hasattr(job.tasks[0], 'extract_connection'):
+                connections.append(job.tasks[0].extract_connection())
+            else:
+                connections.append(None)
+        return connections
 
     def _check_nested_levels(self, list_: list):
         """Check nested levels."""
@@ -104,5 +122,6 @@ class ArrayJob:
 
     def _check_job_params(self, jobs) -> List[Job]:
         """Check job parameters."""
+        # flatten because local might return a list of jobs
         return self._flatten_2d_list(
             [job.scheduler.check_job_params(job) for job in jobs])

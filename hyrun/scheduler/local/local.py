@@ -26,6 +26,15 @@ class LocalScheduler(Scheduler):
         self.default_data_path = 'data_path_local'
         self.name = 'local'
 
+
+    def __eq__(self, other):
+        """Check equality."""
+        return self.name == other.name
+
+    def __hash__(self):
+        """Hash."""
+        return hash(self.name)
+
     def check_job_params(self, job):
         """Check job params."""
         return [replace(job, tasks=[t]) for t in job.tasks]

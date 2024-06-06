@@ -4,7 +4,7 @@ from .runner import Runner
 
 def run(*args, **kwargs):
     """Run."""
-    return Runner(*kwargs).run(*args, **kwargs)
+    return Runner(*args, *kwargs).run(*args, **kwargs)
 
 
 def rerun(*args, **kwargs):
