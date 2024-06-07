@@ -12,19 +12,27 @@ from hyrun.scheduler import get_scheduler
 def gen_jobs(arg, **kwargs) -> list[Job]:
     """Generate jobs."""
     aj = ArrayJob()
+    # case only one job/task
     if not isinstance(arg, list):
         arg = [[arg]]
+    # dont allow more than 2D list
     aj._check_nested_levels(arg)
+    # case 1d list
     if not any(isinstance(item, list) for item in arg):
         arg = [arg]
+    # make sure arg is a list of lists
     arg = [aj._flatten_list(a) for a in arg]
+    # allow for multiple databases
     databases = aj._get_databases(dim=len(arg), **kwargs)
+    # generate job
     jobs = [aj._get_job(a, d) for a, d in zip(arg, databases)]
     connections = aj.extract_connections(jobs)
+    # extract and convert scheduler
     jobs = [replace(job,
                     scheduler=get_scheduler(aj._check_schedulers(job),
                                             connection=c))
             for job, c in zip(jobs, connections)]
+    # check that some parameters are identical among tasks
     jobs = aj._check_job_params(jobs)
     return jobs
 

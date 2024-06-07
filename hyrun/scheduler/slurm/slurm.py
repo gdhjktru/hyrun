@@ -1,9 +1,11 @@
 import hashlib
 
+from dataclasses import replace
 from hytools.file import File
 from hytools.logger import LoggerDummy
 
-from hyrun.remote import connect_to_remote
+from hyrun.remote import connect_to_remote, rsync
+from pathlib import Path
 
 from ..abc import Scheduler
 from .job_script import gen_job_script as gjs
@@ -37,6 +39,28 @@ class SlurmScheduler(Scheduler):
                                   for k, v in sorted(self.connection.items())
                                   if not isinstance(v, dict)))
         return hash((self.name, connection_items))
+    
+    def _resolve_file(self, file, parent='work_path_local'):
+        p = (Path(file.folder) / file.name if file.folder is not None
+             else getattr(file, parent, None))
+        return str(p)
+    
+    def resolve_files(self, job):
+        """Resolve files."""
+        files_to_transfer = {}
+        for t in job.tasks:
+            for f in t.files_to_write:
+                local = self._resolve_file(f, parent='work_path_local')
+                remote = str(Path(self._resolve_file(f, parent='work_path_remote')).parent)
+                if remote not in files_to_transfer:
+                    files_to_transfer[remote] = []
+                files_to_transfer[remote].append(local)
+        local = self._resolve_file(job.job_script, parent='submit_path_local')
+        remote = str(Path(self._resolve_file(job.job_script, parent='submit_path_remote')).parent)
+        if remote not in files_to_transfer:
+            files_to_transfer[remote] = []
+        files_to_transfer[remote].append(local)
+        return files_to_transfer 
 
     def get_connection(self, **kwargs):
         """Get connection."""
@@ -52,10 +76,38 @@ class SlurmScheduler(Scheduler):
                 if getattr(t, k) != getattr(job.tasks[0], k):
                     raise ValueError(f'All slurm tasks must have the same {k}')
         return job
+    
+    def submit(self, job, connection):
+        """Submit job."""
+        remote_dir = Path(job.job_script.submit_path_remote).parent 
+        job_script_name = Path(job.job_script.submit_path_remote).name
+        cmd = f'sbatch ./{job_script_name}'
+        with connection.cd(remote_dir):  # type: ignore
+            # c = connection.run(cmd, hide='stdout')  # type: ignore
+            c = connection.run(cmd)  # type: ignore
+            if c.ok:
+                output = c.stdout.strip()
+                db_id = int(output.split()[-1])
+            else:
+                raise RuntimeError(c.stderr.strip())
+        return replace(job, db_id=db_id)
+                
+
 
     def gen_job_script(self, job):
         """Generate job script."""
         return gjs(job)
+    
+    def transfer_files(self, files_to_transfer, connection):
+        """Transfer files."""
+        result = []
+        for target in files_to_transfer.keys():
+            print('target', target)
+            sources = ' '.join(files_to_transfer[target])
+            print('sources', sources)
+            r =  rsync(connection, sources, [target])
+            result.append(r)
+        return result
 
     def cancel(self, *args, **kwargs):
         """Cancel job."""

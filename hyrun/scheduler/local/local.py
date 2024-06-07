@@ -15,6 +15,9 @@ from ..abc import Scheduler
 from .conda import get_conda_launcher
 from .docker import get_docker_launcher
 
+class Dummy:
+    pass
+
 
 class LocalScheduler(Scheduler):
     """Local scheduler."""
@@ -75,7 +78,7 @@ class LocalScheduler(Scheduler):
         tasks = job.tasks
         if len(tasks) > 1:
             raise ValueError('Local scheduler only supports one task')
-        run_settings = tasks[0]
+        run_settings = tasks[0] 
         cwd = run_settings.work_dir_local
         running_list = self._gen_running_list(run_settings, cwd)
 
@@ -93,17 +96,12 @@ class LocalScheduler(Scheduler):
 
         cmd = ' '.join(running_list)
         return cmd
-        hash = run_settings.get_hash(cmd)
-        job_script_name = f'job_script_{hash}.sh'
-        job_script = File(name=job_script_name,
-                          content=cmd,
-                          handler=run_settings.file_handler)
-        job_script.hash = hash
-        return job_script
-
-    def copy_files(self, *args, **kwargs):
-        """Copy files."""
-        pass
+        
+    def resolve_files(self, job):
+        return {}
+    
+    def transfer_files(self, files_to_transfer, ctx):
+        return []
 
     def gen_output(self, result, run_settings) -> dict:
         """Generate output."""
@@ -151,11 +149,12 @@ class LocalScheduler(Scheduler):
         return output_dict
 
     @list_exec
-    def submit(self, job):
+    def submit(self, job, ctx):
         """Submit job."""
         # warning might return a list of lists
-        print(type(job))
-        rs = job.run_settings
+        if len(job.tasks) > 1 :
+            raise ValueError('Local scheduler only supports one task')
+        rs = job.tasks[0]
         js = job.job_script
         cmd = split(js.content
                     if isinstance(js, File) and js.content

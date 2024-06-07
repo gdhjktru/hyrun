@@ -20,4 +20,4 @@ class Job(JobInfo, Output):
     tasks: Optional[List[Any]] = None
     connection: Optional[Connection] = None
     job_script: Optional[str] = None
-    files_to_transfer: Optional[dict] = None
+    # files_to_transfer: Optional[dict] = None

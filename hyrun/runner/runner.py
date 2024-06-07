@@ -116,17 +116,29 @@ class Runner:
         """Prepare job for database."""
         # purge_attrs = ['local_files', 'remote_files', 'run_settings']
         purge_attrs = []
-        tasks = self.prepare_tasks_for_db(job.tasks)
+        # tasks = self.prepare_tasks_for_db(job.tasks)
+        tasks = job.tasks
         job_db = replace(job, tasks=tasks, db_id=None)
         for attr in purge_attrs:
             job_db.__dict__.pop(attr, None)
         return job_db
+    
 
-    @list_exec
-    def prepare_tasks_for_db(self, tasks):
-        """Prepare tasks for database."""
-        purge_attrs = ['cluster_settings', 'file_handler']
-        return [self.prepare_job_for_db(t) for t in tasks]
+    def resolve_files(self, jobs) -> dict:
+        """Resolve files."""
+        files_to_transfer = {}
+        for job in jobs:
+            d = job.scheduler.resolve_files(job)
+            for k, v in d.items():
+                if k not in files_to_transfer:
+                    files_to_transfer[k] = []
+                files_to_transfer[k].extend(v)
+        return files_to_transfer
+
+    # def prepare_tasks_for_db(self, tasks):
+    #     """Prepare tasks for database."""
+    #     purge_attrs = ['cluster_settings', 'file_handler']
+    #     return [self.prepare_job_for_db(t) for t in tasks]
 
     # def handle_db(self, job, operation):
     #     """Handle job in database based on operation."""
@@ -233,41 +245,46 @@ class Runner:
         job_script_str = job.scheduler.gen_job_script(  # type: ignore
             job)
         job_hash = hashlib.sha256(job_script_str.encode()).hexdigest()
-        job_script_name = (getattr(job.tasks[0],
+        job_script_name = (getattr(job.tasks[0],  # type: ignore
                                   'job_script_filename', None)
                                   or f'job_script_{job_hash}.sh')
         job_script = File(name=job_script_name,
                           content=job_script_str,
                           handler=job.tasks[0].file_handler)  # type: ignore
-        # print(job_script)
-        p = job_script.submit_path_local
-        # p = (getattr(job_script, 'submit_path_local', None)
-        #      or job_script.work_path_local)
-        # print('pjpjp', p)
-        # pojklopiiåpoåø
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(job_script.content)
-        p_remote = getattr(job_script, 'submit_path_remote', None) or p
-        file_transfer = job.files_to_transfer or FILE_TRANSFER
-        file_transfer['pre']['from'].append(str(p))
-        file_transfer['pre']['to'].append(str(p_remote))
-        return replace(job, job_script=str(p),
-                       job_hash=job_hash,
-                       files_to_transfer=file_transfer)
+        return replace(job, job_script=job_script,
+                       job_hash=job_hash)
+        # # print(job_script)
+        # p = job_script.submit_path_local
+        # # p = (getattr(job_script, 'submit_path_local', None)
+        # #      or job_script.work_path_local)
+        # # print('pjpjp', p)
+        # # pojklopiiåpoåø
+        # p.parent.mkdir(parents=True, exist_ok=True)
+        # p.write_text(job_script.content)
+        # p_remote = getattr(job_script, 'submit_path_remote', None) or p
+        # file_transfer = job.files_to_transfer or FILE_TRANSFER
+        # file_transfer['pre']['from'].append(str(p))
+        # file_transfer['pre']['to'].append(str(p_remote))
+        # return replace(job, job_script=str(p),
+        #                job_hash=job_hash)
 
     @list_exec
     def prepare_jobs(self, job: Job) -> Job:
         """Prepare jobs."""
         job = self.gen_job_script(job)
-        job = self.resolve_files(job)
-        print(job)
-        lklklkk
-        file_list = [f for t in job.tasks
-                        for f in t.files_to_write] + [job_script]
-        job.local_files = self.write_file_local(file_list)
-        job.remote_files = [str(f.work_path_remote)
-                            for f in job.local_files
-                            if hasattr(f, 'work_path_remote')]
+        self.write_file_local(job.job_script, parent='submit_path_local')
+        files_to_write = [f for t in job.tasks
+                          for f in t.files_to_write]
+        self.write_file_local(files_to_write, parent='work_path_local')
+        # job = self.resolve_files(job)
+        # print(job)
+        # lklklkk
+        # file_list = [f for t in job.tasks
+        #                 for f in t.files_to_write] + [job_script]
+        # job.local_files = self.write_file_local(file_list)
+        # job.remote_files = [str(f.work_path_remote)
+        #                     for f in job.local_files
+        #                     if hasattr(f, 'work_path_remote')]
         return job
 
     @list_exec
@@ -282,45 +299,47 @@ class Runner:
         return str(p)
 
 
-    def resolve_files(self, job) -> Job:
-        """Resolve files."""
-        mapping = {'files_to_write': 'work_path_local'}
-        files_to_transfer = job.files_to_transfer or FILE_TRANSFER
-        for t in job.tasks:
-            # for k,v in t.__dict__.items():
-            #     if 'file' in k:
-            #         print(k)
-            # mlkmkmkmklmk
-            for name in ['files_to_write', 'files_to_send']:
-                list_ = getattr(t, name, [])
-                for i, f in enumerate(list_):
-                    parent_local = mapping.get(name, 'work_path_local')
-                    parent_remote = parent_local.replace('local', 'remote')
-                    p = self._resolve_file(f, parent=parent_local)
-                    if 'files_to_write' in name:
-                        self.write_file_local(f, parent=parent_local)
-                    list_[i] = p
+    # def resolve_files(self, job) -> Job:
+    #     """Resolve files."""
+    #     mapping = {'files_to_write': 'work_path_local'}
+    #     files_to_transfer = job.files_to_transfer or FILE_TRANSFER
+    #     for t in job.tasks:
+    #         # for k,v in t.__dict__.items():
+    #         #     if 'file' in k:
+    #         #         print(k)
 
-                    if name == 'files_to_transfer':
-                        files_to_transfer['pre']['from'].append(p)
-                        files_to_transfer['pre']['to'].append(getattr(f,
-                                                                  parent_remote))
-            for f in ['output_file', 'stdout_file', 'stderr_file']:
-                if getattr(t, f, None) is not None:
-                    p = self._resolve_file(getattr(t, f), parent='work_path_local')
-                    p_remote = self._resolve_file(getattr(t, f), parent='work_path_remote')
-                    files_to_transfer['post']['from'].append(str(p_remote))
-                    files_to_transfer['post']['to'].append(str(p))
-                    setattr(t, f, p)
+    #         to and from should be part of the scheduler
+    #         # mlkmkmkmklmk
+    #         for name in ['files_to_write', 'files_to_send']:
+    #             list_ = getattr(t, name, [])
+    #             for i, f in enumerate(list_):
+    #                 parent_local = mapping.get(name, 'work_path_local')
+    #                 parent_remote = parent_local.replace('local', 'remote')
+    #                 p = self._resolve_file(f, parent=parent_local)
+    #                 if 'files_to_write' in name:
+    #                     self.write_file_local(f, parent=parent_local)
+    #                 list_[i] = p
 
-        job.files_to_transfer = files_to_transfer
-        return job
+    #                 if name == 'files_to_transfer':
+    #                     files_to_transfer['pre']['from'].append(p)
+    #                     files_to_transfer['pre']['to'].append(getattr(f,
+    #                                                               parent_remote))
+    #         for f in ['output_file', 'stdout_file', 'stderr_file', *'files_to_parse']:
+    #             if getattr(t, f, None) is not None:
+    #                 p = self._resolve_file(getattr(t, f), parent='work_path_local')
+    #                 p_remote = self._resolve_file(getattr(t, f), parent='work_path_remote')
+    #                 files_to_transfer['post']['from'].append(str(p_remote))
+    #                 files_to_transfer['post']['to'].append(str(p))
+    #                 setattr(t, f, p)
+
+    #     job.files_to_transfer = files_to_transfer
+    #     return job
 
 
-    def _resolve_file(self, file, parent='work_path_local'):
-        p = (Path(file.folder) / file.name if file.folder is not None
-             else getattr(file, parent, None))
-        return p
+    # def _resolve_file(self, file, parent='work_path_local'):
+    #     p = (Path(file.folder) / file.name if file.folder is not None
+    #          else getattr(file, parent, None))
+    #     return p
 
 
     @list_exec
@@ -329,9 +348,10 @@ class Runner:
         return [job.scheduler.check_finished(t)  # type: ignore
                 for t in job.tasks]
 
-    def submit_jobs(self, job: Job):
+    @list_exec
+    def submit_jobs(self, job: Job, ctx):
         """Submit jobs."""
-        return job.scheduler.submit(job)  # type: ignore
+        return job.scheduler.submit(job, ctx)  # type: ignore
 
     # def finish_single_job(self, job, status='FINISHED'):
     #     """Finnish single job."""
@@ -357,7 +377,6 @@ class Runner:
         return job.scheduler.fetch_results(job)
 
     def _return_jobs(self, jobs):
-        print('returning', type(jobs))
         if not isinstance(jobs, list):
             return jobs
         if len(jobs) == 1:
@@ -368,7 +387,7 @@ class Runner:
     def get_schedulers(self, jobs):
         """Get schedulers."""
         return list(set([j.scheduler for j in jobs]))
-
+    
     def run(self, *args, **kwargs):
         """Run."""
         # filter jobs that are not finished
@@ -384,6 +403,11 @@ class Runner:
         # potential exit point
 
         schedulers = list(set([j.scheduler for j in jobs]))
+        jobs_scheduler = {}
+        for s in schedulers:
+            jobs_scheduler[s] = [i for i, j in enumerate(jobs)
+                                 if j.scheduler == s]
+
 
         self.logger.info(f'Running {len(jobs)} job(s).')
         for i, j in enumerate(jobs):
@@ -397,10 +421,21 @@ class Runner:
                               f'{scheduler.name}')  # type: ignore
             with scheduler.run_ctx() as ctx:  # tpye: ignore
                 self.logger.debug(f'Context manager opened, ctx: {ctx}')
+                jobs_to_run = [jobs[i] for i in jobs_scheduler[scheduler]]
+                files_to_transfer = self.resolve_files(jobs_to_run)
+                self.logger.debug(f'Files to transfer: {files_to_transfer}')
+                transfer = scheduler.transfer_files(files_to_transfer, ctx)
+                for r in transfer:
+                    if getattr(r, 'ok', True):
+                        self.logger.info(getattr(r, 'stdout', ''))
+                    else:
+                        self.logger.error(getattr(r, 'stderr', ''))
 
 
-        #     self.copy_files(jobs, ctx)
-        #     jobs = self.submit_jobs(jobs)
+                jobs_to_run = self.submit_jobs(jobs_to_run, ctx)
+                # update jobs with jobs_to_run using jobs_scheduler
+            for i, j in enumerate(jobs_scheduler[scheduler]):
+                jobs[j] = jobs_to_run[i]
         #     jobs = self.update_db(jobs)
         # # if not self.wait_for_jobs_to_finish:
         # #     return jobs
@@ -413,3 +448,5 @@ class Runner:
         # # Teardown
         # # self.scheduler.teardown(jobs)
         # return self._return_jobs(jobs)
+        print(jobs)
+        self._return_jobs(jobs)
