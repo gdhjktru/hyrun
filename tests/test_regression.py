@@ -49,12 +49,15 @@ def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
     output = run(setup)
     if not isinstance(output, list):
         output = [output]
+    results = []
     for j in output:
-        result = x.parse(j)
+        for t in j.tasks:
+            results.append(x.parse(t))
+        # result = x.parse(j)
 
-    print('parsed result', result)
+    print('parsed result', results[0])
 
-    return {key: result[key] for key in keys_to_extract}
+    return {key: results[0][key] for key in keys_to_extract}
 
 
 @pytest.mark.parametrize('mol',

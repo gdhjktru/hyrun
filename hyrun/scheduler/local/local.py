@@ -184,14 +184,14 @@ class LocalScheduler(Scheduler):
         # job.returncode = sum([r.returncode for r in results])
         # return result
 
-    def is_finished(self, status) -> bool:
+    def is_finished(self, job) -> bool:
         """Check if job is finished."""
         return True
 
     @list_exec
-    def get_status(self, job) -> str:
+    def get_status(self, job, *args, **kwargs) -> str:
         """Get status."""
-        return 'finished'
+        return replace(job, job_status='finished')
 
     def cancel(self):
         """Cancel job."""
@@ -202,9 +202,9 @@ class LocalScheduler(Scheduler):
         pass
 
     @list_exec
-    def fetch_results(self, jobs):
+    def fetch_results(self, jobs, *args, **kwargs):
         """Fetch results."""
-        return jobs
+        return []
 
     @list_exec
     def teardown(self, jobs):

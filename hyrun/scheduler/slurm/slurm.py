@@ -14,9 +14,6 @@ ssh_kws = ['host', 'user', 'port', 'config', 'gateway', 'forward_agent',
            'connect_timeout', 'connect_kwargs', 'inline_ssh_env']
 
 
-
-
-
 class SlurmScheduler(Scheduler):
     """Slurm scheduler."""
 
@@ -61,6 +58,24 @@ class SlurmScheduler(Scheduler):
             files_to_transfer[remote] = []
         files_to_transfer[remote].append(local)
         return files_to_transfer 
+    
+    def get_status(self, job, connection = None):
+        if  connection:
+            return self._get_state_in_ctx(job, connection)
+        with connect_to_remote(self.connection) as connection:
+            return self._get_state_in_ctx(job, connection)
+        
+    def _get_state_in_ctx(self, job, connection):
+        # cmd = f'squeue -j {job.job_id}'
+        # c = connection.run(cmd, warn=True)
+        # if c.ok:
+        #     return 'running'
+        cmd = f'sacct -j {job.job_id}.0 --format=state --noheader'
+        c = connection.run(cmd, warn=True)
+        if c.ok:
+            return replace(job, job_status=c.stdout.strip())
+        # return replace(job, job_status='unknown')
+        return replace(job, job_status=c.stdout.strip())
 
     def get_connection(self, **kwargs):
         """Get connection."""
@@ -84,15 +99,15 @@ class SlurmScheduler(Scheduler):
         cmd = f'sbatch ./{job_script_name}'
         with connection.cd(remote_dir):  # type: ignore
             # c = connection.run(cmd, hide='stdout')  # type: ignore
-            c = connection.run(cmd)  # type: ignore
+            c = connection.run(cmd, hide='stdout')  # type: ignore
+            job_id = -1
             if c.ok:
                 output = c.stdout.strip()
-                db_id = int(output.split()[-1])
+                job_id = int(output.split()[-1])
             else:
                 raise RuntimeError(c.stderr.strip())
-        return replace(job, db_id=db_id)
+        return replace(job, job_id=job_id, job_status= 'SUBMITTED')
                 
-
 
     def gen_job_script(self, job):
         """Generate job script."""
@@ -102,9 +117,7 @@ class SlurmScheduler(Scheduler):
         """Transfer files."""
         result = []
         for target in files_to_transfer.keys():
-            print('target', target)
             sources = ' '.join(files_to_transfer[target])
-            print('sources', sources)
             r =  rsync(connection, sources, [target])
             result.append(r)
         return result
@@ -113,9 +126,38 @@ class SlurmScheduler(Scheduler):
         """Cancel job."""
         pass
 
-    def fetch_results(self, *args, **kwargs):
+    def is_finished(self, job):
+        """Check if job is finished."""
+        finished = ['COMPLETED', 'FINISHED', 'FAILED', 'CANCELLED']
+        # if not connection:
+        #     return self.get_status(job, connection).job_status in finished
+        return job.job_status.upper() in finished
+
+    def fetch_results(self, job, *args, **kwargs):
         """Fetch results."""
-        pass
+        remote_dirs = []
+        local_dirs = []
+        for rs in job.tasks:
+            for dr in ['work_dir_remote', 'submit_dir_remote']:
+                if not hasattr(rs, dr):
+                    continue
+                if getattr(rs, dr) not in remote_dirs:
+                    remote_dirs.append(str(getattr(rs, dr)) + '/*')
+            for dl in ['work_dir_local', 'submit_dir_local']:
+                if not hasattr(rs, dl):
+                    continue
+                if getattr(rs, dl) not in local_dirs:
+                    local_dirs.append(str(getattr(rs, dl))+ '/')
+       
+        r = []
+        with connect_to_remote(self.connection) as connection:
+            for remote_dir, local_dir in zip(remote_dirs, local_dirs):
+                r.append(rsync(connection,  remote_dir, [local_dir],download=True))
+        return r
+
+
+        #  files_to_get = self.run_remote(cmd=f'ls -d {remote_dir}/*',
+        #                                connection=job.connection)
 
     def quick_return(self, *args, **kwargs):
         """Quick return."""

@@ -11,6 +11,9 @@ from hyrun.scheduler import get_scheduler
 
 def gen_jobs(arg, **kwargs) -> list[Job]:
     """Generate jobs."""
+    if isinstance(arg, list):
+        if all(isinstance(item, Job) for item in arg):
+            return arg
     aj = ArrayJob()
     # case only one job/task
     if not isinstance(arg, list):

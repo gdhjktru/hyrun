@@ -6,7 +6,7 @@ from pathlib import Path
 from string import Template
 from time import sleep
 from typing import Generator, List, Union
-
+from datetime import timedelta
 from hytools.file import File
 from hytools.logger import LoggerDummy
 
@@ -168,6 +168,13 @@ class Runner:
             self.logger.info(f'Added job to database with id {db_id}')
             self.logger.debug(f'db entry: {db.get(db_id)}')
         return replace(job, db_id=db_id)
+    
+    @list_exec
+    def update_db(self, job):
+        """Update job in database."""
+        job_db = self.prepare_job_for_db(job)
+        job_db.database.update(job.db_id, job_db)
+        return job
     # @list_exec
     # def add_to_db(self, job):
     #     """Add job to database."""
@@ -200,21 +207,24 @@ class Runner:
     #                          if isinstance(sublist, list)
     #                          else [sublist])]
 
-    def is_finished(self, statuses) -> bool:
+    def is_finished(self, jobs) -> bool:
         """Check if job is finished."""
-        return True
+        return all(job.scheduler.is_finished(job) for job in jobs)
         # return all(self.scheduler.is_finished(s) for s in statuses)
 
     @force_list
-    def wait(self, jobs, timeout=60) -> list:
+    def wait(self, jobs, connection=None, timeout=60) -> list:
         """Wait for job to finish."""
-        timeout = max([j.job_time for j in jobs]) or timeout
+        timeout = max([t.job_time for j in jobs for t in j.tasks]) or timeout
+
+        if isinstance(timeout, timedelta):
+            timeout= timeout.total_seconds()
         incrementer = self._increment_and_sleep(1)
-        statuses = [self.get_status(j) for j in jobs]
+        statuses = [j.scheduler.get_status(j, connection=connection) for j in jobs]
         for t in incrementer:
             if t >= timeout or self.is_finished(statuses):
                 break
-            statuses = [self.get_status(j) for j in jobs]
+            statuses = [j.scheduler.get_status(j, connection=connection) for j in jobs]
         for j, s in zip(jobs, statuses):
             j.status = s
         return jobs
@@ -372,9 +382,10 @@ class Runner:
     #         self.scheduler.teardown(job)
     #     return r
 
-    def fetch_results(self, job):
+    @list_exec
+    def fetch_results(self, job, *args, **kwargs):
         """Fetch results."""
-        return job.scheduler.fetch_results(job)
+        return job.scheduler.fetch_results(job, *args, **kwargs)
 
     def _return_jobs(self, jobs):
         if not isinstance(jobs, list):
@@ -414,6 +425,8 @@ class Runner:
             self.logger.info(f'   job {i} ({j.job_hash}) task(s): {len(j.tasks)} tasks')
 
 
+# update database with job
+        self.update_db(jobs)
 
 
         for scheduler in schedulers:
@@ -431,22 +444,39 @@ class Runner:
                     else:
                         self.logger.error(getattr(r, 'stderr', ''))
 
-
-                jobs_to_run = self.submit_jobs(jobs_to_run, ctx)
+                try:
+                    jobs_to_run = self.submit_jobs(jobs_to_run, ctx)
+                except Exception as e:
+                    self.logger.error(f'Error submitting jobs: {e}')
+                    continue
+                # wait
                 # update jobs with jobs_to_run using jobs_scheduler
-            for i, j in enumerate(jobs_scheduler[scheduler]):
-                jobs[j] = jobs_to_run[i]
-        #     jobs = self.update_db(jobs)
-        # # if not self.wait_for_jobs_to_finish:
-        # #     return jobs
-        # # Wait for the job to finish
-        # jobs = self.wait(jobs)
+                for i, j in enumerate(jobs_scheduler[scheduler]):
+                    jobs[j] = jobs_to_run[i]
+                self.update_db(jobs_to_run)
+        for scheduler in schedulers:
+            with scheduler.run_ctx() as ctx:
+                jobs_to_wait = [jobs[i] for i in jobs_scheduler[scheduler]]
+                jobs_to_wait = self.wait(jobs_to_wait, connection=ctx)
+            #     jobs = self.update_db(jobs)
+            # # if not self.wait_for_jobs_to_finish:
+            # #     return jobs
+            # # Wait for the job to finish
+            # jobs = self.wait(jobs)
 
-        # # Fetch the results
-        # jobs = self.fetch_results(jobs)
+            # # Fetch the results
+                transfer = self.fetch_results(jobs_to_wait, connection=ctx)
+                for r in transfer:
+                    if getattr(r, 'ok', True):
+                        self.logger.info(getattr(r, 'stdout', ''))
+                    else:
+                        self.logger.error(getattr(r, 'stderr', ''))
         # self.copy_files(jobs, ctx)
         # # Teardown
         # # self.scheduler.teardown(jobs)
         # return self._return_jobs(jobs)
-        print(jobs)
+            for i, j in enumerate(jobs_scheduler[scheduler]):
+                jobs[j] = jobs_to_wait[i]
+        # print(jobs)
+        return jobs
         self._return_jobs(jobs)

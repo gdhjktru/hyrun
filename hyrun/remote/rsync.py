@@ -138,7 +138,7 @@ def rsync_get(
         'rsh': rsh_string,
         'extra': rsync_opts,
     }
-    options = '{delete}{exclude} -avuzP {extra} {rsh}'.format(**options_map)
+    options = '{delete}{exclude} -avuzqP {extra} {rsh}'.format(**options_map)
     # Create and run final command string
     # TODO: richer host object exposing stuff like .address_is_ipv6 or whatever
     # if host.count(":") > 1:
@@ -312,7 +312,7 @@ def rsync_put(
         'rsh': rsh_string,
         'extra': rsync_opts,
     }
-    options = '{delete}{exclude} -avuzP {extra} {rsh}'.format(**options_map)
+    options = '{delete}{exclude} -avuzqP {extra} {rsh}'.format(**options_map)
     # Create and run final command string
     # TODO: richer host object exposing stuff like .address_is_ipv6 or whatever
     # if host.count(":") > 1:
