@@ -1,13 +1,13 @@
 
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List
 
 from .timedelta import timedelta_to_slurmtime
 
 
 def gen_job_script(job):
-    return  SlurmJobScript().job_script(job)
+    """Generate job script."""
+    return SlurmJobScript().job_script(job)
 
 
 class SlurmJobScript:
@@ -184,8 +184,8 @@ class SlurmJobScript:
 
         Parameters
         ----------
-        jobs : List[Job]
-            Information about the jobs
+        job : Job
+            Information about the job.
 
         Returns
         -------

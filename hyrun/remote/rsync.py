@@ -7,6 +7,7 @@ and modified to get file from remote server
 import sys
 
 from invoke.vendor import six
+
 # from patchwork.transfers import rsync as rsync_put
 
 
@@ -171,7 +172,6 @@ def rsync_get(
 
     return c.local(cmd)
 
-
 # if __name__ == '__main__':
 
 #     from fabric import Connection
@@ -187,9 +187,6 @@ def rsync_get(
 #     out = rsync(c, '/Users/tilmann/Documents/work/hylleraas/hyenv/text1',
 # '/cluster/home/tilmann/text1_from_local', rsync_opts='-in', download=False)
 #     lines = out.split()
-
-
-
 
 
 def rsync_put(
@@ -337,17 +334,16 @@ def rsync_put(
         if len(files_target) > 2:
             for f in files_target[2:]:
                 cmd += '{} '.format(f)
-        
+
         cmd += "' "
 
     else:
         cmd = 'rsync {} '.format(options)
         for f in files_source:
             cmd += '{} '.format(f)
-        cmd += "{}@{}:{} ".format(user, host, files_target[0])
+        cmd += '{}@{}:{} '.format(user, host, files_target[0])
         if len(files_target) > 2:
             for f in files_target[1:]:
                 cmd += '{} '.format(f)
 
     return c.local(cmd)
-

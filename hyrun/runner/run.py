@@ -4,7 +4,8 @@ from .runner import Runner
 
 def run(*args, **kwargs):
     """Run."""
-    return Runner(*args, *kwargs).run(*args, **kwargs)
+    jobs = gen_jobs(*args, **kwargs)
+    return Runner(*args, *kwargs).run(*args, jobs=jobs, **kwargs)
 
 
 def rerun(*args, **kwargs):

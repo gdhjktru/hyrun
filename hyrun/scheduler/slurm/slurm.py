@@ -1,11 +1,11 @@
-import hashlib
-
+import datetime
+import json
 from dataclasses import replace
-from hytools.file import File
+from pathlib import Path
+
 from hytools.logger import LoggerDummy
 
 from hyrun.remote import connect_to_remote, rsync
-from pathlib import Path
 
 from ..abc import Scheduler
 from .job_script import gen_job_script as gjs
@@ -36,46 +36,76 @@ class SlurmScheduler(Scheduler):
                                   for k, v in sorted(self.connection.items())
                                   if not isinstance(v, dict)))
         return hash((self.name, connection_items))
-    
+
     def _resolve_file(self, file, parent='work_path_local'):
         p = (Path(file.folder) / file.name if file.folder is not None
              else getattr(file, parent, None))
         return str(p)
-    
+
     def resolve_files(self, job):
         """Resolve files."""
         files_to_transfer = {}
         for t in job.tasks:
             for f in t.files_to_write:
                 local = self._resolve_file(f, parent='work_path_local')
-                remote = str(Path(self._resolve_file(f, parent='work_path_remote')).parent)
+                remote = str(Path(self._resolve_file(
+                    f, parent='work_path_remote')).parent)
                 if remote not in files_to_transfer:
                     files_to_transfer[remote] = []
                 files_to_transfer[remote].append(local)
         local = self._resolve_file(job.job_script, parent='submit_path_local')
-        remote = str(Path(self._resolve_file(job.job_script, parent='submit_path_remote')).parent)
+        remote = str(Path(self._resolve_file(
+            job.job_script, parent='submit_path_remote')).parent)
         if remote not in files_to_transfer:
             files_to_transfer[remote] = []
         files_to_transfer[remote].append(local)
-        return files_to_transfer 
-    
-    def get_status(self, job, connection = None):
-        if  connection:
+        return files_to_transfer
+
+    def get_status(self, job, connection=None):
+        """Get status."""
+        if connection:
             return self._get_state_in_ctx(job, connection)
         with connect_to_remote(self.connection) as connection:
             return self._get_state_in_ctx(job, connection)
-        
+
     def _get_state_in_ctx(self, job, connection):
+        if job.id == -1:
+            return replace(job, status='UNKNOWN')
         # cmd = f'squeue -j {job.job_id}'
         # c = connection.run(cmd, warn=True)
         # if c.ok:
+        # sacct -j 11758903 --format Timelimit,NCPUS,WorkDir,JobID,Start,
+        # State,Submit,End
         #     return 'running'
-        cmd = f'sacct -j {job.job_id}.0 --format=state --noheader'
-        c = connection.run(cmd, warn=True)
-        if c.ok:
-            return replace(job, job_status=c.stdout.strip())
-        # return replace(job, job_status='unknown')
-        return replace(job, job_status=c.stdout.strip())
+        # cmd = f'sacct -j {job.job_id}.0 --format=state --noheader'
+        cmd = f'sacct -j {job.id} --json'
+        c = connection.run(cmd, hide='stdout', warn=True)
+        if c.stderr:
+            self.logger.error(c.stderr)
+        try:
+            status = json.loads(c.stdout.strip()).get('jobs', [{}])[0]
+        except (json.JSONDecodeError, IndexError):
+            return replace(job, status='UNKNOWN')
+
+        metadata_keys = ['account', 'cluster', 'job_id', 'name', 'user',
+                         'working_directory', 'time']
+        metadata = {k: status.get(k, None) for k in metadata_keys}
+        metadata['time'] = {k: v for k, v in metadata['time'].items()
+                            if isinstance(v, int)}
+
+        for k, v in metadata['time'].items():
+            if v == 0:
+                continue
+            metadata['time'][k] = (datetime.datetime.fromtimestamp(v)
+                                   .isoformat())
+        status = status.get('state', {}).get('current', ['UNKNOWN'])[0]
+        self.logger.info(f'Job {job.id} has status {status}')
+
+        return replace(job, status=status, metadata=metadata)
+
+    def teardown(self, *args, **kwargs):
+        """Teardown."""
+        pass
 
     def get_connection(self, **kwargs):
         """Get connection."""
@@ -91,34 +121,42 @@ class SlurmScheduler(Scheduler):
                 if getattr(t, k) != getattr(job.tasks[0], k):
                     raise ValueError(f'All slurm tasks must have the same {k}')
         return job
-    
-    def submit(self, job, connection):
+
+    def submit(self, job, connection=None):
         """Submit job."""
-        remote_dir = Path(job.job_script.submit_path_remote).parent 
+        remote_dir = Path(job.job_script.submit_path_remote).parent
         job_script_name = Path(job.job_script.submit_path_remote).name
         cmd = f'sbatch ./{job_script_name}'
+        if connection is None:
+            with connect_to_remote(self.connection) as connection:
+                return self._submit_in_ctx(job, connection, remote_dir, cmd)
+        return self._submit_in_ctx(job, connection, remote_dir, cmd)
+
+    def _submit_in_ctx(self, job, connection, remote_dir, cmd):
+        """Submit in context."""
         with connection.cd(remote_dir):  # type: ignore
-            # c = connection.run(cmd, hide='stdout')  # type: ignore
             c = connection.run(cmd, hide='stdout')  # type: ignore
+
             job_id = -1
             if c.ok:
                 output = c.stdout.strip()
                 job_id = int(output.split()[-1])
             else:
                 raise RuntimeError(c.stderr.strip())
-        return replace(job, job_id=job_id, job_status= 'SUBMITTED')
-                
+        return replace(job,
+                       id=job_id,
+                       status='SUBMITTED')
 
     def gen_job_script(self, job):
         """Generate job script."""
         return gjs(job)
-    
+
     def transfer_files(self, files_to_transfer, connection):
         """Transfer files."""
         result = []
         for target in files_to_transfer.keys():
             sources = ' '.join(files_to_transfer[target])
-            r =  rsync(connection, sources, [target])
+            r = rsync(connection, sources, [target])
             result.append(r)
         return result
 
@@ -128,10 +166,14 @@ class SlurmScheduler(Scheduler):
 
     def is_finished(self, job):
         """Check if job is finished."""
-        finished = ['COMPLETED', 'FINISHED', 'FAILED', 'CANCELLED']
-        # if not connection:
-        #     return self.get_status(job, connection).job_status in finished
-        return job.job_status.upper() in finished
+        success = ['COMPLETED']
+        failed = ['BOOT_FAIL', 'CANCELLED', 'DEADLINE', 'FAILED', 'NODE_FAIL',
+                  'OUT_OF_MEMORY', 'PREEMPTED', 'TIMEOUT']
+        if job.status in failed:
+            self.logger.error(f'Job {job.id} with id {job.db_id} in ' +
+                              f'database {job.database} failed with status ' +
+                              f'{job.status}')
+        return job.status in success + failed
 
     def fetch_results(self, job, *args, **kwargs):
         """Fetch results."""
@@ -147,17 +189,21 @@ class SlurmScheduler(Scheduler):
                 if not hasattr(rs, dl):
                     continue
                 if getattr(rs, dl) not in local_dirs:
-                    local_dirs.append(str(getattr(rs, dl))+ '/')
-       
-        r = []
-        with connect_to_remote(self.connection) as connection:
-            for remote_dir, local_dir in zip(remote_dirs, local_dirs):
-                r.append(rsync(connection,  remote_dir, [local_dir],download=True))
+                    local_dirs.append(str(getattr(rs, dl)) + '/')
+        connection = kwargs.get('connection', None)
+        if not connection:
+            with connect_to_remote(self.connection) as conn:
+                connection = conn
+
+        r = [rsync(connection, remote_dir, [local_dir], download=True)
+             for remote_dir, local_dir in zip(remote_dirs, local_dirs)]
+        # with connect_to_remote(self.connection) as connection:
+        #     for remote_dir, local_dir in zip(remote_dirs, local_dirs):
+        #         r.append(rsync(connection,
+        #                        remote_dir,
+        #                        [local_dir],
+        #                        download=True))
         return r
-
-
-        #  files_to_get = self.run_remote(cmd=f'ls -d {remote_dir}/*',
-        #                                connection=job.connection)
 
     def quick_return(self, *args, **kwargs):
         """Quick return."""
@@ -166,10 +212,6 @@ class SlurmScheduler(Scheduler):
     def run_ctx(self, *args, **kwargs):
         """Run context manager."""
         return connect_to_remote(self.connection)
-
-    def teardown(self, *args, **kwargs):
-        """Teardown job."""
-        pass
 
     def check_finished(self, run_settings) -> bool:
         """Check if output file exists and return True if it does."""

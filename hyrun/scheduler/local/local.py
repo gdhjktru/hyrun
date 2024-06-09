@@ -15,9 +15,6 @@ from ..abc import Scheduler
 from .conda import get_conda_launcher
 from .docker import get_docker_launcher
 
-class Dummy:
-    pass
-
 
 class LocalScheduler(Scheduler):
     """Local scheduler."""
@@ -78,7 +75,7 @@ class LocalScheduler(Scheduler):
         tasks = job.tasks
         if len(tasks) > 1:
             raise ValueError('Local scheduler only supports one task')
-        run_settings = tasks[0] 
+        run_settings = tasks[0]
         cwd = run_settings.work_dir_local
         running_list = self._gen_running_list(run_settings, cwd)
 
@@ -96,11 +93,13 @@ class LocalScheduler(Scheduler):
 
         cmd = ' '.join(running_list)
         return cmd
-        
+
     def resolve_files(self, job):
+        """Resolve files."""
         return {}
-    
+
     def transfer_files(self, files_to_transfer, ctx):
+        """Transfer files."""
         return []
 
     def gen_output(self, result, run_settings) -> dict:
@@ -148,11 +147,16 @@ class LocalScheduler(Scheduler):
             output_dict['stdout'] = stdout_file
         return output_dict
 
+    def teardown(self, *args, **kwargs):
+        """Teardown."""
+        # removing files
+        pass
+
     @list_exec
     def submit(self, job, ctx):
         """Submit job."""
         # warning might return a list of lists
-        if len(job.tasks) > 1 :
+        if len(job.tasks) > 1:
             raise ValueError('Local scheduler only supports one task')
         rs = job.tasks[0]
         js = job.job_script
@@ -173,7 +177,7 @@ class LocalScheduler(Scheduler):
         result = subprocess.run(cmd, **run_opts)
 
         job = replace(job, **self.gen_output(result, rs))
-        job.job_finished = True
+        job.finished = True
         return job
         # job.finished = True
         # job.files_to_parse = [file for rs in results for file
@@ -191,7 +195,7 @@ class LocalScheduler(Scheduler):
     @list_exec
     def get_status(self, job, *args, **kwargs) -> str:
         """Get status."""
-        return replace(job, job_status='finished')
+        return replace(job, status='COMPLETED')
 
     def cancel(self):
         """Cancel job."""
@@ -205,13 +209,6 @@ class LocalScheduler(Scheduler):
     def fetch_results(self, jobs, *args, **kwargs):
         """Fetch results."""
         return []
-
-    @list_exec
-    def teardown(self, jobs):
-        """Teardown."""
-        for rs in jobs:
-            for f in rs.scratch_dir_local + rs.files_to_remove:
-                f.unlink()
 
     def check_finished(self, run_settings) -> bool:
         """Check if output file exists and return True if it does."""

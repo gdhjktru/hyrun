@@ -47,17 +47,12 @@ def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
             check_version=False, properties=['gradient'])
     setup = x.setup(mol)
     output = run(setup)
-    if not isinstance(output, list):
-        output = [output]
-    results = []
-    for j in output:
-        for t in j.tasks:
-            results.append(x.parse(t))
-        # result = x.parse(j)
+    print('output', output)
+    result = x.parse(output.tasks[0])
 
-    print('parsed result', results[0])
+    print('parsed result', result)
 
-    return {key: results[0][key] for key in keys_to_extract}
+    return {key: result[key] for key in keys_to_extract}
 
 
 @pytest.mark.parametrize('mol',
