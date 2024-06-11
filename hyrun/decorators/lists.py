@@ -18,8 +18,12 @@ def force_list(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         """Force list."""
+        if not args:
+            return func(self, *args, **kwargs)
         if not isinstance(args[0], list):
             return func(self, [args[0]], *args[1:], **kwargs)
         else:
             return func(self, *args, **kwargs)
     return wrapper
+
+

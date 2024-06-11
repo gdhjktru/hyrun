@@ -24,6 +24,9 @@ class SlurmScheduler(Scheduler):
         self.default_data_path = 'data_path_remote'
         self.connection = kwargs.get('connection',
                                      self.get_connection(**kwargs))
+        
+    def __repr__(self): 
+        return f'{self.__class__.__name__}({self.connection})'
 
     def __eq__(self, other):
         """Check equality."""
@@ -114,11 +117,14 @@ class SlurmScheduler(Scheduler):
     def check_job_params(self, job):
         """Check job params."""
         keys_to_be_identical = ssh_kws + ['memory_per_cpu', 'cpus_per_task',
-                                          'ntasks', 'slurm_account',
-                                          'submit_dir_remote']
+                                            'ntasks', 'slurm_account',
+                                            'submit_dir_remote']
         for k in keys_to_be_identical:
-            for t in job.tasks:
-                if getattr(t, k) != getattr(job.tasks[0], k):
+            ref = getattr(job['job'].tasks[0], k)
+            if not ref:
+                continue
+            for t in job['job'].tasks:
+                if getattr(t, k) != ref:
                     raise ValueError(f'All slurm tasks must have the same {k}')
         return job
 
@@ -177,6 +183,7 @@ class SlurmScheduler(Scheduler):
 
     def fetch_results(self, job, *args, **kwargs):
         """Fetch results."""
+
         remote_dirs = []
         local_dirs = []
         for rs in job.tasks:

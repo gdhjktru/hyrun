@@ -4,7 +4,8 @@ from dataclasses import replace
 from pathlib import Path
 from shlex import quote, split
 from sys import executable as python_ex
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
+from copy import deepcopy
 
 from hytools.file import File
 from hytools.logger import LoggerDummy
@@ -26,6 +27,9 @@ class LocalScheduler(Scheduler):
         self.default_data_path = 'data_path_local'
         self.name = 'local'
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}()'
+
     def __eq__(self, other):
         """Check equality."""
         return self.name == other.name
@@ -34,10 +38,23 @@ class LocalScheduler(Scheduler):
         """Hash."""
         return hash(self.name)
 
-    def check_job_params(self, job):
+    def check_job_params(self, job: dict) -> Union[dict, List[dict]]:
         """Check job params."""
-        return [replace(job, tasks=[t]) for t in job.tasks]
+        if len(job['job'].tasks) > 1:
+            self.logger.warning('Local scheduler only supports one task per ' +
+                                'job')
+            return self.separate_jobs(job)
+        return job
 
+    def separate_jobs(self, job: dict) -> list:
+        """Separate jobs."""
+        new_jobs = []
+        for t in job['job'].tasks:
+            j = deepcopy(job)
+            j['job'] = replace(job['job'], tasks=[t])
+            new_jobs.append(j)
+        return new_jobs
+    
     def run_ctx(self, arg: Optional[Any] = None):
         """Return context manager."""
         return nullcontext(arg)

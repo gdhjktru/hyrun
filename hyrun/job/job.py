@@ -14,10 +14,6 @@ from .output import Output
 class Job(JobInfo, Output):
     """HSP job."""
 
-    db_id: Optional[int] = None
     # progress_bar: Optional[tqdm] = None
-    run_settings: Any = None
     tasks: Optional[List[Any]] = None
-    connection: Optional[Connection] = None
     job_script: Optional[str] = None
-    # files_to_transfer: Optional[dict] = None
