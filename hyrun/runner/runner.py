@@ -255,14 +255,27 @@ class Runner:
         # return replace(job, job_script=str(p),
         #                job_hash=job_hash)
 
+    def resolve_objs_in_tasks(self, job):
+        """Resolve objects in tasks."""
+        std_types = (str, int, float, bool, list, dict, tuple)
+        for t in job.tasks:
+            for k, v in t.__dict__.items():
+                if not isinstance(v, std_types):
+                    print('resolve', k, v)
+        kklløklklo
+        return job
+
     @loop_update_jobs
     def prepare_jobs(self, *args, job=None, scheduler=None, **kwargs) -> Job:
         """Prepare jobs."""
         job = self.gen_job_script(job=job, scheduler=scheduler)
-        self.write_file_local(job.job_script, parent='submit_path_local')
-        files_to_write = [f for t in job.tasks
-                          for f in t.files_to_write]
-        self.write_file_local(files_to_write, parent='work_path_local')
+        job.job_script = self.write_file_local(job.job_script,
+                                               parent='submit_path_local')
+        for t in job.tasks:
+            t.files_to_write = self.write_file_local(t.files_to_write,
+                                                     parent='work_path_local')
+        job = self.resolve_objs_in_tasks(job)
+
         return job
 
     @list_exec
