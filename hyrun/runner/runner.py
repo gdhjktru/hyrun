@@ -257,11 +257,20 @@ class Runner:
 
     def resolve_objs_in_tasks(self, job):
         """Resolve objects in tasks."""
-        std_types = (str, int, float, bool, list, dict, tuple)
+        std_types = (str, int, float, bool)
+        seqs = (list, tuple, set)
+        print('checking resolve_objs_in_tasks')
         for t in job.tasks:
             for k, v in t.__dict__.items():
                 if not isinstance(v, std_types):
-                    print('resolve', k, v)
+                    self.logger.warning(f'Found non-standard type in task: {k}')
+                    print('resolve', k, type(v), v)
+                if isinstance(v, seqs):
+                    for i, e in enumerate(v):
+                        if not isinstance(e, std_types):
+                            self.logger.warning(f'Found non-standard type in task: {k}/{e}')
+                            print('resolve', k, i, type(e), e)
+        print('checking done')
         kklløklklo
         return job
 
@@ -274,15 +283,34 @@ class Runner:
         for t in job.tasks:
             t.files_to_write = self.write_file_local(t.files_to_write,
                                                      parent='work_path_local')
+            
+            t.files_for_restarting = [self.resolve_file_name(f, parent=
+                                                             'work_path_local') for f in
+                                      t.files_for_restarting]
+            t.files_to_parse = [self.resolve_file_name(f, parent=
+                                                             'work_path_local') for f in
+                                      t.files_to_parse]
+            for f in ['output_file', 'stdout_file', 'stderr_file']:
+                if hasattr(t, f):
+                    setattr(t, f, self.resolve_file_name(getattr(t, f),
+                                                         parent='work_path_local'))
+            for f in ['file_handler', 'cluster_settings']:
+                if hasattr(t, f):
+                    setattr(t, f, None)
+
         job = self.resolve_objs_in_tasks(job)
 
         return job
+    
+    def resolve_file_name(self, file, parent='work_path_local'):
+        """Resolve file name."""
+        return str(Path(file.folder) / file.name if file.folder is not None
+                else getattr(file, parent))
 
     @list_exec
     def write_file_local(self, file, parent='work_path_local', overwrite=True):
         """Write file locally."""
-        p = (Path(file.folder) / file.name if file.folder is not None
-             else getattr(file, parent))
+        p = Path(self.resolve_file_name(file, parent))
         if p.exists() and not overwrite:
             return file
         p.parent.mkdir(parents=True, exist_ok=True)
