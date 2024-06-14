@@ -183,7 +183,7 @@ class SlurmScheduler(Scheduler):
 
     def fetch_results(self, job, *args, **kwargs):
         """Fetch results."""
-
+        exclude = kwargs.get('exclude',())
         remote_dirs = []
         local_dirs = []
         for rs in job.tasks:
@@ -202,7 +202,8 @@ class SlurmScheduler(Scheduler):
             with connect_to_remote(self.connection) as conn:
                 connection = conn
 
-        r = [rsync(connection, remote_dir, [local_dir], download=True)
+        r = [rsync(connection, remote_dir, [local_dir], download=True,
+                   exclude=exclude)
              for remote_dir, local_dir in zip(remote_dirs, local_dirs)]
         # with connect_to_remote(self.connection) as connection:
         #     for remote_dir, local_dir in zip(remote_dirs, local_dirs):
