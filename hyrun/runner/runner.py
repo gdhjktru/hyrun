@@ -6,7 +6,7 @@ from pathlib import Path
 from string import Template
 from time import sleep
 from typing import Dict, Generator, List, Optional, Callable
-
+from socket import gethostname
 from hytools.file import File
 from hytools.logger import LoggerDummy
 
@@ -278,22 +278,29 @@ class Runner:
     def prepare_jobs(self, *args, job=None, scheduler=None, **kwargs) -> Job:
         """Prepare jobs."""
         job = self.gen_job_script(job=job, scheduler=scheduler)
+        host_remote = [getattr(t, 'host', None) for t in job.tasks]
+        print(list(set(host_remote)))
+        settings = {'parent_local': 'work_path_local',
+                        'parent_remote': 'work_path_remote',
+                        'host_remote': host_remote[0]}
         job.job_script = self.write_file_local(job.job_script,
-                                               parent='submit_path_local')
+                                               parent_local='submit_path_local',
+                                               parent_remote='submit_path_remote')
         for t in job.tasks:
-            t.files_to_write = self.write_file_local(t.files_to_write,
-                                                     parent='work_path_local')
             
-            t.files_for_restarting = [self.resolve_file_name(f, parent=
-                                                             'work_path_local') for f in
+            t.files_to_write = self.write_file_local(t.files_to_write,
+                                                     **settings)
+            
+            t.files_for_restarting = [self.resolve_file_name(f, 
+                                                             **settings) for f in
                                       t.files_for_restarting]
-            t.files_to_parse = [self.resolve_file_name(f, parent=
-                                                             'work_path_local') for f in
+            t.files_to_parse = [self.resolve_file_name(f, **settings) for f in
                                       t.files_to_parse]
             for f in ['output_file', 'stdout_file', 'stderr_file']:
                 if hasattr(t, f):
                     setattr(t, f, self.resolve_file_name(getattr(t, f),
-                                                         parent='work_path_local'))
+                                                         file_name=f, 
+                                                         **settings))
             for f in ['file_handler', 'cluster_settings']:
                 if hasattr(t, f):
                     setattr(t, f, None)
@@ -302,15 +309,39 @@ class Runner:
 
         return job
     
-    def resolve_file_name(self, file, parent='work_path_local'):
+    def resolve_file_name(self,
+                          file,
+                          parent_local: Optional[str] = 'work_path_local',
+                          parent_remote: Optional[str] = 'work_path_remote',
+                          file_name: Optional[str] = None,
+                          host_local: Optional[str] = None,
+                          host_remote: Optional[str] = None,) -> dict:
         """Resolve file name."""
-        return str(Path(file.folder) / file.name if file.folder is not None
-                else getattr(file, parent))
+        file_local = (Path(file.folder) / file.name
+                          if file.folder is not None
+                          else getattr(file, parent_local))
+        
+        file_name = file_name or file_local.name
+        host_local = host_local or gethostname()
+        file = {'name': str(file_name),
+                'local': {'host': str(host_local),
+                          'path': str(file_local)}}
+        if not host_remote:
+            return file
+    
+        file_remote = (Path(file.folder) / file.name
+                        if file.folder is not None
+                        else getattr(file, parent_remote))
+        file['remote'] = {'host': str(host_remote), 
+                          'path': str(file_remote)}
+        return file
+
 
     @list_exec
-    def write_file_local(self, file, parent='work_path_local', overwrite=True):
+    def write_file_local(self, file,  overwrite=True, **kwargs):
         """Write file locally."""
-        p = Path(self.resolve_file_name(file, parent))
+        p = Path(self.resolve_file_name(
+            file, **kwargs).get('local',{}).get('path',''))
         if p.exists() and not overwrite:
             return file
         p.parent.mkdir(parents=True, exist_ok=True)
