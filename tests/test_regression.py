@@ -46,7 +46,7 @@ def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
     x = Xtb(compute_settings=compute_settings,
             check_version=False, properties=['gradient'])
     setup = x.setup(mol)
-    output = run(setup)
+    output = run(setup, parser=x)
     print('output', output)
     result = x.parse(output.tasks[0])
 

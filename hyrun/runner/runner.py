@@ -9,7 +9,8 @@ from typing import Dict, Generator, List, Optional, Callable
 from socket import gethostname
 from hytools.file import File
 from hytools.logger import LoggerDummy
-
+import inspect
+import subprocess
 from hyrun.decorators import force_list, list_exec
 from hyrun.job import Job, loop_update_jobs
 
@@ -22,55 +23,7 @@ class Runner:
     def __init__(self, *args, **kwargs):
         """Initialize."""
         self.logger = self.get_logger(*args, **kwargs)
-        # # self.scheduler = self.get_scheduler(*args,
-        # #                                     logger=self.logger,
-        # #                                     **kwargs)
-        # self.jobs = gen_jobs(*args, **kwargs)
-        # # self.jobs = self.get_scheduler(self.jobs)
-
-        # self.logger.debug(f'Job overview: {len(self.jobs)} jobs.')
-        # for i, j in enumerate(self.jobs):
-        #     self.logger.debug(f'   job {i} task(s): {len(j.tasks)} tasks.')
-
-        # # self.schedu
-        # # print(self.jobs, 'self.jobs')
-        # # joijioji
-        # # # array_job = ArrayJob(self.get_run_settings(*args),
-        # # #                      logger=self.logger,
-        # # #                      **kwargs)
-        # # self.run_array = array_job.run_array
-        # # self.schedulers = array_job.schedulers
-        # # print(self.schedulers, 'scihef')
-        # # poioi
-
-        # # self.global_settings = self.run_array[0][0]
-        # # self.wait_for_jobs_to_finish = self.global_settings.wait
-        # # self.database = self.get_database(**kwargs)
-        # # self.logger.debug(f'Run array: {len(self.run_array)} jobs.')
-        # # for i, rs in enumerate(self.run_array):
-        # #     self.logger.debug(f'   job {i} task(s): {len(rs)} tasks.')
-
-    # def check_job_params(self, jobs) -> List[Job]:
-    #     """Check job parameters."""
-    #     return self.flatten_2d_list(
-    #         [job.scheduler.check_job_params(job) for job in jobs])
-
-    # def flatten_2d_list(self, list_):
-    #     """Flatten a 2D list."""
-    #     if any(isinstance(item, list) for item in list_):
-    #         return [item for sublist in list_ for item in sublist]
-    #     return list_
-
-    # @list_exec
-    # def get_scheduler(self, job):
-    #     """Get scheduler."""
-    #     return replace(job, scheduler=gs(job.scheduler, logger=self.logger))
-
-    # def get_database(self, **kwargs):
-    #     """Get database."""
-    #     return kwargs.get('database',
-    #                       getattr(self.global_settings,
-    #                               'database', None)) or DatabaseDummy()
+        # self.parser = kwargs.get('parser', kwargs.get('method', None))        
 
     def _get_attr(self, attr_name, *args, **kwargs):
         """Get attribute."""
@@ -86,25 +39,6 @@ class Runner:
                           self._get_attr('logger', *args, **kwargs)
                           or LoggerDummy())
 
-    # def get_run_settings(self, *args):
-    #     """Get run settings."""
-    #     if len(args) > 1:
-    #         raise ValueError('run() takes at most 1 positional argument, ' +
-    #                          'got {}'.format(len(args)))
-        # return args[0]
-
-    # def get_scheduler(self, *args, logger=None, **kwargs):
-    #     """Get scheduler."""
-    #     scheduler = self._get_attr('scheduler', *args,  **kwargs)
-    #     if scheduler is None:
-    #         raise ValueError('Scheduler not specified in kwargs or ' +
-    #                          'run_settings')
-    #     return gs(scheduler, logger=logger, **kwargs)
-
-    # def is_finished(self, status) -> bool:
-    #     """Check if job is finished."""
-    #     return self.scheduler.is_finished(status)
-
     def prepare_job_for_db(self, job):
         """Prepare job for database."""
         # purge_attrs = ['local_files', 'remote_files', 'run_settings']
@@ -116,21 +50,28 @@ class Runner:
         for attr in purge_attrs:
             job_db.__dict__.pop(attr, None)
         return job_db
+    
+    def get_files_to_transfer(self, jobs):
+        """Get files to transfer."""
+        lkmlmklmm
 
-    def resolve_files(self,
-                      jobs: dict, 
-                      files_to_transfer: Optional[dict] = None) -> dict:
-        """Resolve files."""
-        files_to_transfer = files_to_transfer or {}
-        for j in jobs:
-            job = j['job']
-            scheduler = j['scheduler']
-            d = scheduler.resolve_files(job)
-            for k, v in d.items():
-                if k not in files_to_transfer:
-                    files_to_transfer[k] = []
-                files_to_transfer[k].extend(v)
-        return files_to_transfer
+
+
+    # def resolve_files(self,
+    #                   jobs: dict, 
+    #                   files_to_transfer: Optional[dict] = None) -> dict:
+    #     """Resolve files."""
+    #     files_to_transfer = files_to_transfer or {}
+    #     for j in jobs.values():
+    #         job = j['job']
+    #         scheduler = j['scheduler']
+    #         d = scheduler.resolve_files(job)
+    #         for k, v in d.items():
+    #             if k not in files_to_transfer:
+    #                 files_to_transfer[k] = []
+    #             files_to_transfer[k].extend(v)
+    #     return files_to_transfer
+    
 
     # def prepare_tasks_for_db(self, tasks):
     #     """Prepare tasks for database."""
@@ -164,6 +105,12 @@ class Runner:
             self.logger.info(f'Added job to database with id {db_id}')
             self.logger.debug(f'db entry: {database.get(db_id)}')
         return replace(job, db_id=db_id)
+    
+    @loop_update_jobs
+    def get_from_db(self, *args, job=None, database=None, **kwargs):
+        """Get job from database."""
+        job_db = database.get(job.db_id)
+        return replace(job, **job_db)
 
     @loop_update_jobs
     def update_db(self, job=None, database=None, **kwargs):
@@ -257,29 +204,46 @@ class Runner:
 
     def resolve_objs_in_tasks(self, job):
         """Resolve objects in tasks."""
-        std_types = (str, int, float, bool)
-        seqs = (list, tuple, set)
         print('checking resolve_objs_in_tasks')
         for t in job.tasks:
-            for k, v in t.__dict__.items():
-                if not isinstance(v, std_types):
-                    self.logger.warning(f'Found non-standard type in task: {k}')
-                    print('resolve', k, type(v), v)
-                if isinstance(v, seqs):
-                    for i, e in enumerate(v):
-                        if not isinstance(e, std_types):
-                            self.logger.warning(f'Found non-standard type in task: {k}/{e}')
-                            print('resolve', k, i, type(e), e)
+            self.check_types(t)
+        # for t in job.tasks:
+
+        #     for k, v in t.__dict__.items():
+        #         if not isinstance(v, std_types):
+        #             self.logger.warning(f'Found non-standard type in task: {k}')
+        #             print('resolve', k, type(v), v)
+        #         if isinstance(v, seqs):
+        #             for i, e in enumerate(v):
+        #                 if not isinstance(e, std_types):
+        #                     self.logger.warning(f'Found non-standard type in task: {k}/{e}')
+        #                     print('resolve', k, i, type(e), e)
         print('checking done')
-        kklløklklo
         return job
+    
+    def check_types(self, obj, path=''):
+        std_types = (str, int, float, bool)
+        seqs = (list, tuple, set)
+        for k, v in obj.__dict__.items():
+            new_path = f'{path}/{k}' if path else k
+            if not isinstance(v, std_types):
+                self.logger.warning(f'Found non-standard type in task: {new_path}')
+                print('resolve', new_path, type(v), v)
+            if isinstance(v, seqs):
+                for i, e in enumerate(v):
+                    if not isinstance(e, std_types):
+                        self.logger.warning(f'Found non-standard type in task: {new_path}/{i}')
+                        print('resolve', new_path, i, type(e), e)
+                    elif hasattr(e, '__dict__'):
+                        self.check_types(e, f'{new_path}/{i}')
+
+
 
     @loop_update_jobs
     def prepare_jobs(self, *args, job=None, scheduler=None, **kwargs) -> Job:
         """Prepare jobs."""
         job = self.gen_job_script(job=job, scheduler=scheduler)
         host_remote = [getattr(t, 'host', None) for t in job.tasks]
-        print(list(set(host_remote)))
         settings = {'parent_local': 'work_path_local',
                         'parent_remote': 'work_path_remote',
                         'host_remote': host_remote[0]}
@@ -287,6 +251,9 @@ class Runner:
                                                parent_local='submit_path_local',
                                                parent_remote='submit_path_remote')
         for t in job.tasks:
+            self.write_file_local(t.files_to_write, **settings)
+            t.files_to_write = [self.resolve_file_name(f, **settings) for f in
+                                      t.files_to_write]
             
             t.files_to_write = self.write_file_local(t.files_to_write,
                                                      **settings)
@@ -390,31 +357,28 @@ class Runner:
         # "global" run settings                
         rs = jobs[0]['job'].tasks[0]  # type: ignore
         jobs = self.prepare_jobs(jobs)
-        print(jobs)
-        kklklklkl
         jobs = self.add_to_db(jobs)
+
         if rs.dry_run:
             self.logger.warning('Dry run found in first task of first job, '
                                 'exiting...')
             return jobs
-        # potential exit point
 
-        schedulers = list(set([j.scheduler for j in jobs]))
-        jobs_scheduler = {}
-        for s in schedulers:
-            jobs_scheduler[s] = [i for i, j in enumerate(jobs)
-                                 if j.scheduler == s]
-
+        schedulers = list(set([j['scheduler'] for j in jobs.values()]))
+       
         self.logger.info(f'Running {len(jobs)} job(s).')
-        for i, j in enumerate(jobs):
-            self.logger.info(f'   job {i} ({j.hash}) task(s): ' +
-                             f'{len(j.tasks)} tasks')
-
+        for i, j in jobs.items():
+            self.logger.info(f'   job {i} ({j["job"].hash}) task(s): ' +
+                             f'{len(j["job"].tasks)} tasks')
+        wait = any([t.wait for j in jobs.values() for t in j['job'].tasks])
+        if wait:
+            self.logger.info('Waiting for jobs to finish...')
 # update database with job
-        self.update_db(jobs)
+        # self.update_db(jobs)
 
-        if len(schedulers) > 1 :
-            print('branch out')
+        if len(schedulers) > 1 and wait:
+            self.logger.warning('Multiple schedulers found, ' +
+                                'waiting for all jobs to finish...')
         #     .... first submit all then wait for all then fetch all
         # database save_minimal
         for scheduler in schedulers:
@@ -424,7 +388,10 @@ class Runner:
             with scheduler.run_ctx() as ctx:  # tpye: ignore
 
                 self.logger.debug(f'Context manager opened, ctx: {ctx}')
-                jobs_to_run = [jobs[i] for i in jobs_scheduler[scheduler]]
+                jobs_to_run = {i: j for i, j in jobs.items()
+                               if j['scheduler'] == scheduler}
+                
+                
                 files_to_transfer = self.resolve_files(jobs_to_run)
                 self.logger.debug(f'Files to transfer: {files_to_transfer}')
                 transfer = scheduler.transfer_files(files_to_transfer, ctx)
