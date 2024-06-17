@@ -50,6 +50,7 @@ class SlurmScheduler(Scheduler):
         files_to_transfer = {}
         for t in job.tasks:
             for f in t.files_to_write:
+
                 local = self._resolve_file(f, parent='work_path_local')
                 remote = str(Path(self._resolve_file(
                     f, parent='work_path_remote')).parent)
@@ -62,6 +63,24 @@ class SlurmScheduler(Scheduler):
         if remote not in files_to_transfer:
             files_to_transfer[remote] = []
         files_to_transfer[remote].append(local)
+        return files_to_transfer
+    
+    def get_files_to_transfer(self, job):
+        """Get files to transfer."""
+        files_to_transfer = {}
+        for t in job.tasks:
+            for f in t.files_to_write:
+                host = str(f['remote']['host'])
+                path_local = str(f['local']['path'])
+                if host not in files_to_transfer:
+                    files_to_transfer[host] = []
+                files_to_transfer[host].append(path_local)
+        # add job script
+        host = str(job.job_script['remote']['host'])
+        path_local = str(job.job_script['local']['path'])
+        if host not in files_to_transfer:
+            files_to_transfer[host] = []
+        files_to_transfer[host].append(path_local)
         return files_to_transfer
 
     def get_status(self, job, connection=None):

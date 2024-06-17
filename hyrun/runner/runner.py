@@ -51,10 +51,18 @@ class Runner:
             job_db.__dict__.pop(attr, None)
         return job_db
     
-    def get_files_to_transfer(self, jobs):
+    def get_files_to_transfer(self, jobs, files_to_transfer=None):
         """Get files to transfer."""
-        lkmlmklmm
-
+        files_to_transfer = files_to_transfer or {}
+        for j in jobs.values():
+            job = j['job']
+            scheduler = j['scheduler']
+            d = scheduler.get_files_to_transfer(job)
+            for k, v in d.items():
+                if k not in files_to_transfer:
+                    files_to_transfer[k] = []
+                files_to_transfer[k].extend(v)
+        return files_to_transfer
 
 
     # def resolve_files(self,
@@ -71,7 +79,7 @@ class Runner:
     #                 files_to_transfer[k] = []
     #             files_to_transfer[k].extend(v)
     #     return files_to_transfer
-    
+
 
     # def prepare_tasks_for_db(self, tasks):
     #     """Prepare tasks for database."""
@@ -243,21 +251,20 @@ class Runner:
     def prepare_jobs(self, *args, job=None, scheduler=None, **kwargs) -> Job:
         """Prepare jobs."""
         job = self.gen_job_script(job=job, scheduler=scheduler)
-        host_remote = [getattr(t, 'host', None) for t in job.tasks]
+        host_remote = [getattr(t, 'host', None) or getattr(t, 'connection', {}).get('host', None) for t in job.tasks]
         settings = {'parent_local': 'work_path_local',
                         'parent_remote': 'work_path_remote',
                         'host_remote': host_remote[0]}
-        job.job_script = self.write_file_local(job.job_script,
+        self.write_file_local(job.job_script,
                                                parent_local='submit_path_local',
                                                parent_remote='submit_path_remote')
+
         for t in job.tasks:
             self.write_file_local(t.files_to_write, **settings)
             t.files_to_write = [self.resolve_file_name(f, **settings) for f in
                                       t.files_to_write]
             
-            t.files_to_write = self.write_file_local(t.files_to_write,
-                                                     **settings)
-            
+    
             t.files_for_restarting = [self.resolve_file_name(f, 
                                                              **settings) for f in
                                       t.files_for_restarting]
@@ -270,8 +277,11 @@ class Runner:
                                                          **settings))
             for f in ['file_handler', 'cluster_settings']:
                 if hasattr(t, f):
-                    setattr(t, f, None)
-
+                      setattr(t, f, None)
+        settings_js = {'parent_local': 'submit_path_local',
+                        'parent_remote': 'submit_path_remote',
+                        'host_remote': host_remote[0]}
+        job.job_script = self.resolve_file_name(job.job_script, **settings_js)
         job = self.resolve_objs_in_tasks(job)
 
         return job
@@ -284,25 +294,26 @@ class Runner:
                           host_local: Optional[str] = None,
                           host_remote: Optional[str] = None,) -> dict:
         """Resolve file name."""
+        print(', ijpjjj', file)
         file_local = (Path(file.folder) / file.name
                           if file.folder is not None
                           else getattr(file, parent_local))
         
         file_name = file_name or file_local.name
         host_local = host_local or gethostname()
-        file = {'name': str(file_name),
+        dfile = {'name': str(file_name),
                 'local': {'host': str(host_local),
                           'path': str(file_local)}}
         if not host_remote:
-            return file
+            return dfile
     
         file_remote = (Path(file.folder) / file.name
                         if file.folder is not None
                         else getattr(file, parent_remote))
-        file['remote'] = {'host': str(host_remote), 
+        dfile['remote'] = {'host': str(host_remote), 
                           'path': str(file_remote)}
-        return file
-
+        print('ijilwjeflwef', dfile)
+        return dfile
 
     @list_exec
     def write_file_local(self, file,  overwrite=True, **kwargs):
@@ -392,8 +403,9 @@ class Runner:
                                if j['scheduler'] == scheduler}
                 
                 
-                files_to_transfer = self.resolve_files(jobs_to_run)
+                files_to_transfer = self.get_files_to_transfer(jobs_to_run)
                 self.logger.debug(f'Files to transfer: {files_to_transfer}')
+                llkmlkmlkm
                 transfer = scheduler.transfer_files(files_to_transfer, ctx)
                 for r in transfer:
                     if getattr(r, 'ok', True):
@@ -422,6 +434,7 @@ class Runner:
                 jobs_to_run = self.update_db(jobs_to_run)
 
             # # Fetch the results
+                print('REMEMBER; EVERY JOB task needs anoutput oobject')
                 # check status first
                 transfer = self.fetch_results(jobs_to_run, connection=ctx)
                 for r in transfer:

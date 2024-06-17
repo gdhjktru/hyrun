@@ -111,6 +111,10 @@ class LocalScheduler(Scheduler):
         cmd = ' '.join(running_list)
         return cmd
 
+    def get_files_to_transfer(self, job):
+        """Get files to transfer."""
+        return {}
+
     def resolve_files(self, job):
         """Resolve files."""
         return {}
