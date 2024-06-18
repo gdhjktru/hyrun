@@ -5,7 +5,7 @@ import json
 from hydb import Database, DatabaseDummy  # noqa: F401
 from hytools.logger import LoggerDummy
 from hyrun.decorators import force_list
-from hyrun.job import Job  # noqa: F401
+from hyrun.job import Job, Output  # noqa: F401
 from hyrun.scheduler import get_scheduler
 
 
@@ -47,7 +47,6 @@ class ArrayJob:
 
     def set_jobs(self, tasks, **kwargs):
         """Check tasks."""
-        print('pijjjfwef', kwargs)
         jobs = {i: {} for i in range(len(tasks))}
         for i, t in enumerate(tasks):
             if len(t) == 1:
@@ -56,7 +55,7 @@ class ArrayJob:
                 elif isinstance(t[0], Job):
                     jobs[i]['job'] = {'job': t[0]}
                 else:
-                    jobs[i] = {'job': Job(tasks=t)}
+                    jobs[i] = {'job': Job(tasks=t, outputs=[])}
         return jobs
     
     def resolve_db_id(self, db_id, **kwargs):

@@ -11,9 +11,10 @@ from .output import Output
 
 
 @dataclass
-class Job(JobInfo, Output):
+class Job(JobInfo):
     """HSP job."""
 
     # progress_bar: Optional[tqdm] = None
     tasks: Optional[List[Any]] = None
+    outputs: Optional[List[Output]] = None
     job_script: Optional[str] = None

@@ -119,7 +119,7 @@ class LocalScheduler(Scheduler):
         """Resolve files."""
         return {}
 
-    def transfer_files(self, files_to_transfer, ctx):
+    def transfer_files(self, *args, **kwargs):
         """Transfer files."""
         return []
 
@@ -180,11 +180,13 @@ class LocalScheduler(Scheduler):
         if len(job.tasks) > 1:
             raise ValueError('Local scheduler only supports one task')
         rs = job.tasks[0]
-        js = job.job_script
-        cmd = split(js.content
-                    if isinstance(js, File) and js.content
-                    else str(js) if isinstance(js, str)
-                    else Path(js).read_text())
+        js = job.job_script['local']['path']
+        cmd = Path(js).read_text()
+
+        # cmd = split(js.content
+        #             if isinstance(js, File) and js.content
+        #             else str(js) if isinstance(js, str)
+        #             else Path(js).read_text())
         self.logger.debug('Running command: %s\n', cmd)
         self.logger.debug('Working directory: %s\n', rs.work_dir_local)
         run_opts = {'capture_output': True,

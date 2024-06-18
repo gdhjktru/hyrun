@@ -83,7 +83,7 @@ class SlurmScheduler(Scheduler):
         files_to_transfer[host].append(path_local)
         return files_to_transfer
 
-    def get_status(self, job, connection=None):
+    def get_status(self, job=None, connection=None):
         """Get status."""
         if connection:
             return self._get_state_in_ctx(job, connection)
@@ -149,8 +149,8 @@ class SlurmScheduler(Scheduler):
 
     def submit(self, job, connection=None):
         """Submit job."""
-        remote_dir = Path(job.job_script.submit_path_remote).parent
-        job_script_name = Path(job.job_script.submit_path_remote).name
+        remote_dir = Path(job.job_script['remote']['path']).parent
+        job_script_name = Path(job.job_script['name']).name
         cmd = f'sbatch ./{job_script_name}'
         if connection is None:
             with connect_to_remote(self.connection) as connection:
@@ -176,14 +176,38 @@ class SlurmScheduler(Scheduler):
         """Generate job script."""
         return gjs(job)
 
-    def transfer_files(self, files_to_transfer, connection):
+    def transfer_files(self, files_to_transfer, connection, to_remote=False, from_remote=False):
         """Transfer files."""
-        result = []
-        for target in files_to_transfer.keys():
-            sources = ' '.join(files_to_transfer[target])
-            r = rsync(connection, sources, [target])
-            result.append(r)
-        return result
+        if to_remote == from_remote:
+            raise ValueError('Exactly one of to_remote and from_remote must be True')
+        sources = []
+        targets = []
+        for f in files_to_transfer:
+            if to_remote:
+                sources.append(str(f['local']['path']))
+                targets.append(str(f['remote']['path']))
+            else:
+                sources.append(str(f['remote']['path']))
+                targets.append(str(f['local']['path']))
+        target_dirs = set([str(Path(t).parent) for t in targets])
+        res = []
+        for d in target_dirs:
+            connection.run(f'mkdir -p {d}', hide='stdout')
+            idx = [i for i, t in enumerate(targets) if str(Path(t).parent) == d]
+            r = rsync(connection, ' '.join([sources[i] for i in idx]),
+                      d,
+                       download=False)
+            res.append(r)
+
+
+        # r = rsync(connection, ' '.join(sources), ' '.join(targets), download=from_remote)
+        # for target in files_to_transfer.keys():
+        #     sources = ' '.join(files_to_transfer[target])
+        #     
+        # print('rsync', targets, sources)
+        #     r = rsync(connection, sources, [target])
+        #     result.append(r)
+        return res
 
     def cancel(self, *args, **kwargs):
         """Cancel job."""
@@ -191,6 +215,7 @@ class SlurmScheduler(Scheduler):
 
     def is_finished(self, job):
         """Check if job is finished."""
+        print('jiljwef' ,job.status)
         success = ['COMPLETED']
         failed = ['BOOT_FAIL', 'CANCELLED', 'DEADLINE', 'FAILED', 'NODE_FAIL',
                   'OUT_OF_MEMORY', 'PREEMPTED', 'TIMEOUT']

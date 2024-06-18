@@ -51,18 +51,35 @@ class Runner:
             job_db.__dict__.pop(attr, None)
         return job_db
     
-    def get_files_to_transfer(self, jobs, files_to_transfer=None):
+    def get_files_to_transfer(self,
+                              jobs,
+                              files_to_transfer=None,
+                              job_keys = None,
+                              task_keys=None):
         """Get files to transfer."""
-        files_to_transfer = files_to_transfer or {}
+        files_to_transfer = files_to_transfer or []
+        job_keys = job_keys or []
+        task_keys = task_keys or []
         for j in jobs.values():
-            job = j['job']
-            scheduler = j['scheduler']
-            d = scheduler.get_files_to_transfer(job)
-            for k, v in d.items():
-                if k not in files_to_transfer:
-                    files_to_transfer[k] = []
-                files_to_transfer[k].extend(v)
-        return files_to_transfer
+            for k in job_keys:
+                _list = getattr(j['job'], k, [])
+                _list = [_list] if not isinstance(_list, list) else _list
+                for f in _list:
+                    files_to_transfer.append(f)
+            for t in j['job'].tasks:
+                for k in task_keys:
+                    ll = getattr(t, k, [])
+                    ll = [ll] if not isinstance(ll, list) else ll
+                    for f in ll:
+                        files_to_transfer.append(f)
+                
+            # d = scheduler.get_files_to_transfer(job)
+            # for k, v in d.items():
+            #     if k not in files_to_transfer:
+            #         files_to_transfer[k] = []
+            #     files_to_transfer[k].extend(v)
+        # remove Nones from list
+        return [f for f in files_to_transfer if f is not None]
 
 
     # def resolve_files(self,
@@ -140,7 +157,8 @@ class Runner:
 
     def is_finished(self, jobs) -> bool:
         """Check if job is finished."""
-        return all(job['scheduler'].is_finished(job['job']) for job in jobs)
+        print('check finishes', [job['scheduler'].is_finished(job['job']) for job in jobs.values()])
+        return all(job['scheduler'].is_finished(job['job']) for job in jobs.values())
 
     @loop_update_jobs
     def get_status(self,
@@ -156,9 +174,8 @@ class Runner:
         """Get timeout."""
         return max(sum([t.job_time.total_seconds()
                         if isinstance(t.job_time, timedelta)
-                        else t.job_time for t in j['job'].tasks]) for j in jobs)
+                        else t.job_time for t in j['job'].tasks]) for j in jobs.values())
 
-    @force_list
     def wait(self, jobs, connection=None, timeout=None) -> list:
         """Wait for job to finish."""
         timeout = (timeout or self._get_timeout(jobs))
@@ -170,8 +187,16 @@ class Runner:
         self.logger.info(f'Waiting for jobs to finish. Timeout: {timeout} ' +
                          'seconds.')
         for t in incrementer:
-            jobs = [j.scheduler.get_status(j, connection=connection)
-                    for j in jobs]
+            jobs = self.get_status(jobs, connection=connection)
+            # statuses = [j['scheduler'].get_status(j['job'], connection=connection)
+            #             for j in jobs.values()]
+            # for i, j in jobs.items():
+            #     j['job'].status = statuses[i]
+            # jobs = {i: j for i, j in jobs.items()}
+            
+            
+            # [j['scheduler'].get_status(j['job'], connection=connection)
+            #         for i, j in jobs)]
             if t >= timeout or self.is_finished(jobs):
                 break
         return jobs
@@ -403,10 +428,16 @@ class Runner:
                                if j['scheduler'] == scheduler}
                 
                 
-                files_to_transfer = self.get_files_to_transfer(jobs_to_run)
+                files_to_transfer = self.get_files_to_transfer(jobs_to_run,
+                                                               job_keys=['job_script'],
+                                                               task_keys=['files_to_write'])
                 self.logger.debug(f'Files to transfer: {files_to_transfer}')
-                llkmlkmlkm
-                transfer = scheduler.transfer_files(files_to_transfer, ctx)
+
+            
+                transfer = scheduler.transfer_files(files_to_transfer,
+                                                    ctx,
+                                                    to_remote=True,
+                                                    from_remote=False)
                 for r in transfer:
                     if getattr(r, 'ok', True):
                         self.logger.info(getattr(r, 'stdout', ''))
@@ -420,11 +451,7 @@ class Runner:
                     continue
                 # wait
                 self.update_db(jobs_to_run)
-                if (sum(sum([t.wait for t in j.tasks])
-                        for j in jobs_to_run) == 0
-                        or not kwargs.get('wait', True)):
-                    for i, j in enumerate(jobs_scheduler[scheduler]):
-                        jobs[j] = jobs_to_run[i]
+                if not wait:
                     self.logger.info('Not waiting for jobs to finish...')
                     continue
 
