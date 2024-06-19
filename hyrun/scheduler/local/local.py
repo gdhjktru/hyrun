@@ -233,23 +233,23 @@ class LocalScheduler(Scheduler):
         """Fetch results."""
         return []
 
-    def check_finished(self, run_settings) -> bool:
-        """Check if output file exists and return True if it does."""
-        files_to_check = [getattr(f, 'work_path_local')
-                          for f in [run_settings.output_file,
-                                    run_settings.stdout_file,
-                                    run_settings.stderr_file]
-                          if getattr(f, 'work_path_local', None) is not None]
-        files_to_check = [f for f in files_to_check
-                          if f.name not in ['stdout.out', 'stderr.out']]
-        if any(f.exists() for f in files_to_check if f is not None):
-            self.logger.debug(f'(one of) output file(s) {files_to_check} ' +
-                              'exists')
-        else:
-            return False
+    # def check_finished(self, run_settings) -> bool:
+    #     """Check if output file exists and return True if it does."""
+    #     files_to_check = [getattr(f, 'work_path_local')
+    #                       for f in [run_settings.output_file,
+    #                                 run_settings.stdout_file,
+    #                                 run_settings.stderr_file]
+    #                       if getattr(f, 'work_path_local', None) is not None]
+    #     files_to_check = [f for f in files_to_check
+    #                       if f.name not in ['stdout.out', 'stderr.out']]
+    #     if any(f.exists() for f in files_to_check if f is not None):
+    #         self.logger.debug(f'(one of) output file(s) {files_to_check} ' +
+    #                           'exists')
+    #     else:
+    #         return False
 
-        force_recompute = run_settings.force_recompute
-        self.logger.info('force_recompute is %s, will %srecompute\n',
-                         'set' if force_recompute else 'not set',
-                         '' if force_recompute else 'not ')
-        return not force_recompute
+    #     force_recompute = run_settings.force_recompute
+    #     self.logger.info('force_recompute is %s, will %srecompute\n',
+    #                      'set' if force_recompute else 'not set',
+    #                      '' if force_recompute else 'not ')
+    #     return not force_recompute

@@ -55,7 +55,8 @@ class ArrayJob:
                 elif isinstance(t[0], Job):
                     jobs[i]['job'] = {'job': t[0]}
                 else:
-                    jobs[i] = {'job': Job(tasks=t, outputs=[])}
+                    outputs = [Output().from_dict(rs.__dict__) for rs in t]
+                    jobs[i] = {'job': Job(tasks=t, outputs=outputs)}
         return jobs
     
     def resolve_db_id(self, db_id, **kwargs):

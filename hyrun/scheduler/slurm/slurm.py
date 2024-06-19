@@ -176,7 +176,7 @@ class SlurmScheduler(Scheduler):
         """Generate job script."""
         return gjs(job)
 
-    def transfer_files(self, files_to_transfer, connection, to_remote=False, from_remote=False):
+    def transfer_files(self, files_to_transfer, connection, to_remote=False, from_remote=False, **kwargs):
         """Transfer files."""
         if to_remote == from_remote:
             raise ValueError('Exactly one of to_remote and from_remote must be True')
@@ -192,11 +192,14 @@ class SlurmScheduler(Scheduler):
         target_dirs = set([str(Path(t).parent) for t in targets])
         res = []
         for d in target_dirs:
-            connection.run(f'mkdir -p {d}', hide='stdout')
+            if to_remote:
+                connection.run(f'mkdir -p {d}', hide='stdout')
             idx = [i for i, t in enumerate(targets) if str(Path(t).parent) == d]
+            print('oijoijioj', sources, idx, d, from_remote)
+            
             r = rsync(connection, ' '.join([sources[i] for i in idx]),
                       d,
-                       download=False)
+                       download=from_remote)
             res.append(r)
 
 
@@ -215,7 +218,6 @@ class SlurmScheduler(Scheduler):
 
     def is_finished(self, job):
         """Check if job is finished."""
-        print('jiljwef' ,job.status)
         success = ['COMPLETED']
         failed = ['BOOT_FAIL', 'CANCELLED', 'DEADLINE', 'FAILED', 'NODE_FAIL',
                   'OUT_OF_MEMORY', 'PREEMPTED', 'TIMEOUT']
@@ -265,23 +267,24 @@ class SlurmScheduler(Scheduler):
         """Run context manager."""
         return connect_to_remote(self.connection)
 
-    def check_finished(self, run_settings) -> bool:
-        """Check if output file exists and return True if it does."""
-        files_to_check = [getattr(f, 'work_path_local')
-                          for f in [run_settings.output_file,
-                                    run_settings.stdout_file,
-                                    run_settings.stderr_file]
-                          if getattr(f, 'work_path_local', None) is not None]
-        files_to_check = [f for f in files_to_check
-                          if f.name not in ['stdout.out', 'stderr.out']]
-        if any(f.exists() for f in files_to_check if f is not None):
-            self.logger.debug(f'(one of) output file(s) {files_to_check} ' +
-                              'exists')
-        else:
-            return False
+    # def check_finished(self, run_settings) -> bool:
+    #     """Check if output file exists and return True if it does."""
+    #     work_dir_local = getattr(run_settings, 'work_dir_local', Path('.'))
+    #     files_to_check = [Path(work_dir_local)/Path(f.name).name
+    #                       for f in [run_settings.output_file,
+    #                                 run_settings.stdout_file,
+    #                                 run_settings.stderr_file]]
+    #     files_to_check = [f for f in files_to_check
+    #                       if f.name not in ['stdout.out', 'stderr.out']]
+        
+    #     if any(f.exists() for f in files_to_check if f is not None):
+    #         self.logger.debug(f'(one of) output file(s) {files_to_check} ' +
+    #                           'exists')
+    #     else:
+    #         return False
 
-        force_recompute = run_settings.force_recompute
-        self.logger.info('force_recompute is %s, will %srecompute\n',
-                         'set' if force_recompute else 'not set',
-                         '' if force_recompute else 'not ')
-        return not force_recompute
+    #     force_recompute = run_settings.force_recompute
+    #     self.logger.info('force_recompute is %s, will %srecompute\n',
+    #                      'set' if force_recompute else 'not set',
+    #                      '' if force_recompute else 'not ')
+    #     return not force_recompute

@@ -106,13 +106,15 @@ class SlurmJobScript:
 
             run_settings = job.tasks[i]
             job_script += f'# Run job no. {i}\n'
-            job_script += f'export SCRATCH="{run_settings.work_dir_remote}/'
+            wdir = (run_settings.work_dir_remote.parent
+                    if 'job_id' in run_settings.work_dir_remote.name
+                    else run_settings.work_dir_remote)
+            job_script += f'export SCRATCH="{wdir}/'
             job_script += f'${{SLURM_JOB_ID}}"\n'  # noqa: F541
             job_script += f'mkdir -p ${{SCRATCH}}\n'  # noqa: F541
             for f in run_settings.files_to_send + run_settings.files_to_write:
-                # if f.work_path_remote.parent == run_settings.work_dir_remote:
-                #     continue
-                job_script += f'cp -f {f.work_path_remote} ${{SCRATCH}}\n'
+                file = str(Path(wdir)/f.name)
+                job_script += f'cp -f {file} ${{SCRATCH}}\n'
 
             job_script += f'cd ${{SCRATCH}}\n'  # noqa: F541
 
@@ -126,9 +128,12 @@ class SlurmJobScript:
             symlinks_created = []
             if run_settings.create_symlinks and len(
                     run_settings.data_files) > 0:
+                job_script += '\n# Create symlinks\n'
+                data_dir_remote = run_settings.data_dir_remote
                 for f in run_settings.data_files:
-                    job_script += f'ln -s {f.data_path_remote} ${{SCRATCH}}\n'
-                    name = str(f.name)
+                    file = str(Path(data_dir_remote)/f.name)
+                    job_script += f'ln -s {file} ${{SCRATCH}}\n'
+                    name = file
                     if '/' in name:
                         name = name.split('/')[-1]
                     symlinks_created.append(name)

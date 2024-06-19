@@ -169,6 +169,8 @@ def rsync_get(
             for f in files[1:]:
                 cmd += ':{} '.format(f)
             cmd += target
+        
+    print('rsync command', cmd)
 
     return c.local(cmd)
 
