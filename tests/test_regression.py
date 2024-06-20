@@ -34,9 +34,9 @@ compute_settings = {
     'local': ccs('local', **default_cs),
     # 'docker': ccs('docker', container_image='xtb', **default_cs),
     # 'conda': ccs('conda', conda_env='base', **default_cs),
-    'saga': ccs('saga', modules=['xtb/6.4.1-intel-2021a'],
-                user=os.getlogin(),
-                memory_per_cpu=2000, progress_bar=False, **default_cs)
+    # 'saga': ccs('saga', modules=['xtb/6.4.1-intel-2021a'],
+    #             user=os.getlogin(),
+    #             memory_per_cpu=2000, progress_bar=False, **default_cs)
 }
 molecules = {'water': Molecule('O')}
 
@@ -48,7 +48,7 @@ def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
     setup = x.setup(mol)
     output = run(setup, parser=x)
     print('output', output)
-    result = x.parse(output.tasks[0])
+    result = x.parse(output[0])[0]
 
     print('parsed result', result)
 

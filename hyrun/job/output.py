@@ -21,12 +21,10 @@ class Output:
     returncode: Optional[int] = None
     error: Optional[Exception] = None
 
-
     def from_dict(self, data: dict):
         """Load data from dictionary."""
         for key, value in data.items():
             # if hasattr(self, key):
             #     setattr(self, key, value)
-            print('OUTPUTkey:', key, key in self.__annotations__)
             if key in self.__annotations__:
                 setattr(self, key, value)

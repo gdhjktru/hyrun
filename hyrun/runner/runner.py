@@ -312,13 +312,14 @@ class Runner:
             t.files_to_parse = [self.resolve_file_name(f, parent=parent, host=host) for f in
                                       t.files_to_parse]
             
-            parent = getattr(t, 'work_dir_remote', None)
             host = getattr(t, 'host', None) or getattr(t, 'connection', {}).get('host', gethostname())
+            parent = getattr(t, 'work_dir_remote', None)
+            if host == gethostname():
+                parent = getattr(t, 'work_dir_local', None)
 
             for f in ['output_file', 'stdout_file', 'stderr_file']:
                 if hasattr(t, f):
                     setattr(t, f, self.resolve_file_name(getattr(t, f),
-                                                         file_name=f, 
                                                          parent=parent, host=host))
             for f in ['file_handler', 'cluster_settings']:
                 if hasattr(t, f):
@@ -333,9 +334,10 @@ class Runner:
     def resolve_file_name(self,
                           file,
                           parent: Optional[str] = '',
-                          file_name: Optional[str] = None,
                           host: Optional[str] = None) -> dict:
         """Resolve file name."""
+        if not file:
+            return {}
         file = (Path(file.folder) / file.name
                           if file.folder is not None
                           else Path(parent) / file.name)
@@ -539,22 +541,26 @@ class Runner:
                 for job in jobs_to_run.values():
                     files_to_transfer = []
                     job_id = job['job'].id
-                    d = job['job'].tasks[0].work_dir_remote
+                    d_local = job['job'].tasks[0].work_dir_local
+                    d = getattr(job['job'].tasks[0],'work_dir_remote', d_local)
                     d = str(d).replace('job_id', str(job_id))
                     remote_wdirs.append(d)
-                    d_local = job['job'].tasks[0].work_dir_local
+                   
                     job['job'].outputs = []
-                    for t in job['job'].tasks:
-                        output = Output().from_dict(t.__dict__) 
+                    for i, t in enumerate(job['job'].tasks):
+                        output = Output()
+                        output.from_dict(t.__dict__)
+                        
                         if not output:
                             raise ValueError('could not create output object')
-                        job['job'].outputs.append(output)
                         for f in ['output_file', 'stdout_file', 'stderr_file']:
-                            remote_file = getattr(t, f, None)
+                            remote_file = getattr(t, f, {})
+                            setattr(output, f, Path(d_local)/Path(remote_file['path']).name)
                             if remote_file:
                                 remote_file['path'] = Path(d) / Path(remote_file['path']).name
                                 remote_file['host'] = getattr(ctx, 'host', gethostname())
                                 files_to_transfer.append(remote_file)
+                        job['job'].outputs.append(output)
                     transfer = scheduler.transfer_files(files_to_transfer=files_to_transfer,
                                                     connection=ctx, 
                                                     folder=d_local)
@@ -562,8 +568,8 @@ class Runner:
                     log_method(getattr(transfer, 'stdout' if getattr(transfer, 'ok', True) else 'stderr', ''))
 
 
-                print(jobs)
-                kokkkk
+               
+               
                     
 
                 
@@ -612,4 +618,4 @@ class Runner:
 
                 scheduler.teardown(jobs_to_run, ctx)
         self.update_db(jobs)
-        return self.return_jobs(jobs)
+        return [j['job'].outputs for j in jobs.values()]

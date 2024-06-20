@@ -9,7 +9,6 @@ from copy import deepcopy
 
 from hytools.file import File
 from hytools.logger import LoggerDummy
-
 from hyrun.decorators import list_exec
 
 from ..abc import Scheduler
@@ -139,11 +138,11 @@ class LocalScheduler(Scheduler):
         }
 
         if run_settings.output_file:
-            if hasattr(run_settings.output_file, 'work_path_local'):
-                f = run_settings.output_file.work_path_local  # type: ignore
-            else:
-                f = run_settings.output_file
-            output_dict.update({'output_file': f})  # type: ignore
+            # if hasattr(run_settings.output_file, 'work_path_local'):
+            #     f = run_settings.output_file.work_path_local  # type: ignore
+            # else:
+            #     f = run_settings.output_file['path']
+            output_dict.update({'output_file': run_settings.output_file['path']})  # type: ignore
         if result is None:
             return output_dict
 
@@ -151,9 +150,10 @@ class LocalScheduler(Scheduler):
 
         exceptions = ['normal termination of xtb']
         if result.stderr:
-            stderr_file = (
-                run_settings.stderr_file.work_path_local  # type: ignore
-            )
+            # stderr_file = (
+            #     run_settings.stderr_file.work_path_local  # type: ignore
+            # )
+            stderr_file = run_settings.stderr_file['path']
             Path(stderr_file).write_text(result.stderr)
             self.logger.debug('STDERR: %s', result.stderr) if any(
                 e in result.stderr for e in exceptions
@@ -161,9 +161,10 @@ class LocalScheduler(Scheduler):
             output_dict['stderr'] = result.stderr
 
         if result.stdout:
-            stdout_file = (
-                run_settings.stdout_file.work_path_local  # type: ignore
-            )
+            stdout_file = run_settings.stdout_file['path']
+            # stdout_file = (
+            #     run_settings.stdout_file.work_path_local  # type: ignore
+            # )
             Path(stdout_file).write_text(result.stdout)
             output_dict['stdout'] = stdout_file
         return output_dict
@@ -173,15 +174,18 @@ class LocalScheduler(Scheduler):
         # removing files
         pass
 
-    @list_exec
-    def submit(self, job, ctx):
+    def submit(self, job, *args, **kwargs):
         """Submit job."""
+        # if isinstance(jobs, dict):
+        #     for job in jobs.values():
+        #         job['job'] = self.submit(job['job'])
+        #         return jobs
         # warning might return a list of lists
         if len(job.tasks) > 1:
             raise ValueError('Local scheduler only supports one task')
         rs = job.tasks[0]
-        js = job.job_script['local']['path']
-        cmd = Path(js).read_text()
+        js = job.job_script['path']
+        cmd = Path(js).read_text().split(' ')
 
         # cmd = split(js.content
         #             if isinstance(js, File) and js.content
@@ -191,7 +195,7 @@ class LocalScheduler(Scheduler):
         self.logger.debug('Working directory: %s\n', rs.work_dir_local)
         run_opts = {'capture_output': True,
                     'text': True,
-                    'cwd': rs.work_dir_local,
+                    'cwd': str(rs.work_dir_local),
                     'env': rs.env,
                     'shell': False}
         if ';' in cmd or '&&' in cmd:
@@ -199,7 +203,7 @@ class LocalScheduler(Scheduler):
             cmd = ' '.join(cmd)
         result = subprocess.run(cmd, **run_opts)
 
-        job = replace(job, **self.gen_output(result, rs))
+        job.outputs = [self.gen_output(result, rs)]
         job.finished = True
         return job
         # job.finished = True
