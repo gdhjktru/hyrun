@@ -27,5 +27,6 @@ class Output:
         for key, value in data.items():
             # if hasattr(self, key):
             #     setattr(self, key, value)
+            print('OUTPUTkey:', key, key in self.__annotations__)
             if key in self.__annotations__:
                 setattr(self, key, value)

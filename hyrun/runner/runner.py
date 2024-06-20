@@ -8,7 +8,7 @@ from time import sleep
 from typing import Dict, Generator, List, Optional, Callable
 from socket import gethostname
 from hytools.file import File
-from hytools.logger import LoggerDummy
+from hytools.logger import LoggerDummy, Logger
 import inspect
 import subprocess
 from hyrun.decorators import force_list, list_exec
@@ -237,7 +237,6 @@ class Runner:
 
     def resolve_objs_in_tasks(self, job):
         """Resolve objects in tasks."""
-        print('checking resolve_objs_in_tasks')
         for t in job.tasks:
             self.check_types(t)
         # for t in job.tasks:
@@ -251,24 +250,32 @@ class Runner:
         #                 if not isinstance(e, std_types):
         #                     self.logger.warning(f'Found non-standard type in task: {k}/{e}')
         #                     print('resolve', k, i, type(e), e)
-        print('checking done')
         return job
     
-    def check_types(self, obj, path=''):
+    def check_types(self, obj):
+        """Check types."""
+        self.logger.debug(f'Checking types in {obj} of type {type(obj)} for storage in database')
+        ignore_types= (Logger, timedelta, Path)
         std_types = (str, int, float, bool)
         seqs = (list, tuple, set)
-        for k, v in obj.__dict__.items():
-            new_path = f'{path}/{k}' if path else k
-            if not isinstance(v, std_types):
-                self.logger.warning(f'Found non-standard type in task: {new_path}')
-                print('resolve', new_path, type(v), v)
+        if isinstance(obj, ignore_types + std_types):
+            return
+        if not obj:
+            return  
+        if isinstance(obj, seqs):
+            for e in obj:
+                return self.check_types(e)
+    
+        d = obj if isinstance(obj, dict) else obj.__dict__
+        for k, v in d.items():
+            if v is None or isinstance(v, ignore_types + std_types):
+                continue
+            if isinstance(v, dict):
+                return self.check_types(v)             
             if isinstance(v, seqs):
-                for i, e in enumerate(v):
-                    if not isinstance(e, std_types):
-                        self.logger.warning(f'Found non-standard type in task: {new_path}/{i}')
-                        print('resolve', new_path, i, type(e), e)
-                    elif hasattr(e, '__dict__'):
-                        self.check_types(e, f'{new_path}/{i}')
+                for e in v:
+                    return self.check_types(e)
+            self.logger.error(f'Found non-standard type {type(v)} in task: {k}')
 
 
 
@@ -276,75 +283,83 @@ class Runner:
     def prepare_jobs(self, *args, job=None, scheduler=None, **kwargs) -> Job:
         """Prepare jobs."""
         job = self.gen_job_script(job=job, scheduler=scheduler)
-        host_remote = [getattr(t, 'host', None)
-                       or getattr(t, 'connection', {}).get('host', None)
-                       for t in job.tasks]
-        settings = {'parent_local': 'work_dir_local',
-                        'parent_remote': 'submit_dir_remote',
-                        'host_remote': host_remote[0]}
-        mklmlmkmkmkmk
-        self.write_file_local(job.job_script, parent_local='submit_path_local')
+        # hosts = [getattr(t, 'host', None)
+        #                or getattr(t, 'connection', {}).get('host', None)
+        #                for t in job.tasks]
+        # wdirs = [getattr(t, 'work_dir_local', None)
+        #          for t in job.tasks if hasattr(t, 'work_dir_local')]
+        # sdirs = [getattr(t, 'submit_dir_local', None)
+        #             for t in job.tasks if hasattr(t, 'submit_dir_local')]
+        parent= getattr(job.tasks[0], 'submit_dir_local', None)
+        host = gethostname()
+        self.write_file_local(job.job_script, parent= parent, host=host)
+        job.job_script = self.resolve_file_name(job.job_script,parent= parent, host=host)
+        for i, t in enumerate(job.tasks):
+            parent = getattr(t, 'work_dir_local', None)
+            host =  gethostname()
+            if not all([parent, host]):
+                self.logger.error('work_dir_local and host must be set')
+                continue
 
-        for t in job.tasks:
-            self.write_file_local(t.files_to_write, **settings)
-            t.files_to_write = [self.resolve_file_name(f, **settings) for f in
+            self.write_file_local(t.files_to_write, parent=parent, host=host)
+            t.files_to_write = [self.resolve_file_name(f, parent=parent, host=host) for f in
                                       t.files_to_write]
             
     
             t.files_for_restarting = [self.resolve_file_name(f, 
-                                                             **settings) for f in
+                                                             parent=parent, host=host) for f in
                                       t.files_for_restarting]
-            t.files_to_parse = [self.resolve_file_name(f, **settings) for f in
+            t.files_to_parse = [self.resolve_file_name(f, parent=parent, host=host) for f in
                                       t.files_to_parse]
+            
+            parent = getattr(t, 'work_dir_remote', None)
+            host = getattr(t, 'host', None) or getattr(t, 'connection', {}).get('host', gethostname())
+
             for f in ['output_file', 'stdout_file', 'stderr_file']:
                 if hasattr(t, f):
                     setattr(t, f, self.resolve_file_name(getattr(t, f),
                                                          file_name=f, 
-                                                         **settings))
+                                                         parent=parent, host=host))
             for f in ['file_handler', 'cluster_settings']:
                 if hasattr(t, f):
                       setattr(t, f, None)
-        settings_js = {'parent_local': 'submit_path_local',
-                        'parent_remote': 'submit_path_remote',
-                        'host_remote': host_remote[0]}
-        job.job_script = self.resolve_file_name(job.job_script, **settings_js)
+
+
+       
         job = self.resolve_objs_in_tasks(job)
 
         return job
     
     def resolve_file_name(self,
                           file,
-                          parent_local: Optional[str] = 'work_path_local',
-                          parent_remote: Optional[str] = 'submit_path_remote',
+                          parent: Optional[str] = '',
                           file_name: Optional[str] = None,
-                          host_local: Optional[str] = None,
-                          host_remote: Optional[str] = None,) -> dict:
+                          host: Optional[str] = None) -> dict:
         """Resolve file name."""
-        file_local = (Path(file.folder) / file.name
+        file = (Path(file.folder) / file.name
                           if file.folder is not None
-                          else getattr(file, parent_local))
-        
-        file_name = file_name or file_local.name
-        host_local = host_local or gethostname()
-        dfile = {'name': str(file_name),
-                'local': {'host': str(host_local),
-                          'path': str(file_local)}}
-        if not host_remote:
-            return dfile
+                          else Path(parent) / file.name)
+        return {'path': str(file), 'host': host or gethostname()}
+        # file_name = file_name or file_local.name
+        # host_local = host_local or gethostname()
+        # dfile = {'name': str(file_name),
+        #         'local': {'host': str(host_local),
+        #                   'path': str(file_local)}}
+        # if not host_remote:
+        #     return dfile
     
-        file_remote = (Path(file.folder) / file.name
-                        if file.folder is not None
-                        else getattr(file, parent_remote))
-        dfile['remote'] = {'host': str(host_remote), 
-                          'path': str(file_remote)}
-        print('ijilwjeflwef', dfile)
-        return dfile
+        # file_remote = (Path(file.folder) / file.name
+        #                 if file.folder is not None
+        #                 else getattr(file, parent_remote))
+        # dfile['remote'] = {'host': str(host_remote), 
+        #                   'path': str(file_remote)}
+        # print('ijilwjeflwef', dfile)
+        # return dfile
 
     @list_exec
     def write_file_local(self, file,  overwrite=True, **kwargs):
         """Write file locally."""
-        p = Path(self.resolve_file_name(
-            file, **kwargs).get('local',{}).get('path',''))
+        p = Path(self.resolve_file_name(file, **kwargs).get('path'))
         if p.exists() and not overwrite:
             return file
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -382,7 +397,7 @@ class Runner:
     @loop_update_jobs
     def submit_jobs(self, *args, job=None, scheduler=None, context=None, **kwargs):
         """Submit jobs."""
-        return scheduler.submit(job, context)  # type: ignore
+        return scheduler.submit(job, context, **kwargs)  # type: ignore
 
     @loop_update_jobs
     def fetch_results(self,
@@ -454,14 +469,14 @@ class Runner:
             self.logger.info(f'   job {i} ({j["job"].hash}) task(s): ' +
                              f'{len(j["job"].tasks)} tasks')
         wait = any([t.wait for j in jobs.values() for t in j['job'].tasks])
-        if wait:
-            self.logger.info('Waiting for jobs to finish...')
+        self.logger.info(f'Waiting for jobs to finish: {wait}')
 # update database with job
         # self.update_db(jobs)
 
         if len(schedulers) > 1 and wait:
             self.logger.warning('Multiple schedulers found, ' +
-                                'waiting for all jobs to finish...')
+                                'waiting for all jobs of each scheduler' +
+                                'to finish consecutively...')
         #     .... first submit all then wait for all then fetch all
         # database save_minimal
         for scheduler in schedulers:
@@ -481,21 +496,26 @@ class Runner:
                                           for j in jobs_to_run.values()
                                           for t in j['job'].tasks
                                           for f in t.files_to_write])
-                self.logger.debug(f'Files to transfer: {files_to_transfer}')
 
-            
-                transfer = scheduler.transfer_files(files_to_transfer,
-                                                    ctx,
-                                                    to_remote=True,
-                                                    from_remote=False)
-                for r in transfer:
-                    if getattr(r, 'ok', True):
-                        self.logger.info(getattr(r, 'stdout', ''))
-                    else:
-                        self.logger.error(getattr(r, 'stderr', ''))
+                remote_folder = [getattr(t, 'submit_dir_remote', None) or getattr(t, 'work_dir_remote', None)
+                                 for j in jobs_to_run.values() for t in j['job'].tasks]
+                remote_folder = list(set(remote_folder))
+
+                if len(remote_folder) > 1:
+                    self.logger.error('Multiple remote folders found, ' +
+                                      'cannot continue')
+                
+                self.logger.debug(f'Files to transfer: {files_to_transfer}'
+                                  + f' to {getattr(ctx, "host", gethostname())}:{remote_folder[0]}')
+
+                transfer = scheduler.transfer_files(files_to_transfer=files_to_transfer,
+                                                    connection=ctx, 
+                                                    folder=remote_folder[0])
+                log_method = self.logger.info if getattr(transfer, 'ok', True) else self.logger.error
+                log_method(getattr(transfer, 'stdout' if getattr(transfer, 'ok', True) else 'stderr', ''))
 
                 try:
-                    jobs_to_run = self.submit_jobs(jobs_to_run, ctx)
+                    jobs_to_run = self.submit_jobs(jobs_to_run, ctx,remote_folder=remote_folder[0])
                 except Exception as e:
                     self.logger.error(f'Error submitting jobs: {e}')
                     continue
@@ -513,36 +533,82 @@ class Runner:
             # # Fetch the results
                 print('REMEMBER; EVERY JOB task needs anoutput oobject')
                 # check status first
-                files_to_transfer = []
-                for f in ['output_file', 'stdout_file', 'stderr_file']:
-                    for j in jobs_to_run.values():
-                        id = j['job'].id
-                        for t in j['job'].tasks:
-                            f = getattr(t, f, None)
-                            if f is None:
-                                continue
-                            # move up
-                            p = f['remote']['path']
-                            ff = Path(p).parent / f'{id}' / Path(p).name
-                            f['remote']['path'] = str(ff)
-                            files_to_transfer.append(f)
+                # first resolve the files below
+                
+                remote_wdirs = []
+                for job in jobs_to_run.values():
+                    files_to_transfer = []
+                    job_id = job['job'].id
+                    d = job['job'].tasks[0].work_dir_remote
+                    d = str(d).replace('job_id', str(job_id))
+                    remote_wdirs.append(d)
+                    d_local = job['job'].tasks[0].work_dir_local
+                    job['job'].outputs = []
+                    for t in job['job'].tasks:
+                        output = Output().from_dict(t.__dict__) 
+                        if not output:
+                            raise ValueError('could not create output object')
+                        job['job'].outputs.append(output)
+                        for f in ['output_file', 'stdout_file', 'stderr_file']:
+                            remote_file = getattr(t, f, None)
+                            if remote_file:
+                                remote_file['path'] = Path(d) / Path(remote_file['path']).name
+                                remote_file['host'] = getattr(ctx, 'host', gethostname())
+                                files_to_transfer.append(remote_file)
+                    transfer = scheduler.transfer_files(files_to_transfer=files_to_transfer,
+                                                    connection=ctx, 
+                                                    folder=d_local)
+                    log_method = self.logger.info if getattr(transfer, 'ok', True) else self.logger.error
+                    log_method(getattr(transfer, 'stdout' if getattr(transfer, 'ok', True) else 'stderr', ''))
+
+
+                print(jobs)
+                kokkkk
+                    
+
+                
+                # for f in ['output_file', 'stdout_file', 'stderr_file']:
+                    # remote_wdir
+
+                    # file = self.resolve_file_name(getattr(j['job'], f, None),parent= parent, host=host)
+                    # files_to_transfer.append[getattr(j['job'], f, None)
+                    #                  for j in jobs_to_run.values()]
+                # local_folder = [getattr(t, 'work_dir_local', None) for j in jobs_to_run.values() for t in j['job'].tasks]
+                # local_folder = list(set(local_folder))
+                # if len(local_folder) > 1:
+                #     self.logger.error('Multiple local folders found, ' +
+                #                       'cannot continue')
+                # transfer = scheduler.transfer_files(files_to_transfer=files_to_transfer,
+                #                                     connection=ctx, 
+                #                                     folder=local_folder[0])
+                    # for j in jobs_to_run.values():
+                    #     id = j['job'].id
+                    #     for t in j['job'].tasks:
+                    #         f = getattr(t, f, None)
+                    #         if f is None:
+                    #             continue
+                    #         # move up
+                    #         p = f['remote']['path']
+                    #         ff = Path(p).parent / f'{id}' / Path(p).name
+                    #         f['remote']['path'] = str(ff)
+                    #         files_to_transfer.append(f)
             
                 # fetch_all= any([t.copy_all for j in jobs_to_run.values()
                 #         for t in j['job'].tasks])
-                print('oijiji', files_to_transfer)
-                transfer = scheduler.transfer_files(files_to_transfer,
-                                                    ctx,
-                                                    to_remote=False,
-                                                    from_remote=True,
-                                                )
-                # transfer = self.fetch_results(jobs_to_run, connection=ctx, fetch_all=fetch_all)
-                for r in transfer:
-                    if getattr(r, 'ok', True):
-                        self.logger.info(getattr(r, 'stdout', ''))
-                    else:
-                        self.logger.error(getattr(r, 'stderr', ''))
+                # print('oijiji', files_to_transfer)
+                # transfer = scheduler.transfer_files(files_to_transfer,
+                #                                     ctx,
+                #                                     to_remote=False,
+                #                                     from_remote=True,
+                #                                 )
+                # # transfer = self.fetch_results(jobs_to_run, connection=ctx, fetch_all=fetch_all)
+                # for r in transfer:
+                #     if getattr(r, 'ok', True):
+                #         self.logger.info(getattr(r, 'stdout', ''))
+                #     else:
+                #         self.logger.error(getattr(r, 'stderr', ''))
 
-                jobs_to_run = self.get_outputs(jobs_to_run)
+                # jobs_to_run = self.get_outputs(jobs_to_run)
 
                 scheduler.teardown(jobs_to_run, ctx)
         self.update_db(jobs)

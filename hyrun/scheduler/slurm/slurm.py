@@ -147,15 +147,15 @@ class SlurmScheduler(Scheduler):
                     raise ValueError(f'All slurm tasks must have the same {k}')
         return job
 
-    def submit(self, job, connection=None):
+    def submit(self, job, connection=None,remote_folder=None, **kwargs):
         """Submit job."""
-        remote_dir = Path(job.job_script['remote']['path']).parent
-        job_script_name = Path(job.job_script['name']).name
+        job_script_name = Path(job.job_script['path']).name
+        self.logger.debug(f'submitting job with job script {job_script_name}')
         cmd = f'sbatch ./{job_script_name}'
         if connection is None:
             with connect_to_remote(self.connection) as connection:
-                return self._submit_in_ctx(job, connection, remote_dir, cmd)
-        return self._submit_in_ctx(job, connection, remote_dir, cmd)
+                return self._submit_in_ctx(job, connection, remote_folder, cmd)
+        return self._submit_in_ctx(job, connection, remote_folder, cmd)
 
     def _submit_in_ctx(self, job, connection, remote_dir, cmd):
         """Submit in context."""
@@ -176,41 +176,21 @@ class SlurmScheduler(Scheduler):
         """Generate job script."""
         return gjs(job)
 
-    def transfer_files(self, files_to_transfer, connection, to_remote=False, from_remote=False, **kwargs):
+    def transfer_files(self, 
+                       files_to_transfer=None,
+                       connection=None,
+                       folder=None,
+                       **kwargs):
         """Transfer files."""
-        if to_remote == from_remote:
-            raise ValueError('Exactly one of to_remote and from_remote must be True')
-        sources = []
-        targets = []
-        for f in files_to_transfer:
-            if to_remote:
-                sources.append(str(f['local']['path']))
-                targets.append(str(f['remote']['path']))
-            else:
-                sources.append(str(f['remote']['path']))
-                targets.append(str(f['local']['path']))
-        target_dirs = set([str(Path(t).parent) for t in targets])
-        res = []
-        for d in target_dirs:
-            if to_remote:
-                connection.run(f'mkdir -p {d}', hide='stdout')
-            idx = [i for i, t in enumerate(targets) if str(Path(t).parent) == d]
-            print('oijoijioj', sources, idx, d, from_remote)
-            
-            r = rsync(connection, ' '.join([sources[i] for i in idx]),
-                      d,
-                       download=from_remote)
-            res.append(r)
+        files_to_transfer = files_to_transfer or []
+        host = connection.host
+        download = ( files_to_transfer[0]['host'] == host )
+        sources = [str(f['path']) for f in files_to_transfer]
 
-
-        # r = rsync(connection, ' '.join(sources), ' '.join(targets), download=from_remote)
-        # for target in files_to_transfer.keys():
-        #     sources = ' '.join(files_to_transfer[target])
-        #     
-        # print('rsync', targets, sources)
-        #     r = rsync(connection, sources, [target])
-        #     result.append(r)
-        return res
+        if not download:
+            connection.run(f'mkdir -p {folder}', hide='stdout')
+        
+        return rsync(connection, ' '.join(sources), str(folder), download=download)
 
     def cancel(self, *args, **kwargs):
         """Cancel job."""
