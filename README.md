@@ -78,7 +78,7 @@ i.e. if the output files can be found locally and force_recompute is False
 13. collect all files from all jobs (of given scheduler) and send them to cluster. Note: they are all send to the SAME directory, submit_dir_remote, e.g. /cluster/work/users/${user} which might thus clog up easily
 14. submit jobs from submit_dir_remote, and jobs[<job_no>].id and jobs[<job_no>].outputs[x].output_file, etc are updated
 15. update database. if scheduler=local, the calculation is finished, stdout_err and stdout_file are written to work_dir_local and jobs[<job_no>]['job'].outputs[0] is updated and jobs[<job_no>]['job'].status is set to 'COMPLETED' or 'FAILED' depending on the returncode. For scheduler=slurm, the scheduler context is used to submit the job script and the jobs[<job_no>].job_id is set to the slurm id and jobs[<job_no>].status is set to 'SUBMITTED'.
-16. if wait is False, the scheduler loop is continued (goto 10). If wait is True, the maximum waiting time is max(sum(task.job_time for task in job.tasks) for job in jobs)
+16. if wait is False, the scheduler loop is continued (goto 10) and eventually, the database ids are returned. If wait is True, the maximum waiting time is max(sum(task.job_time for task in job.tasks) for job in jobs)
 17. after waiting jobs in database are updated with the latest status
 18. files are transferred back from the cluster, if transfer_all is set (default) all files from the remote working directory, e.g. /cluster/work/users/${user}/${job_id} are downloaded, if not, only output_file, stderr_file and stdout_file are transferred
 19. the scheduler is teared down
