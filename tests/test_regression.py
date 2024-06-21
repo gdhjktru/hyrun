@@ -47,11 +47,8 @@ def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
             check_version=False, properties=['gradient'])
     setup = x.setup(mol)
     output = run(setup, parser=x)
-    print('output', output)
     result = x.parse(output[0])[0]
-
     print('parsed result', result)
-
     return {key: result[key] for key in keys_to_extract}
 
 
@@ -87,22 +84,6 @@ def test_gen_jobs(mol):
     assert jobs1[0]['job'] == jobs0[0]['job']
 
 
-def test_fetch_jobs(num_regression, request):
-    """Test fetch_jobs."""
-    x = Xtb(check_version=False,
-            compute_settings=ccs('local', **default_cs))
-    s = get_status([-1], database='mydb')
-    print('status', s)
-    assert s[0] == 'COMPLETED'
-    o = fetch_results([-1], database='mydb')
-    result = x.parse(o[0])[0]
-    print('parsed fetched result', result)
-    # data = {key: result[key] for key in keys_to_extract}
-    # num_regression.check(data,
-    #                      basename=f'{request.node.name}_fetch_results',
-    #                      default_tolerance=default_tolerance)
-
-
 @pytest.mark.parametrize('mol',
                          list(molecules.values()),
                          ids=list(molecules.keys()))
@@ -119,4 +100,32 @@ def test_all(cs, mol, num_regression, request):
     # check that all values are identical to local reference
     num_regression.check(data,
                          basename=f'{mol.hash}',
+                         default_tolerance=default_tolerance)
+
+
+@pytest.mark.parametrize('mol',
+                         list(molecules.values()),
+                         ids=list(molecules.keys()))
+@pytest.mark.parametrize('cs',
+                         list(compute_settings.values()),
+                         ids=list(compute_settings.keys()))
+def test_fetch_jobs(cs, mol, num_regression, request):
+    """Test fetch_jobs."""
+    cs.wait = False
+    _ = calculate(cs, mol)
+    # wait 60 seconds for the job to finish
+    from time import sleep
+    s = get_status([-1], database='mydb')
+    while s[0] != 'COMPLETED':
+        sleep(10)
+        s = get_status([-1], database='mydb')
+        print('status', s)
+    assert s[0] == 'COMPLETED'
+    o = fetch_results([-1], database='mydb')
+    x = Xtb(check_version=False)
+    result = x.parse(o[0])[0]
+    print('parsed fetched result', result)
+    data = {key: result[key] for key in keys_to_extract}
+    num_regression.check(data,
+                         basename=f'{request.node.name}_fetch_results',
                          default_tolerance=default_tolerance)
