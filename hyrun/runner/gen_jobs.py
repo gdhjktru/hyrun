@@ -1,12 +1,9 @@
 import itertools
 import json
-from dataclasses import replace
-from typing import List
 
 from hydb import Database, DatabaseDummy  # noqa: F401
 from hytools.logger import LoggerDummy
 
-from hyrun.decorators import force_list
 from hyrun.job import Job, Output  # noqa: F401
 from hyrun.scheduler import get_scheduler
 
@@ -69,7 +66,7 @@ class ArrayJob:
         entry = db.get(key='db_id', value=db_id)
         return {'job': Job(**entry, db_id=db_id, database=db.name),
                 'database': db,
-                'db_id': db_id,}
+                'db_id': db_id, }
 
     def get_connections(self, jobs) -> list[dict]:
         """Extract connections."""
@@ -82,9 +79,10 @@ class ArrayJob:
                 connections.append(job['job'].tasks[0].extract_connection())
             else:
                 connections.append({})
-            if len(set(json.dumps(d, sort_keys=True) for d in connections)) > 1:
+            if len(set(json.dumps(d, sort_keys=True)
+                   for d in connections)) > 1:
                 self.logger.error('All tasks in a job must have the same ' +
-                                    'connection')
+                                  'connection')
             c.append(connections[0])
         return c
 
@@ -147,7 +145,8 @@ class ArrayJob:
     def _check_job_params(self, jobs) -> dict:
         """Check job parameters."""
         # extract all scheduler names
-        # scheduler_names = set([job['scheduler'].name for job in jobs.values()])
+        # scheduler_names = set([job['scheduler'].name for job
+        # in jobs.values()])
         # # extract all jobs with same scheduler.name:
         # jobs_grouped = {name: {k: v for k, v in jobs.items()
         #                        if v['scheduler'].name == name}
@@ -172,21 +171,14 @@ class ArrayJob:
                 i += 1
         return new_jobs
 
-
-
-
-
         return jobs
 
-
-
-
-
-
         # jobs_flattened = self._flatten_2d_list(
-        #     [job['scheduler'].check_job_params(job['job']) for job in jobs.values()])
+        #     [job['scheduler'].check_job_params(job['job'])
+        # for job in jobs.values()])
 
         # for job in jobs.values:
         #     jobs_flattened
         # return self._flatten_2d_list(
-        #     [job['scheduler'].check_job_params(job['job']) for job in jobs.values()])
+        #     [job['scheduler'].check_job_params(job['job'])
+        # for job in jobs.values()])
