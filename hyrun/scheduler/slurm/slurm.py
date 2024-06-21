@@ -2,9 +2,11 @@ import datetime
 import json
 from dataclasses import replace
 from pathlib import Path
+from typing import Optional, Union
 
 from hytools.logger import LoggerDummy
 
+from hyrun.job import Job
 from hyrun.remote import connect_to_remote, rsync
 
 from ..abc import Scheduler
@@ -24,8 +26,9 @@ class SlurmScheduler(Scheduler):
         self.default_data_path = 'data_path_remote'
         self.connection = kwargs.get('connection',
                                      self.get_connection(**kwargs))
-        
-    def __repr__(self): 
+
+    def __repr__(self):
+        """Represent."""
         return f'{self.__class__.__name__}({self.connection})'
 
     def __eq__(self, other):
@@ -64,7 +67,7 @@ class SlurmScheduler(Scheduler):
             files_to_transfer[remote] = []
         files_to_transfer[remote].append(local)
         return files_to_transfer
-    
+
     def get_files_to_transfer(self, job):
         """Get files to transfer."""
         files_to_transfer = {}
@@ -136,8 +139,8 @@ class SlurmScheduler(Scheduler):
     def check_job_params(self, job):
         """Check job params."""
         keys_to_be_identical = ssh_kws + ['memory_per_cpu', 'cpus_per_task',
-                                            'ntasks', 'slurm_account',
-                                            'submit_dir_remote']
+                                          'ntasks', 'slurm_account',
+                                          'submit_dir_remote']
         for k in keys_to_be_identical:
             ref = getattr(job['job'].tasks[0], k)
             if not ref:
@@ -147,9 +150,13 @@ class SlurmScheduler(Scheduler):
                     raise ValueError(f'All slurm tasks must have the same {k}')
         return job
 
-    def submit(self, job, connection=None,remote_folder=None, **kwargs):
+    def submit(self,
+               job: Job,
+               connection=None,
+               remote_folder=None,
+               **kwargs):
         """Submit job."""
-        job_script_name = Path(job.job_script['path']).name
+        job_script_name = Path(job.job_script.get('path')).name  # type: ignore
         self.logger.debug(f'submitting job with job script {job_script_name}')
         cmd = f'sbatch ./{job_script_name}'
         if connection is None:
@@ -161,7 +168,6 @@ class SlurmScheduler(Scheduler):
         """Submit in context."""
         with connection.cd(remote_dir):  # type: ignore
             c = connection.run(cmd, hide='stdout')  # type: ignore
-
             job_id = -1
             if c.ok:
                 output = c.stdout.strip()
@@ -176,21 +182,24 @@ class SlurmScheduler(Scheduler):
         """Generate job script."""
         return gjs(job)
 
-    def transfer_files(self, 
-                       files_to_transfer=None,
+    def transfer_files(self,
+                       files_to_transfer: Optional[list] = None,
                        connection=None,
-                       folder=None,
+                       folder: Optional[Union[str, Path]] = None,
                        **kwargs):
         """Transfer files."""
         files_to_transfer = files_to_transfer or []
         host = connection.host
-        download = ( files_to_transfer[0]['host'] == host )
+        download = (files_to_transfer[0]['host'] == host)
         sources = [str(f['path']) for f in files_to_transfer]
 
         if not download:
             connection.run(f'mkdir -p {folder}', hide='stdout')
-        
-        return rsync(connection, ' '.join(sources), str(folder), download=download)
+
+        return rsync(connection,
+                     ' '.join(sources),
+                     str(folder),
+                     download=download)
 
     def cancel(self, *args, **kwargs):
         """Cancel job."""
@@ -209,7 +218,7 @@ class SlurmScheduler(Scheduler):
 
     def fetch_results(self, job, *args, **kwargs):
         """Fetch results."""
-        exclude = kwargs.get('exclude',())
+        exclude = kwargs.get('exclude', ())
         remote_dirs = []
         local_dirs = []
         for rs in job.tasks:
@@ -256,7 +265,7 @@ class SlurmScheduler(Scheduler):
     #                                 run_settings.stderr_file]]
     #     files_to_check = [f for f in files_to_check
     #                       if f.name not in ['stdout.out', 'stderr.out']]
-        
+
     #     if any(f.exists() for f in files_to_check if f is not None):
     #         self.logger.debug(f'(one of) output file(s) {files_to_check} ' +
     #                           'exists')

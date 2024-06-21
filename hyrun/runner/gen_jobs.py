@@ -1,9 +1,11 @@
 import itertools
+import json
 from dataclasses import replace
 from typing import List
-import json
+
 from hydb import Database, DatabaseDummy  # noqa: F401
 from hytools.logger import LoggerDummy
+
 from hyrun.decorators import force_list
 from hyrun.job import Job, Output  # noqa: F401
 from hyrun.scheduler import get_scheduler
@@ -32,10 +34,10 @@ def gen_jobs(arg, **kwargs) -> dict:
     return jobs
 
 
-@force_list
-def update_jobs(jobs, **kwargs) -> list[Job]:
-    """Update jobs."""
-    return [replace(job, **kwargs) for job in jobs]
+# @force_list
+# def update_jobs(jobs, **kwargs) -> list[Job]:
+#     """Update jobs."""
+#     return [replace(job, **kwargs) for job in jobs]
 
 
 class ArrayJob:
@@ -58,7 +60,7 @@ class ArrayJob:
                     outputs = [Output().from_dict(rs.__dict__) for rs in t]
                     jobs[i] = {'job': Job(tasks=t, outputs=outputs)}
         return jobs
-    
+
     def resolve_db_id(self, db_id, **kwargs):
         """Resolve db_id."""
         db = (Database(kwargs['database'])
@@ -68,7 +70,7 @@ class ArrayJob:
         return {'job': Job(**entry, db_id=db_id, database=db.name),
                 'database': db,
                 'db_id': db_id,}
- 
+
     def get_connections(self, jobs) -> list[dict]:
         """Extract connections."""
         c = []
@@ -85,8 +87,6 @@ class ArrayJob:
                                     'connection')
             c.append(connections[0])
         return c
-
-
 
     def _check_nested_levels(self, list_: list):
         """Check nested levels."""
@@ -119,9 +119,9 @@ class ArrayJob:
                                if db[0]
                                else kwargs.get('database', DatabaseDummy()))
         return jobs
-    
 
     def add_schedulers(self, jobs):
+        """Add schedulers."""
         connections = self.get_connections(jobs)
         for i, job in jobs.items():
             if job.get('scheduler', None):
@@ -139,8 +139,9 @@ class ArrayJob:
         if any(isinstance(item, list) for item in list_):
             return [item for sublist in list_ for item in sublist]
         return list_
-    
+
     def change_key(self, dict_obj, old_key, new_key):
+        """Change key."""
         dict_obj[new_key] = dict_obj.pop(old_key)
 
     def _check_job_params(self, jobs) -> dict:
@@ -176,12 +177,12 @@ class ArrayJob:
 
 
         return jobs
-    
 
 
-        
-        
-        
+
+
+
+
         # jobs_flattened = self._flatten_2d_list(
         #     [job['scheduler'].check_job_params(job['job']) for job in jobs.values()])
 
@@ -189,6 +190,3 @@ class ArrayJob:
         #     jobs_flattened
         # return self._flatten_2d_list(
         #     [job['scheduler'].check_job_params(job['job']) for job in jobs.values()])
-    
-
-

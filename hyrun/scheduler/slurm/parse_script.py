@@ -7,7 +7,7 @@ try:
 except ImportError:
     m = None
 
-class Output: 
+class Output:
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -18,7 +18,7 @@ def get_result(output_file, parsed_file):
     if m:
         with suppress(Exception):
         output = m.parse(Output(**result))
- 
+
     with open($filename as f)
         yaml.dump(output, f)
 
@@ -29,6 +29,3 @@ get_result($output_file, $parsed_file)
 def parse_script(**kwargs):
     """Parse script."""
     return Template(PARSE_SCRIPT).substitute(**kwargs)
-
-
-

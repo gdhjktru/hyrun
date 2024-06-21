@@ -10,16 +10,12 @@ class Scheduler(ABC):
     def cancel(self):
         """Cancel job."""
 
-    # @abstractmethod
-    # def run(self):
-    #     """Run job."""
+    @abstractmethod
+    def is_finished(self, *args, **kwargs):
+        """Check if job finishes."""
 
     @abstractmethod
-    def quick_return(self):
-        """Quick return job."""
-
-    @abstractmethod
-    def fetch_results(self):
+    def fetch_results(self, *args, **kwargs):
         """Fetch results."""
 
     @contextmanager

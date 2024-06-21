@@ -1,14 +1,15 @@
 import subprocess
 from contextlib import nullcontext
+from copy import deepcopy
 from dataclasses import replace
 from pathlib import Path
 from shlex import quote, split
 from sys import executable as python_ex
 from typing import Any, Dict, List, Optional, Union
-from copy import deepcopy
 
 from hytools.file import File
 from hytools.logger import LoggerDummy
+
 from hyrun.decorators import list_exec
 
 from ..abc import Scheduler
@@ -27,6 +28,7 @@ class LocalScheduler(Scheduler):
         self.name = 'local'
 
     def __repr__(self):
+        """Represent."""
         return f'{self.__class__.__name__}()'
 
     def __eq__(self, other):
@@ -53,7 +55,7 @@ class LocalScheduler(Scheduler):
             j['job'] = replace(job['job'], tasks=[t])
             new_jobs.append(j)
         return new_jobs
-    
+
     def run_ctx(self, arg: Optional[Any] = None):
         """Return context manager."""
         return nullcontext(arg)
@@ -142,7 +144,9 @@ class LocalScheduler(Scheduler):
             #     f = run_settings.output_file.work_path_local  # type: ignore
             # else:
             #     f = run_settings.output_file['path']
-            output_dict.update({'output_file': run_settings.output_file['path']})  # type: ignore
+            output_dict.update(
+                {'output_file':
+                 run_settings.output_file['path']})  # type: ignore
         if result is None:
             return output_dict
 

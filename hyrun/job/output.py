@@ -1,7 +1,7 @@
+import inspect
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Union
-import inspect
 
 PathLike = Union[Path, str]
 PathLikeList = Union[PathLike, List[PathLike]]

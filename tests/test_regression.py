@@ -1,5 +1,4 @@
 # requires pytest-regressions installed (pip install pytest-regressions)
-import os
 from pathlib import Path
 
 import pytest

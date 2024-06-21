@@ -25,5 +25,3 @@ def force_list(func):
         else:
             return func(self, *args, **kwargs)
     return wrapper
-
-
