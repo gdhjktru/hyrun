@@ -6,7 +6,6 @@ from typing import Optional, Union
 
 from hytools.logger import LoggerDummy
 
-from hyrun.job import Job
 from hyrun.remote import connect_to_remote, rsync
 
 from ..abc import Scheduler
@@ -151,7 +150,7 @@ class SlurmScheduler(Scheduler):
         return job
 
     def submit(self,
-               job: Job,
+               job,
                connection=None,
                remote_folder=None,
                **kwargs):

@@ -209,7 +209,7 @@ class Runner:
                                     ).safe_substitute(**file.variables)
         return file
 
-    def gen_job_script(self, job=None, scheduler=None) -> dict:
+    def gen_job_script(self, job=None, scheduler=None):
         """Generate job script."""
         job_script_str = scheduler.gen_job_script(job)  # type: ignore
         job_hash = hashlib.sha256(job_script_str.encode()).hexdigest()
@@ -218,39 +218,14 @@ class Runner:
                            or f'job_script_{job_hash}.sh')
         job_script = File(name=job_script_name,
                           content=job_script_str)  # type: ignore
-        return replace(job, job_script=job_script, hash=job_hash)
-        # # print(job_script)
-        # p = job_script.submit_path_local
-        # # p = (getattr(job_script, 'submit_path_local', None)
-        # #      or job_script.work_path_local)
-        # # print('pjpjp', p)
-        # # pojklopiiåpoåø
-        # p.parent.mkdir(parents=True, exist_ok=True)
-        # p.write_text(job_script.content)
-        # p_remote = getattr(job_script, 'submit_path_remote', None) or p
-        # file_transfer = job.files_to_transfer or FILE_TRANSFER
-        # file_transfer['pre']['from'].append(str(p))
-        # file_transfer['pre']['to'].append(str(p_remote))
-        # return replace(job, job_script=str(p),
-        #                job_hash=job_hash)
+        return replace(job,
+                       job_script=job_script,
+                       hash=job_hash)
 
     def resolve_objs_in_tasks(self, job):
         """Resolve objects in tasks."""
         for t in job.tasks:
             self.check_types(t)
-        # for t in job.tasks:
-
-        #     for k, v in t.__dict__.items():
-        #         if not isinstance(v, std_types):
-        #             self.logger.warning(f'Found non-standard type
-        # in task: {k}')
-        #             print('resolve', k, type(v), v)
-        #         if isinstance(v, seqs):
-        #             for i, e in enumerate(v):
-        #                 if not isinstance(e, std_types):
-        #                     self.logger.warning(f'Found non-standard
-        # type in task: {k}/{e}')
-        #                     print('resolve', k, i, type(e), e)
         return job
 
     def check_types(self, obj):
@@ -381,13 +356,18 @@ class Runner:
         p.write_text(self.replace_var_in_file_content(file).content)
         return str(p)
 
-    def check_finished(self, job=None, **kwargs):
-        """Check if all tasks of a job have finished."""
-        return [self.check_finished_single(t)  # type: ignore
-                for t in job.tasks]
+    def check_finished_jobs(self, jobs: dict) -> dict:
+        """Check if all jobs are finished."""
+        for j in jobs.values():
+            job = j['job']
+            job.finished = all(
+                self.check_finished_single(t)
+                for t in job.tasks)  # type: ignore
+        return jobs
 
     def check_finished_single(self, run_settings) -> bool:
         """Check if output file exists and return True if it does."""
+        # NOTE: for remotely parsed add parsed file !!
         work_dir_local = getattr(run_settings, 'work_dir_local', Path('.'))
         files_to_check = [Path(work_dir_local) / Path(f.name).name
                           for f in [run_settings.output_file,
@@ -431,13 +411,6 @@ class Runner:
         """Return jobs."""
         return jobs[0] if len(jobs) == 1 else jobs
 
-    def check_all_finished(self, jobs: dict):
-        """Check if all jobs are finished."""
-        for j in jobs.values():
-            job = j['job']
-            job.finished = all(self.check_finished(job))
-        return jobs
-
     def get_outputs(self, jobs):
         """Get outputs."""
         for j in jobs.values():
@@ -454,23 +427,21 @@ class Runner:
                 job.outputs.append(output)
         return jobs
 
-    # def get_schedulers(self, jobs):
-    #     """Get schedulers."""
-    #     return list(set([j.scheduler for j in jobs]))
-
     def run(self, *args, **kwargs):
         """Run."""
         jobs = gen_jobs(*args, logger=self.logger, **kwargs)
-        jobs = self.check_all_finished(jobs)
+        jobs = self.check_finished_jobs(jobs)
+        self.logger.debug('The following jobs are finished: ' +
+                          ', '.join([str(i) for i, j in jobs.items()
+                                     if j['job'].finished]))
+        # remove jobs that are finished
+        jobs = {i: j for i, j in jobs.items() if not j['job'].finished}
 
-        # "global" run settings
-        rs = jobs[0]['job'].tasks[0]  # type: ignore
         jobs = self.prepare_jobs(jobs)
         jobs = self.add_to_db(jobs)
 
-        if rs.dry_run:
-            self.logger.warning('Dry run found in first task of first job, '
-                                'exiting...')
+        if all(t.dry_run for j in jobs.values() for t in j['job'].tasks):
+            self.logger.warning('Performing dry run, exiting...')
             return jobs
 
         schedulers = list(set([j['scheduler'] for j in jobs.values()]))

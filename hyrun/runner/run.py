@@ -1,4 +1,3 @@
-from .array_job import gen_jobs  # noqa
 from .runner import Runner
 
 
@@ -22,6 +21,6 @@ def get_results(*args, **kwargs):
     pass
 
 
-async def arun(*args, **kwargs):
-    """Run."""
-    return await Runner(*args, **kwargs).arun()
+# async def arun(*args, **kwargs):
+#     """Run."""
+#     return await Runner(*args, **kwargs).arun()  # pragma: no cover

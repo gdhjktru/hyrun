@@ -1,4 +1,5 @@
 # requires pytest-regressions installed (pip install pytest-regressions)
+import os
 from pathlib import Path
 
 import pytest
@@ -33,9 +34,9 @@ compute_settings = {
     'local': ccs('local', **default_cs),
     # 'docker': ccs('docker', container_image='xtb', **default_cs),
     # 'conda': ccs('conda', conda_env='base', **default_cs),
-    # 'saga': ccs('saga', modules=['xtb/6.4.1-intel-2021a'],
-    #             user=os.getlogin(),
-    #             memory_per_cpu=2000, progress_bar=False, **default_cs)
+    'saga': ccs('saga', modules=['xtb/6.4.1-intel-2021a'],
+                user=os.getlogin(),
+                memory_per_cpu=2000, progress_bar=False, **default_cs)
 }
 molecules = {'water': Molecule('O')}
 
