@@ -70,7 +70,7 @@ class ArrayJob:
 
     def resolve_db_id(self, db_id, **kwargs) -> dict:
         """Resolve db_id."""
-        db = (Database(kwargs['database'])
+        db = (Database(kwargs['database'], logger=self.logger)
               if kwargs.get('database')
               else DatabaseDummy())
         db_id = db._db_id(db_id)

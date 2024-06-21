@@ -6,7 +6,6 @@ from shlex import quote, split
 from sys import executable as python_ex
 from typing import Any, Dict, List, Optional
 
-from hytools.file import File
 from hytools.logger import LoggerDummy
 
 from hyrun.decorators import list_exec
@@ -32,6 +31,8 @@ class LocalScheduler(Scheduler):
 
     def __eq__(self, other):
         """Check equality."""
+        if not isinstance(other, LocalScheduler):
+            return False
         return self.name == other.name
 
     def __hash__(self):
@@ -69,7 +70,7 @@ class LocalScheduler(Scheduler):
             *run_settings.launcher,
             run_settings.program,
             *run_settings.args  # type: ignore
-        ]  # type: ignore #14891
+            ]  # type: ignore #14891
         running_list = [str(x).strip() for x in running_list]
 
         if not all([isinstance(x, str) for x in running_list]):
@@ -121,23 +122,19 @@ class LocalScheduler(Scheduler):
     def gen_output(self, result, run_settings) -> dict:
         """Generate output."""
         output_dict: Dict[str, Any]
-        files_to_parse = run_settings.files_to_parse
-        for i, f in enumerate(files_to_parse):
-            if isinstance(f, File):
-                if hasattr(f, 'work_path_local'):
-                    files_to_parse[i] = f.work_path_local  # type: ignore
+        # files_to_parse = run_settings.files_to_parse
+        # for i, f in enumerate(files_to_parse):
+        #     if isinstance(f, File):
+        #         if hasattr(f, 'work_path_local'):
+        #             files_to_parse[i] = f.work_path_local  # type: ignore
         output_dict = {
-            'files_to_parse': files_to_parse,
+            # 'files_to_parse': files_to_parse,
             'output_folder': (run_settings.work_dir_local
                               if run_settings.output_folder
                               else None),
-        }
+            }
 
         if run_settings.output_file:
-            # if hasattr(run_settings.output_file, 'work_path_local'):
-            #     f = run_settings.output_file.work_path_local  # type: ignore
-            # else:
-            #     f = run_settings.output_file['path']
             output_dict.update(
                 {'output_file':
                  run_settings.output_file['path']})  # type: ignore
@@ -148,23 +145,17 @@ class LocalScheduler(Scheduler):
 
         exceptions = ['normal termination of xtb']
         if result.stderr:
-            # stderr_file = (
-            #     run_settings.stderr_file.work_path_local  # type: ignore
-            # )
             stderr_file = run_settings.stderr_file['path']
             Path(stderr_file).write_text(result.stderr)
             self.logger.debug('STDERR: %s', result.stderr) if any(
                 e in result.stderr for e in exceptions
-            ) else self.logger.error('STDERR: %s', result.stderr)
-            output_dict['stderr'] = result.stderr
+                ) else self.logger.error('STDERR: %s', result.stderr)
+            # output_dict['stderr'] = result.stderr
 
         if result.stdout:
             stdout_file = run_settings.stdout_file['path']
-            # stdout_file = (
-            #     run_settings.stdout_file.work_path_local  # type: ignore
-            # )
             Path(stdout_file).write_text(result.stdout)
-            output_dict['stdout'] = stdout_file
+            # output_dict['stdout'] = stdout_file
         return output_dict
 
     def teardown(self, *args, **kwargs):
@@ -172,25 +163,43 @@ class LocalScheduler(Scheduler):
         # removing files
         pass
 
-    def submit(self, job, *args, **kwargs):
+    def update_output(self, result=None, run_settings=None, output=None):
+        """Update output."""
+        output_dict = {}
+        # if output.output_file:
+        #     output_dict['output_file'] = output.output_file['path']
+        # if output.stdout_file:
+        #     output_dict['stdout_file'] = output.stdout_file['path']
+        # if output.stderr_file:
+        #     output_dict['stderr_file'] = output.stderr_file['path']
+
+        output_dict['returncode'] = result.returncode
+
+        exceptions = ['normal termination of xtb']
+        if result.stderr:
+            stderr_file = run_settings.stderr_file['path']
+            Path(stderr_file).write_text(result.stderr)
+            self.logger.debug('STDERR: %s', result.stderr) if any(
+                e in result.stderr for e in exceptions
+                ) else self.logger.error('STDERR: %s', result.stderr)
+            output_dict['stderr'] = result.stderr
+
+        if result.stdout:
+            stdout_file = run_settings.stdout_file['path']
+            Path(stdout_file).write_text(result.stdout)
+            output_dict['stdout'] = stdout_file
+        return replace(output, **output_dict)
+
+    def submit(self, job=None, **kwargs):
         """Submit job."""
-        # if isinstance(jobs, dict):
-        #     for job in jobs.values():
-        #         job['job'] = self.submit(job['job'])
-        #         return jobs
-        # warning might return a list of lists
         if len(job.tasks) > 1:
             raise ValueError('Local scheduler only supports one task')
         rs = job.tasks[0]
         js = job.job_script['path']
+        output = job.outputs[0]
         cmd = Path(js).read_text().split(' ')
-
-        # cmd = split(js.content
-        #             if isinstance(js, File) and js.content
-        #             else str(js) if isinstance(js, str)
-        #             else Path(js).read_text())
-        self.logger.debug('Running command: %s\n', cmd)
-        self.logger.debug('Working directory: %s\n', rs.work_dir_local)
+        self.logger.info('Running command: %s\n', cmd)
+        self.logger.info('Working directory: %s\n', rs.work_dir_local)
         run_opts = {'capture_output': True,
                     'text': True,
                     'cwd': str(rs.work_dir_local),
@@ -200,27 +209,31 @@ class LocalScheduler(Scheduler):
             run_opts['shell'] = True
             cmd = ' '.join(cmd)
         result = subprocess.run(cmd, **run_opts)
-
-        job.outputs = [self.gen_output(result, rs)]
+        self.logger.debug('Result: %s\n', result)
+        output = self.update_output(result=result,
+                                    run_settings=rs,
+                                    output=output)
+        job.outputs = [output]
+        if result.returncode == 0:
+            job.status = 'COMPLETED'
+        else:
+            job.status = 'FAILED'
         job.finished = True
         return job
-        # job.finished = True
-        # job.files_to_parse = [file for rs in results for file
-        # in rs.files_to_parse]
-        # job.output_file = [r.output_file for r in results]
-        # job.stdout = [r.stdout for r in results]
-        # job.stderr = [r.stderr for r in results]
-        # job.returncode = sum([r.returncode for r in results])
-        # return result
 
-    def is_finished(self, job) -> bool:
+    def is_finished(self, job, *args, **kwargs) -> bool:
         """Check if job is finished."""
-        return True
+        success = ['COMPLETED']
+        failed = ['FAILED']
+        if job.status in failed:
+            self.logger.error(f'Job {job.id} with id {job.db_id} in ' +
+                              f'database {job.database} failed with status ' +
+                              f'{job.status}')
+        return job.status in success + failed
 
-    @list_exec
-    def get_status(self, job, *args, **kwargs) -> str:
+    def get_status(self, job=None, **kwargs) -> str:
         """Get status."""
-        return replace(job, status='COMPLETED')
+        return job
 
     def cancel(self):
         """Cancel job."""
@@ -233,7 +246,7 @@ class LocalScheduler(Scheduler):
     @list_exec
     def fetch_results(self, jobs, *args, **kwargs):
         """Fetch results."""
-        return []
+        return jobs
 
     # def check_finished(self, run_settings) -> bool:
     #     """Check if output file exists and return True if it does."""

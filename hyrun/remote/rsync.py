@@ -20,15 +20,16 @@ def rsync(*args, **kwargs):
 
 
 def rsync_get(
-    c,
-    source,
-    target,
-    exclude=(),
-    delete=False,
-    strict_host_keys=True,
-    rsync_opts='',
-    ssh_opts='',
-):
+        c,
+        source,
+        target,
+        exclude=(),
+        delete=False,
+        strict_host_keys=True,
+        rsync_opts='',
+        ssh_opts='',
+        **kwargs,
+        ):
     r"""Wrap patchwork.transfers.rsync.rsync_get.
 
     Convenient wrapper around your friendly local ``rsync``.
@@ -138,7 +139,7 @@ def rsync_get(
         'exclude': exclude_opts.format(*exclusions),
         'rsh': rsh_string,
         'extra': rsync_opts,
-    }
+        }
     options = '{delete}{exclude} -avuzqP {extra} {rsh}'.format(**options_map)
     # Create and run final command string
     # TODO: richer host object exposing stuff like .address_is_ipv6 or whatever
@@ -170,7 +171,9 @@ def rsync_get(
                 cmd += ':{} '.format(f)
             cmd += target
 
-    print('rsync command', cmd)
+    logger = kwargs.get('logger', None)
+    if logger:
+        logger.debug('rsync command: {}'.format(cmd))
 
     return c.local(cmd)
 
@@ -192,15 +195,16 @@ def rsync_get(
 
 
 def rsync_put(
-    c,
-    source,
-    target,
-    exclude=(),
-    delete=False,
-    strict_host_keys=True,
-    rsync_opts='',
-    ssh_opts='',
-):
+        c,
+        source,
+        target,
+        exclude=(),
+        delete=False,
+        strict_host_keys=True,
+        rsync_opts='',
+        ssh_opts='',
+        **kwargs,
+        ):
     r"""Wrap patchwork.transfers.rsync.rsync_get.
 
     Convenient wrapper around your friendly local ``rsync``.
@@ -310,7 +314,7 @@ def rsync_put(
         'exclude': exclude_opts.format(*exclusions),
         'rsh': rsh_string,
         'extra': rsync_opts,
-    }
+        }
     options = '{delete}{exclude} -avuzqP {extra} {rsh}'.format(**options_map)
     # Create and run final command string
     # TODO: richer host object exposing stuff like .address_is_ipv6 or whatever
@@ -348,4 +352,7 @@ def rsync_put(
             for f in files_target[1:]:
                 cmd += '{} '.format(f)
 
+    logger = kwargs.get('logger', None)
+    if logger:
+        logger.debug('rsync command: {}'.format(cmd))
     return c.local(cmd)

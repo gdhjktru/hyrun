@@ -14,9 +14,9 @@ class Scheduler(ABC):
     def is_finished(self, *args, **kwargs):
         """Check if job finishes."""
 
-    @abstractmethod
-    def fetch_results(self, *args, **kwargs):
-        """Fetch results."""
+    # @abstractmethod
+    # def fetch_results(self, *args, **kwargs):
+    #     """Fetch results."""
 
     @contextmanager
     @abstractmethod

@@ -7,7 +7,7 @@ from hyif import Xtb
 from hyobj import Molecule
 from hyset import create_compute_settings as ccs
 
-from hyrun import run
+from hyrun.runner import fetch_results, get_status, run
 
 
 @pytest.fixture(scope='session')
@@ -37,7 +37,7 @@ compute_settings = {
     'saga': ccs('saga', modules=['xtb/6.4.1-intel-2021a'],
                 user=os.getlogin(),
                 memory_per_cpu=2000, progress_bar=False, **default_cs)
-}
+    }
 molecules = {'water': Molecule('O')}
 
 
@@ -85,6 +85,22 @@ def test_gen_jobs(mol):
         jobs_db.append(job)
     jobs1 = gen_jobs(jobs_db)
     assert jobs1[0]['job'] == jobs0[0]['job']
+
+
+def test_fetch_jobs(num_regression, request):
+    """Test fetch_jobs."""
+    x = Xtb(check_version=False,
+            compute_settings=ccs('local', **default_cs))
+    s = get_status([-1], database='mydb')
+    print('status', s)
+    assert s[0] == 'COMPLETED'
+    o = fetch_results([-1], database='mydb')
+    result = x.parse(o[0])[0]
+    print('parsed fetched result', result)
+    # data = {key: result[key] for key in keys_to_extract}
+    # num_regression.check(data,
+    #                      basename=f'{request.node.name}_fetch_results',
+    #                      default_tolerance=default_tolerance)
 
 
 @pytest.mark.parametrize('mol',

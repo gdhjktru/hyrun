@@ -1,4 +1,4 @@
-from .job import Job
+from .job import Job, Output
 from .runner import run
 
-__all__ = ['run', 'Job']
+__all__ = ['run', 'Job', 'Output']

@@ -6,19 +6,19 @@ def run(*args, **kwargs):
     return Runner(*args, **kwargs).run(*args, **kwargs)
 
 
-def rerun(*args, **kwargs):
-    """Run."""
-    return Runner(*args, rerun=True, **kwargs).run()
+# def rerun(*args, **kwargs):
+#     """Run."""
+#     return Runner(*args, rerun=True, **kwargs).run()
 
 
 def get_status(*args, **kwargs):
     """Get status."""
-    pass
+    return Runner(*args, **kwargs).get_status(*args, **kwargs)
 
 
-def get_results(*args, **kwargs):
+def fetch_results(*args, **kwargs):
     """Get results."""
-    pass
+    return Runner(*args, **kwargs).fetch_results(*args, **kwargs)
 
 
 # async def arun(*args, **kwargs):

@@ -32,6 +32,8 @@ class SlurmScheduler(Scheduler):
 
     def __eq__(self, other):
         """Check equality."""
+        if not isinstance(other, SlurmScheduler):
+            return False
         return (self.name == other.name
                 and self.connection == other.connection)
 
@@ -67,25 +69,7 @@ class SlurmScheduler(Scheduler):
         files_to_transfer[remote].append(local)
         return files_to_transfer
 
-    def get_files_to_transfer(self, job):
-        """Get files to transfer."""
-        files_to_transfer = {}
-        for t in job.tasks:
-            for f in t.files_to_write:
-                host = str(f['remote']['host'])
-                path_local = str(f['local']['path'])
-                if host not in files_to_transfer:
-                    files_to_transfer[host] = []
-                files_to_transfer[host].append(path_local)
-        # add job script
-        host = str(job.job_script['remote']['host'])
-        path_local = str(job.job_script['local']['path'])
-        if host not in files_to_transfer:
-            files_to_transfer[host] = []
-        files_to_transfer[host].append(path_local)
-        return files_to_transfer
-
-    def get_status(self, job=None, connection=None):
+    def get_status(self, job=None, connection=None, **kwargs):
         """Get status."""
         if connection:
             return self._get_state_in_ctx(job, connection)
@@ -141,7 +125,8 @@ class SlurmScheduler(Scheduler):
                                           'cpus_per_task',
                                           'ntasks',
                                           'slurm_account',
-                                          'submit_dir_remote']
+                                          'submit_dir_remote'
+                                          'work_dir_remote']
         first_task = job.tasks[0]
         for k in keys_to_be_identical:
             ref = getattr(first_task, k, None)
@@ -153,22 +138,29 @@ class SlurmScheduler(Scheduler):
         return job
 
     def submit(self,
-               job,
-               connection=None,
-               remote_folder=None,
+               job=None,
                **kwargs):
         """Submit job."""
         job_script_name = Path(job.job_script.get('path')).name  # type: ignore
         self.logger.debug(f'submitting job with job script {job_script_name}')
         cmd = f'sbatch ./{job_script_name}'
-        if connection is None:
-            with connect_to_remote(self.connection) as connection:
-                return self._submit_in_ctx(job, connection, remote_folder, cmd)
-        return self._submit_in_ctx(job, connection, remote_folder, cmd)
+        # if connection is None:
+        #     with connect_to_remote(self.connection) as connection:
+        # return self._submit_in_ctx(job, connection, remote_folder, cmd)
+        return self._submit_in_ctx(job=job,
+                                   connection=kwargs.get('connection'),
+                                   remote_folder=kwargs.get('remote_folder'),
+                                   cmd=cmd)
 
-    def _submit_in_ctx(self, job, connection, remote_dir, cmd):
+    def _submit_in_ctx(self,
+                       job=None,
+                       connection=None,
+                       remote_folder=None,
+                       cmd=None):
         """Submit in context."""
-        with connection.cd(remote_dir):  # type: ignore
+        if connection is None:
+            raise ValueError('connection must be provided')
+        with connection.cd(remote_folder):  # type: ignore
             c = connection.run(cmd, hide='stdout')  # type: ignore
             job_id = -1
             if c.ok:
@@ -176,9 +168,33 @@ class SlurmScheduler(Scheduler):
                 job_id = int(output.split()[-1])
             else:
                 raise RuntimeError(c.stderr.strip())
-        return replace(job,
-                       id=job_id,
-                       status='SUBMITTED')
+        job = self.update_remote_wdirs(job=job,
+                                       job_id=job_id,
+                                       host=connection.host)
+        job.id = job_id
+        job.status = 'SUBMITTED'
+
+        print('oujfoafewgf', job)
+        return job
+
+    def update_remote_wdirs(self, job=None, job_id=None, host=None):
+        """Update remote work directories."""
+        for t, o in zip(job.tasks, job.outputs):
+            wdir = Path(t.work_dir_remote)
+            if 'job_id' in wdir.name:
+                t.work_dir_remote = wdir.parent / str(job_id)
+            else:
+                t.work_dir_remote = wdir / str(job_id)
+            files = ['output_file', 'stderr_file', 'stdout_file']
+            for f in files:
+                ff = getattr(o, f, None)
+                if ff is None:
+                    continue
+                name = Path(ff['path']).name
+                p = Path(t.work_dir_remote) / name
+                setattr(o, f, {'path': str(p), 'host': host})
+                setattr(t, f, {'path': str(p), 'host': host})
+        return job
 
     def gen_job_script(self, job):
         """Generate job script."""
@@ -193,7 +209,7 @@ class SlurmScheduler(Scheduler):
         files_to_transfer = files_to_transfer or []
         host = connection.host
         download = (files_to_transfer[0]['host'] == host)
-        sources = [str(f['path']) for f in files_to_transfer]
+        sources = list(set([str(f['path']) for f in files_to_transfer]))
 
         if not download:
             connection.run(f'mkdir -p {folder}', hide='stdout')
@@ -201,7 +217,7 @@ class SlurmScheduler(Scheduler):
         return rsync(connection,
                      ' '.join(sources),
                      str(folder),
-                     download=download)
+                     download=download, logger=getattr(self, 'logger', None))
 
     def cancel(self, *args, **kwargs):
         """Cancel job."""
@@ -218,64 +234,6 @@ class SlurmScheduler(Scheduler):
                               f'{job.status}')
         return job.status in success + failed
 
-    def fetch_results(self, job, *args, **kwargs):
-        """Fetch results."""
-        exclude = kwargs.get('exclude', ())
-        remote_dirs = []
-        local_dirs = []
-        for rs in job.tasks:
-            for dr in ['work_dir_remote', 'submit_dir_remote']:
-                if not hasattr(rs, dr):
-                    continue
-                if getattr(rs, dr) not in remote_dirs:
-                    remote_dirs.append(str(getattr(rs, dr)) + '/*')
-            for dl in ['work_dir_local', 'submit_dir_local']:
-                if not hasattr(rs, dl):
-                    continue
-                if getattr(rs, dl) not in local_dirs:
-                    local_dirs.append(str(getattr(rs, dl)) + '/')
-        connection = kwargs.get('connection', None)
-        if not connection:
-            with connect_to_remote(self.connection) as conn:
-                connection = conn
-
-        r = [rsync(connection, remote_dir, [local_dir], download=True,
-                   exclude=exclude)
-             for remote_dir, local_dir in zip(remote_dirs, local_dirs)]
-        # with connect_to_remote(self.connection) as connection:
-        #     for remote_dir, local_dir in zip(remote_dirs, local_dirs):
-        #         r.append(rsync(connection,
-        #                        remote_dir,
-        #                        [local_dir],
-        #                        download=True))
-        return r
-
-    def quick_return(self, *args, **kwargs):
-        """Quick return."""
-        pass
-
     def run_ctx(self, *args, **kwargs):
         """Run context manager."""
         return connect_to_remote(self.connection)
-
-    # def check_finished(self, run_settings) -> bool:
-    #     """Check if output file exists and return True if it does."""
-    #     work_dir_local = getattr(run_settings, 'work_dir_local', Path('.'))
-    #     files_to_check = [Path(work_dir_local)/Path(f.name).name
-    #                       for f in [run_settings.output_file,
-    #                                 run_settings.stdout_file,
-    #                                 run_settings.stderr_file]]
-    #     files_to_check = [f for f in files_to_check
-    #                       if f.name not in ['stdout.out', 'stderr.out']]
-
-    #     if any(f.exists() for f in files_to_check if f is not None):
-    #         self.logger.debug(f'(one of) output file(s) {files_to_check} ' +
-    #                           'exists')
-    #     else:
-    #         return False
-
-    #     force_recompute = run_settings.force_recompute
-    #     self.logger.info('force_recompute is %s, will %srecompute\n',
-    #                      'set' if force_recompute else 'not set',
-    #                      '' if force_recompute else 'not ')
-    #     return not force_recompute
