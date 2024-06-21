@@ -88,7 +88,7 @@ i.e. if the output files can be found locally and force_recompute is False
 ## checking on jobs
 
 hyrun.get_status() is similar to run with steps 1.-3., 7. and 10.-12. then the current status is fetched from the scheduler and returned as a string.
-if Fetch results=True, the results are copied back and the outputs are return.
+if Fetch results=True, the results are copied back and the outputs are returned.
 
 
 ## fetching results

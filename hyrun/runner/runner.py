@@ -512,6 +512,8 @@ class Runner:
                                            connection=ctx, **kwargs)
 
                 scheduler.teardown(jobs_to_run, ctx)
+        if not wait:
+            return [j['job'].db_id for j in jobs.values()]
         return [j['job'].outputs for j in jobs.values()]
 
     def get_status(self, *args, fetch_results=False, **kwargs):
