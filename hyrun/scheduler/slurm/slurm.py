@@ -137,14 +137,17 @@ class SlurmScheduler(Scheduler):
 
     def check_job_params(self, job):
         """Check job params."""
-        keys_to_be_identical = ssh_kws + ['memory_per_cpu', 'cpus_per_task',
-                                          'ntasks', 'slurm_account',
+        keys_to_be_identical = ssh_kws + ['memory_per_cpu',
+                                          'cpus_per_task',
+                                          'ntasks',
+                                          'slurm_account',
                                           'submit_dir_remote']
+        first_task = job.tasks[0]
         for k in keys_to_be_identical:
-            ref = getattr(job['job'].tasks[0], k)
-            if not ref:
+            ref = getattr(first_task, k, None)
+            if ref is None:
                 continue
-            for t in job['job'].tasks:
+            for t in job.tasks[1:]:
                 if getattr(t, k) != ref:
                     raise ValueError(f'All slurm tasks must have the same {k}')
         return job

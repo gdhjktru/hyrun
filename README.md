@@ -3,7 +3,7 @@
 Tools for running calculations using the Hylleraas Software Platform
 
 
-# jobs
+## jobs
 
 central object are jobs, which have the following structure:
 
@@ -24,11 +24,17 @@ are thus stored in the other keys of jobs[<job_no>].
 The form as a dict allows for easier picking out specific jobs, e.g. for
 bundling those with same scheduler.
 
-jobs are generated from
-* list of run settings
-* list of ints (database-ids), together with a kw database=...
-* list of Jobs
-using gen_jobs()
+ The decocator hyrun.job.loop_over_jobs is used to convert routines for single
+ jobs into thos that can perform tasks for all jobs. These routines are thus
+ called with routine(jobs, *args, **kwargs) and using the decorator converted
+ into a list of calls with the kwargs jobs[<job_no>].values().
+
+## generating jobs
+
+jobs are generated using hyrun.runner.gen_jobs() from
+* (list of) run settings
+* (list of) ints (database-ids), together with a kw database=...
+* (list of) Jobs
 
 For local jobs, len(jobs[<job_no>]['job'].tasks) is always 1., for remote jobs,
 e.g.slurm a length > 1 means that jobs are bundled within one job_script.
@@ -37,12 +43,16 @@ That is an Input [[RS0, RS1], [RS2, RS3]] (RS==RunSettings
  4 consecutive calculations, and for scheduler=slurm will create 2 jobs where
  each job_script is performing 2 calculations consecutively.
 
- The decocator hyrun.job.loop_over_jobs is used to convert routines for single
- jobs into thos that can perform tasks for all jobs. These routines are thus
- called with routine(jobs, *args, **kwargs) and using the decorator converted
- into a list of calls with the kwargs jobs[<job_no>].values().
+ gen_jobs() is making sure that all tasks in a job have the same database
+ and scheduler and initialize them.
 
-# running jobs
+ Furthermore, for scheduler=local it will make sure that there is only 1
+ task per job and thus add jobs if applicable. For slurm jobs, it is checked
+ that the ressources asked for in the job script, e.g. mermory_per_cpu, ntasks,
+ etc. and submit_dir_remote are identical for all tasks in on job.
+
+
+## running jobs
 
 hyrun.run(<input>) is performing the following steps:
 

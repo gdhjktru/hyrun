@@ -58,6 +58,38 @@ def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
 @pytest.mark.parametrize('mol',
                          list(molecules.values()),
                          ids=list(molecules.keys()))
+def test_gen_jobs(mol):
+    """Test gen_jobs."""
+    from hydb import Database
+
+    from hyrun.runner import gen_jobs
+    x = Xtb(check_version=False)
+    jobs_ref = gen_jobs([x.setup(mol) for _ in range(2)])
+    jobs_ref[0]['database'] = None
+    # test generating from a list of db_ids
+    jobs0 = gen_jobs([-2, -1], database='mydb')
+    wd = str(jobs0[0]['job'].tasks[0].work_dir_local)
+    wd_ref = str(jobs_ref[0]['job'].tasks[0].work_dir_local)
+    assert wd == wd_ref
+
+    # test generating from a list of Job objects
+    # load jobs from db
+    db = Database('mydb')
+    db_ids = [-2, -1]
+    jobs_db = []
+    for id in db_ids:
+        db_id = db._db_id(id)
+        entry = db.get(key='db_id', value=db_id)[0]
+        job = db.dict_to_obj(entry)
+        job.db_id = db_id
+        jobs_db.append(job)
+    jobs1 = gen_jobs(jobs_db)
+    assert jobs1[0]['job'] == jobs0[0]['job']
+
+
+@pytest.mark.parametrize('mol',
+                         list(molecules.values()),
+                         ids=list(molecules.keys()))
 @pytest.mark.parametrize('cs',
                          list(compute_settings.values()),
                          ids=list(compute_settings.keys()))

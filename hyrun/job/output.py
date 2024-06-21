@@ -25,3 +25,4 @@ class Output:
         for key, value in data.items():
             if key in self.__annotations__:
                 setattr(self, key, value)
+        return self

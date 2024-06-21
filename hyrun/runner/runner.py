@@ -256,19 +256,17 @@ class Runner:
                 f'Found non-standard type {type(v)} in task: {k}')
 
     @loop_update_jobs
-    def prepare_jobs(self, *args, job=None, scheduler=None, **kwargs) -> Job:
+    def prepare_jobs(self,
+                     *args,
+                     job=None,
+                     scheduler=None,
+                     **kwargs) -> Job:
         """Prepare jobs."""
-        job = self.gen_job_script(job=job, scheduler=scheduler)
-        # hosts = [getattr(t, 'host', None)
-        #                or getattr(t, 'connection', {}).get('host', None)
-        #                for t in job.tasks]
-        # wdirs = [getattr(t, 'work_dir_local', None)
-        #          for t in job.tasks if hasattr(t, 'work_dir_local')]
-        # sdirs = [getattr(t, 'submit_dir_local', None)
-        #             for t in job.tasks if hasattr(t, 'submit_dir_local')]
         parent = getattr(job.tasks[0], 'submit_dir_local', None)
         host = gethostname()
+        job = self.gen_job_script(job=job, scheduler=scheduler)
         self.write_file_local(job.job_script, parent=parent, host=host)
+
         job.job_script = self.resolve_file_name(
             job.job_script, parent=parent, host=host)
         for i, t in enumerate(job.tasks):
