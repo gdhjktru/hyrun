@@ -173,8 +173,6 @@ class SlurmScheduler(Scheduler):
                                        host=connection.host)
         job.id = job_id
         job.status = 'SUBMITTED'
-
-        print('oujfoafewgf', job)
         return job
 
     def update_remote_wdirs(self, job=None, job_id=None, host=None):

@@ -1,0 +1,7 @@
+#asynctest
+aiounittest
+hydb @ git+https://gitlab.com/hylleraasplatform/hydb.git
+hyobj @ git+https://gitlab.com/hylleraasplatform/hyobj.git
+pytest
+pytest-asyncio
+pytest-cov

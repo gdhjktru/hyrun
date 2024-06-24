@@ -13,7 +13,7 @@ from hytools.file import File
 from hytools.logger import Logger, LoggerDummy
 
 from hyrun.decorators import list_exec
-from hyrun.job import Job, Output, loop_update_jobs
+from hyrun.job import Job, loop_update_jobs
 
 from .gen_jobs import gen_jobs
 
@@ -83,7 +83,6 @@ class Runner:
     @loop_update_jobs
     def add_to_db(self, *args, job=None, database=None, **kwargs):
         """Add job to database."""
-        print('job', job)
         if job.db_id is not None:
             self.logger.debug('Job already in database, updating...')
             return self.update_db(job=job, database=database)
@@ -336,21 +335,21 @@ class Runner:
         """Submit jobs."""
         return scheduler.submit(job=job, **kwargs)  # type: ignore
 
-    def get_outputs(self, jobs):
-        """Get outputs."""
-        for j in jobs.values():
-            job = j['job']
-            job.outputs = []
-            for t in job.tasks:
-                output = Output().from_dict(t.__dict__)
-                print('output get', output)
-                for f in ['output_file', 'stdout_file', 'stderr_file']:
-                    if hasattr(t, f):
-                        setattr(output, f, getattr(t, f)['local']['path'])
-                print('output mod', output)
+    # def get_outputs(self, jobs):
+    #     """Get outputs."""
+    #     for j in jobs.values():
+    #         job = j['job']
+    #         job.outputs = []
+    #         for t in job.tasks:
+    #             output = Output().from_dict(t.__dict__)
+    #             print('output get', output)
+    #             for f in ['output_file', 'stdout_file', 'stderr_file']:
+    #                 if hasattr(t, f):
+    #                     setattr(output, f, getattr(t, f)['local']['path'])
+    #             print('output mod', output)
 
-                job.outputs.append(output)
-        return jobs
+    #             job.outputs.append(output)
+    #     return jobs
 
     def get_remote_folder(self, jobs) -> str:
         """Get remote folder."""
@@ -458,7 +457,7 @@ class Runner:
 
         if any(t.dry_run for j in jobs.values() for t in j['job'].tasks):
             self.logger.warning('Performing dry run, exiting...')
-            return jobs
+            return [j['job'] for j in jobs.values()]
 
         schedulers = list(set([j['scheduler'] for j in jobs.values()]))
 
