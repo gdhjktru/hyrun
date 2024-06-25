@@ -9,13 +9,17 @@ from time import sleep
 from typing import Generator, Optional
 
 from hydb import DatabaseDummy
-from hytools.file import File
 from hytools.logger import Logger, LoggerDummy
 
 from hyrun.decorators import list_exec
 from hyrun.job import Job, loop_update_jobs
 
 from .gen_jobs import gen_jobs
+
+try:
+    from hytools.file import File
+except ImportError:
+    from hyset import File
 
 
 class Runner:

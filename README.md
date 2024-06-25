@@ -8,8 +8,8 @@ hyrun.run() will replace hyset.Runner.run() and can thus be used like this:
 hyif.Interface.parse(hyrun.run(hyif.Interface.setup(object))).
 However, in addition to RunSettings (==hyif.Interface.setup(object)), it can
 also take a database id, a Job object and, inprinciple combinations of it.
-hyrun.run() will thus return either 2d-array of hyrun.Output() objects (default),
- intergers (database ids, for wait=False) or hyrun.Job() (for dry_run=True).
+hyrun.run() will thus return either 2d-array of hyrun.Output() objects (default), list of
+ integers (database ids, for wait=False) or hyrun.Job() (for dry_run=True).
 
 ## jobs
 
