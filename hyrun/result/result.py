@@ -203,6 +203,10 @@ def get_result(result: Any,
     if isinstance(result, list):
         return [get_result(r, output_type) for r in result]
 
+    if isinstance(result, int):
+        print(f'Job stored in database with id {result}')  # pragma: no cover
+        return result  # type: ignore
+
     if not isinstance(result, dict):
         if hasattr(result, '__dict__'):
             result = vars(result)
