@@ -7,10 +7,13 @@ from typing import Any, Callable, Dict, Optional, Union
 import yaml
 
 try:
-    from hyobj.units import Units, convert_units
+    from hytools.units import Units, convert_units
 except ImportError:
-    Units = None
-    convert_units = None
+    try:
+        from hyobj.units import Units, convert_units
+    except ImportError:
+        Units = None
+        convert_units = None
 from hytools.logger import Logger, LoggerDummy
 
 
