@@ -1,4 +1,5 @@
 import hashlib
+from collections import defaultdict
 from contextlib import suppress
 from dataclasses import replace
 from datetime import timedelta
@@ -7,7 +8,6 @@ from socket import gethostname
 from string import Template
 from time import sleep
 from typing import Generator, Optional
-from collections import defaultdict
 
 from hydb import DatabaseDummy
 from hytools.logger import Logger, LoggerDummy
@@ -129,7 +129,8 @@ class Runner:
             raise ValueError('db_id must be set to update job in database')
         database.update(db_id, job)
         self.logger.info(f'Updated job in database with id {db_id}')
-        self.logger.debug(f'db entry: {database.get(key="db_id", value=db_id)}')
+        self.logger.debug('db entry: ' +
+                          f'{database.get(key="db_id", value=db_id)}')
         return job
 
     def _increment_t(self, t, tmin=1, tmax=60) -> int:
@@ -323,7 +324,7 @@ class Runner:
         """Check if all jobs are finished."""
         for j in jobs.values():
             job = j['job']
-            
+
             job.finished = all(
                 self.check_finished_single(t)
                 for t in job.tasks)  # type: ignore
@@ -469,16 +470,16 @@ class Runner:
                       else self.logger.error)
         log_method(getattr(transfer, 'stdout'
                            if getattr(transfer, 'ok', True) else 'stderr', ''))
-        
+
     @loop_update_jobs
     def initiate_job(self, *args, job=None, scheduler=None, database=None,
-                      **kwargs):
+                     **kwargs):
         """Initiate job."""
         if job.db_id is not None:
             self.logger.debug('Job already in database, updating...')
             return self.update_db(job=job, database=database)
         if job.job_hash is not None:
-            self.logger.debug('Job hash found, checking database...')  
+            self.logger.debug('Job hash found, checking database...')
             job_db = self.get_jobs_from_db(job=job,
                                            scheduler=scheduler,
                                            database=database,
@@ -518,7 +519,7 @@ class Runner:
                                 'waiting for all jobs of each scheduler' +
                                 'to finish consecutively...')
         #     .... first submit all then wait for all then fetch all
-        
+
         for scheduler in schedulers:
             setattr(scheduler, 'logger', self.logger)
             self.logger.debug('Using scheduler: ' +
@@ -529,7 +530,7 @@ class Runner:
                 self.logger.debug(f'Context manager opened, ctx: {ctx}')
                 jobs_to_run = {i: j for i, j in jobs.items()
                                if j['scheduler'] == scheduler}
-                
+
                 jobs_to_run = self.prepare_jobs(jobs_to_run)
                 jobs_to_run = self.initiate_job(jobs_to_run)
                 if dry_run:
@@ -584,7 +585,7 @@ class Runner:
         if dry_run:
             return self.gen_db_info(jobs)
         return [j['job'].outputs for j in jobs.values()]
-    
+
     def gen_db_info(self, jobs: dict) -> dict:
         """Generate database info."""
         result = defaultdict(list)

@@ -61,7 +61,8 @@ class SlurmScheduler(Scheduler):
     #             if remote not in files_to_transfer:
     #                 files_to_transfer[remote] = []
     #             files_to_transfer[remote].append(local)
-    #     local = self._resolve_file(job.job_script, parent='submit_path_local')
+    #     local = self._resolve_file(job.job_script, parent='
+    # submit_path_local')
     #     remote = str(Path(self._resolve_file(
     #         job.job_script, parent='submit_path_remote')).parent)
     #     if remote not in files_to_transfer:
