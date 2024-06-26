@@ -491,6 +491,34 @@ class Runner:
         self.logger.debug('Job not found in database, adding...')
         return self.add_to_db(job=job, database=database)
 
+    def get_finished_jobs(self,
+                          jobs: dict,
+                          connection=None,
+                          scheduler=None,
+                          **kwargs) -> dict:
+        """Get finished jobs."""
+        jobs_to_fetch = {}
+        for i, j in list(jobs.items()):
+            if j['job'].id is not None:
+                jobs_to_fetch[i] = j
+                del jobs[i]
+
+        self.logger.info(f'Jobs to fetch: {len(jobs_to_fetch)}')
+        jobs_to_fetch = self.get_status_run(jobs_to_fetch,
+                                            connection=connection)
+        jobs_to_do_fetch = {i: j for i, j in jobs_to_fetch.items()
+                            if j['job'].status in ['COMPLETED']}
+        jobs_to_not_fetch = {i: j for i, j in jobs_to_fetch.items()
+                             if j['job'].status not in ['COMPLETED']}
+        if jobs_to_not_fetch:
+            self.logger.warning('Jobs not finished: ' +
+                                f'{jobs_to_not_fetch}')
+
+        self.transfer_from_cluster(jobs=jobs_to_do_fetch,
+                                   scheduler=scheduler,
+                                   connection=connection, **kwargs)
+        return jobs
+
     def run(self, *args, **kwargs):
         """Run."""
         jobs = gen_jobs(*args, logger=self.logger, **kwargs)
@@ -512,6 +540,7 @@ class Runner:
         wait = any([t.wait for j in jobs.values() for t in j['job'].tasks])
         dry_run = any([t.dry_run for j in jobs.values()
                        for t in j['job'].tasks])
+        rerun = any([t.rerun for j in jobs.values() for t in j['job'].tasks])
         self.logger.info(f'Waiting for jobs to finish: {wait}')
 
         if len(schedulers) > 1 and wait:
@@ -537,25 +566,11 @@ class Runner:
                     self.logger.warning('Performing dry run...')
                     continue
 
-                for i, j in list(jobs_to_run.items()):
-                    if j['job'].id is not None:
-                        jobs_to_fetch[i] = j
-                        del jobs_to_run[i]
-
-                self.logger.info(f'Jobs to fetch: {len(jobs_to_fetch)}')
-                jobs_to_fetch = self.get_status_run(jobs_to_fetch,
-                                                    connection=ctx)
-                jobs_to_do_fetch = {i: j for i, j in jobs_to_fetch.items()
-                                    if j['job'].status in ['COMPLETED']}
-                jobs_to_not_fetch = {i: j for i, j in jobs_to_fetch.items()
-                                     if j['job'].status not in ['COMPLETED']}
-                if jobs_to_not_fetch:
-                    self.logger.warning('Jobs not finished: ' +
-                                        f'{jobs_to_not_fetch}')
-                self.transfer_from_cluster(jobs=jobs_to_do_fetch,
-                                           scheduler=scheduler,
-                                           connection=ctx, **kwargs)
-                # scheduler.teardown(jobs_to_fetch, ctx)
+                if not rerun:
+                    jobs_to_run = self.get_finished_jobs(jobs_to_run,
+                                                         scheduler=scheduler,
+                                                         connection=ctx,
+                                                         **kwargs)
 
                 if len(jobs_to_run) == 0:
                     self.logger.info('No more jobs to run with ' +
