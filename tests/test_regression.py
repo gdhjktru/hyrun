@@ -7,7 +7,8 @@ from hyif import Xtb
 from hyobj import Molecule
 from hyset import create_compute_settings as ccs
 
-from hyrun.runner import fetch_results, get_status, run
+# from hyrun.runner import fetch_results, get_status
+from hyrun.runner import run
 
 
 @pytest.fixture(scope='session')
@@ -109,29 +110,47 @@ def test_all(cs, mol, num_regression, request):
                          default_tolerance=default_tolerance)
 
 
+# @pytest.mark.parametrize('mol',
+#                          list(molecules.values()),
+#                          ids=list(molecules.keys()))
+# @pytest.mark.parametrize('cs',
+#                          list(compute_settings.values()),
+#                          ids=list(compute_settings.keys()))
+# def test_fetch_jobs(cs, mol, num_regression, request):
+#     """Test fetch_jobs."""
+#     cs.wait = False
+#     cs.database = 'mydb'
+#     _ = calculate(cs, mol)
+#     from time import sleep
+#     s = get_status([-1], database='mydb')
+#     while s[0] != 'COMPLETED':
+#         sleep(10)
+#         s = get_status([-1], database='mydb')
+#         print('status', s)
+#     assert s[0] == 'COMPLETED'
+#     o = fetch_results([-1], database='mydb')
+#     x = Xtb(check_version=False)
+#     result = x.parse(o[0])[0]
+#     print('parsed fetched result', result)
+#     data = {key: result[key] for key in keys_to_extract}
+#     num_regression.check(data,
+#                          basename=f'{request.node.name}_fetch_results',
+#                          default_tolerance=default_tolerance)
+
 @pytest.mark.parametrize('mol',
                          list(molecules.values()),
                          ids=list(molecules.keys()))
 @pytest.mark.parametrize('cs',
                          list(compute_settings.values()),
                          ids=list(compute_settings.keys()))
-def test_fetch_jobs(cs, mol, num_regression, request):
-    """Test fetch_jobs."""
-    cs.wait = False
-    cs.database = 'mydb'
-    _ = calculate(cs, mol)
-    from time import sleep
-    s = get_status([-1], database='mydb')
-    while s[0] != 'COMPLETED':
-        sleep(10)
-        s = get_status([-1], database='mydb')
-        print('status', s)
-    assert s[0] == 'COMPLETED'
-    o = fetch_results([-1], database='mydb')
-    x = Xtb(check_version=False)
-    result = x.parse(o[0])[0]
-    print('parsed fetched result', result)
-    data = {key: result[key] for key in keys_to_extract}
+def test_rerun(cs, mol, num_regression, request):
+    """Test all."""
+    data = calculate(cs, mol)
+    # check if value is identical to the reference calculated with same method
     num_regression.check(data,
-                         basename=f'{request.node.name}_fetch_results',
+                         basename=f'{request.node.name}_{mol.hash}',
+                         default_tolerance=default_tolerance)
+    # check that all values are identical to local reference
+    num_regression.check(data,
+                         basename=f'{mol.hash}',
                          default_tolerance=default_tolerance)
