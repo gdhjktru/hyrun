@@ -7,6 +7,7 @@ from socket import gethostname
 from string import Template
 from time import sleep
 from typing import Generator, Optional
+from collections import defaultdict
 
 from hydb import DatabaseDummy
 from hytools.logger import Logger, LoggerDummy
@@ -39,15 +40,33 @@ class Runner:
         return getattr(a, attr_name, None)
 
     @loop_update_jobs
-    def get_jobs_from_db(self, *args, job=None, database=None, **kwargs):
+    def get_jobs_from_db(self,
+                         *args,
+                         job=None,
+                         database=None,
+                         key=None,
+                         val=None,
+                         **kwargs):
         """Resolve db_id."""
         db = database or DatabaseDummy()
         db_id = job.db_id
-        entry = db.get(key='db_id', value=db_id)[0]
+        key = str(key) or 'db_id'
+        val = str(val) or int(db_id)
+        entry = db.get(key=key, value=val)
+        if isinstance(entry, list):
+            if len(entry) > 1:
+                self.logger.error('Multiple entries found in database')
+                return None
+            entry = entry[0]
+        db_id = entry.doc_id
+        if not entry:
+            self.logger.debug(f'No job found in database with {key} {val}')
+            return None
+        self.logger.debug(f'Found job in database with id {db_id}')
+
         job = db.dict_to_obj(entry)
         job.db_id = db_id
-        return {'job': job, 'scheduler': job.scheduler, 'db_id': db_id,
-                'database': db}
+        return job
 
     def get_logger(self, *args, **kwargs):
         """Get logger."""
@@ -95,9 +114,12 @@ class Runner:
             self.logger.error('Error adding job to database')
             return job
         else:
+            job.db_id = db_id
+            job = self.update_db(job=job, database=database)
             self.logger.info(f'Added job to database with id {db_id}')
-            self.logger.debug(f'db entry: {database.get(db_id)}')
-        return replace(job, db_id=db_id)
+            self.logger.debug('db entry: ' +
+                              f'{database.get(key="db_id", value=db_id)}')
+        return job
 
     @loop_update_jobs
     def update_db(self, *args, job=None, database=None, **kwargs):
@@ -107,7 +129,7 @@ class Runner:
             raise ValueError('db_id must be set to update job in database')
         database.update(db_id, job)
         self.logger.info(f'Updated job in database with id {db_id}')
-        self.logger.debug(f'db entry: {database.get(db_id)}')
+        self.logger.debug(f'db entry: {database.get(key="db_id", value=db_id)}')
         return job
 
     def _increment_t(self, t, tmin=1, tmax=60) -> int:
@@ -170,6 +192,7 @@ class Runner:
         """Generate job script."""
         job_script_str = scheduler.gen_job_script(job)  # type: ignore
         job_hash = hashlib.sha256(job_script_str.encode()).hexdigest()
+
         job_script_name = (getattr(job.tasks[0],  # type: ignore
                                    'job_script_filename', None)
                            or f'job_script_{job_hash}.sh')
@@ -177,7 +200,7 @@ class Runner:
                           content=job_script_str)  # type: ignore
         return replace(job,
                        job_script=job_script,
-                       hash=job_hash)
+                       job_hash=job_hash)
 
     def check_types(self, obj):
         """Check types."""
@@ -300,6 +323,7 @@ class Runner:
         """Check if all jobs are finished."""
         for j in jobs.values():
             job = j['job']
+            
             job.finished = all(
                 self.check_finished_single(t)
                 for t in job.tasks)  # type: ignore
@@ -445,23 +469,38 @@ class Runner:
                       else self.logger.error)
         log_method(getattr(transfer, 'stdout'
                            if getattr(transfer, 'ok', True) else 'stderr', ''))
+        
+    @loop_update_jobs
+    def initiate_job(self, *args, job=None, scheduler=None, database=None,
+                      **kwargs):
+        """Initiate job."""
+        if job.db_id is not None:
+            self.logger.debug('Job already in database, updating...')
+            return self.update_db(job=job, database=database)
+        if job.job_hash is not None:
+            self.logger.debug('Job hash found, checking database...')  
+            job_db = self.get_jobs_from_db(job=job,
+                                           scheduler=scheduler,
+                                           database=database,
+                                           key='job_hash',
+                                           val=job.job_hash)
+            if job_db is not None:
+                self.logger.debug('Job found in database, updating...')
+                return job_db
+        self.logger.debug('Job not found in database, adding...')
+        return self.add_to_db(job=job, database=database)
 
     def run(self, *args, **kwargs):
         """Run."""
         jobs = gen_jobs(*args, logger=self.logger, **kwargs)
+        # check if jobs has an id
+
         jobs = self.check_finished_jobs(jobs)
         self.logger.debug('The following jobs are finished: ' +
                           ', '.join([str(i) for i, j in jobs.items()
                                      if j['job'].finished]))
         # remove jobs that are finished
         jobs = {i: j for i, j in jobs.items() if not j['job'].finished}
-
-        jobs = self.prepare_jobs(jobs)
-        jobs = self.add_to_db(jobs)
-
-        if any(t.dry_run for j in jobs.values() for t in j['job'].tasks):
-            self.logger.warning('Performing dry run, exiting...')
-            return [j['job'] for j in jobs.values()]
 
         schedulers = list(set([j['scheduler'] for j in jobs.values()]))
 
@@ -470,6 +509,8 @@ class Runner:
             self.logger.info(f'   job {i} ({j["scheduler"].name}) task(s): ' +
                              f'{len(j["job"].tasks)} tasks')
         wait = any([t.wait for j in jobs.values() for t in j['job'].tasks])
+        dry_run = any([t.dry_run for j in jobs.values()
+                       for t in j['job'].tasks])
         self.logger.info(f'Waiting for jobs to finish: {wait}')
 
         if len(schedulers) > 1 and wait:
@@ -477,15 +518,38 @@ class Runner:
                                 'waiting for all jobs of each scheduler' +
                                 'to finish consecutively...')
         #     .... first submit all then wait for all then fetch all
+        
         for scheduler in schedulers:
             setattr(scheduler, 'logger', self.logger)
             self.logger.debug('Using scheduler: ' +
                               f'{scheduler.name}')  # type: ignore
+            jobs_to_fetch = {}
             with scheduler.run_ctx() as ctx:  # tpye: ignore
 
                 self.logger.debug(f'Context manager opened, ctx: {ctx}')
                 jobs_to_run = {i: j for i, j in jobs.items()
                                if j['scheduler'] == scheduler}
+                
+                jobs_to_run = self.prepare_jobs(jobs_to_run)
+                jobs_to_run = self.initiate_job(jobs_to_run)
+                if dry_run:
+                    self.logger.warning('Performing dry run...')
+                    continue
+
+                for i, j in list(jobs_to_run.items()):
+                    if j['job'].id is not None:
+                        jobs_to_fetch[i] = j
+                        del jobs_to_run[i]
+
+                self.logger.info(f'Jobs to fetch: {len(jobs_to_fetch)}')
+                self.transfer_from_cluster(jobs=jobs_to_fetch,
+                                           scheduler=scheduler,
+                                           connection=ctx, **kwargs)
+                # scheduler.teardown(jobs_to_fetch, ctx)
+
+                if len(jobs_to_run) == 0:
+                    self.logger.info('No jobs to run, fetching results...')
+                    continue
 
                 self.transfer_to_cluster(jobs=jobs_to_run,
                                          scheduler=scheduler,
@@ -516,8 +580,19 @@ class Runner:
 
                 scheduler.teardown(jobs_to_run, ctx)
         if not wait:
-            return [j['job'].db_id for j in jobs.values()]
+            return self.gen_db_info(jobs)
+        if dry_run:
+            return self.gen_db_info(jobs)
         return [j['job'].outputs for j in jobs.values()]
+    
+    def gen_db_info(self, jobs: dict) -> dict:
+        """Generate database info."""
+        result = defaultdict(list)
+        for job in jobs.values():
+            db_id = int(job['job'].db_id)
+            database = str(job['database'].name)
+            result[database].append(db_id)
+        return dict(result)
 
     def get_status(self, *args, fetch_results=False, **kwargs):
         """Get status/Fetch results."""

@@ -49,25 +49,25 @@ class SlurmScheduler(Scheduler):
              else getattr(file, parent, None))
         return str(p)
 
-    def resolve_files(self, job):
-        """Resolve files."""
-        files_to_transfer = {}
-        for t in job.tasks:
-            for f in t.files_to_write:
+    # def resolve_files(self, job):
+    #     """Resolve files."""
+    #     files_to_transfer = {}
+    #     for t in job.tasks:
+    #         for f in t.files_to_write:
 
-                local = self._resolve_file(f, parent='work_path_local')
-                remote = str(Path(self._resolve_file(
-                    f, parent='work_path_remote')).parent)
-                if remote not in files_to_transfer:
-                    files_to_transfer[remote] = []
-                files_to_transfer[remote].append(local)
-        local = self._resolve_file(job.job_script, parent='submit_path_local')
-        remote = str(Path(self._resolve_file(
-            job.job_script, parent='submit_path_remote')).parent)
-        if remote not in files_to_transfer:
-            files_to_transfer[remote] = []
-        files_to_transfer[remote].append(local)
-        return files_to_transfer
+    #             local = self._resolve_file(f, parent='work_path_local')
+    #             remote = str(Path(self._resolve_file(
+    #                 f, parent='work_path_remote')).parent)
+    #             if remote not in files_to_transfer:
+    #                 files_to_transfer[remote] = []
+    #             files_to_transfer[remote].append(local)
+    #     local = self._resolve_file(job.job_script, parent='submit_path_local')
+    #     remote = str(Path(self._resolve_file(
+    #         job.job_script, parent='submit_path_remote')).parent)
+    #     if remote not in files_to_transfer:
+    #         files_to_transfer[remote] = []
+    #     files_to_transfer[remote].append(local)
+    #     return files_to_transfer
 
     def get_status(self, job=None, connection=None, **kwargs):
         """Get status."""

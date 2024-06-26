@@ -7,9 +7,9 @@ from typing import Optional
 class JobInfo:
     """Dataclass containing information about a job."""
 
-    id: int = -1
+    id: Optional[int] = None
     db_id: Optional[int] = None
     name: Optional[str] = None
     finished: bool = False
     status: Optional[str] = None
-    hash: Optional[str] = None
+    job_hash: Optional[str] = None

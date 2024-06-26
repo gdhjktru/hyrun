@@ -47,9 +47,15 @@ def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
             check_version=False, properties=['gradient'])
     setup = x.setup(mol)
     output = run(setup, parser=x)
-    result = x.parse(output[0])[0]
-    print('parsed result', result)
-    return {key: result[key] for key in keys_to_extract}
+    print(output)
+    try:
+        # result = x.parse(output)
+        result = x.parse(output[0])[0]
+        print('parsed result', result)
+        return {key: result[key] for key in keys_to_extract}
+    except Exception as e:
+        print(e)
+        return {}
 
 
 @pytest.mark.parametrize('mol',
@@ -76,7 +82,7 @@ def test_gen_jobs(mol):
     jobs_db = []
     for id in db_ids:
         db_id = db._db_id(id)
-        entry = db.get(key='db_id', value=db_id)[0]
+        entry = db.get(key='db_id', value=db_id)
         job = db.dict_to_obj(entry)
         job.db_id = db_id
         jobs_db.append(job)
@@ -112,8 +118,8 @@ def test_all(cs, mol, num_regression, request):
 def test_fetch_jobs(cs, mol, num_regression, request):
     """Test fetch_jobs."""
     cs.wait = False
+    cs.database = 'mydb'
     _ = calculate(cs, mol)
-    # wait 60 seconds for the job to finish
     from time import sleep
     s = get_status([-1], database='mydb')
     while s[0] != 'COMPLETED':

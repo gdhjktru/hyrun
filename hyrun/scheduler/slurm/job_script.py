@@ -201,7 +201,9 @@ class SlurmJobScript:
         job_names = [t.job_name for t in job.tasks]
         if len(set(job_names)) == 1 and job_names[0] is not None:
             return job_names[0]
+        
+        return 'hyrun_job'
 
-        program = 'slurm_job' if len(job_names) == 1 else 'slurm_bundle'
-        return (
-            f"{program}_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}")
+        # program = 'slurm_job' if len(job_names) == 1 else 'slurm_bundle'
+        # return (
+        #     f"{program}_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}")

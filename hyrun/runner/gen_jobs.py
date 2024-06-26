@@ -68,13 +68,15 @@ class ArrayJob:
                 ijob += 1
         return jobs
 
-    def resolve_db_id(self, db_id, **kwargs) -> dict:
+    def resolve_db_id(self, db_id: int, **kwargs) -> dict:
         """Resolve db_id."""
         db = (Database(kwargs['database'], logger=self.logger)
               if kwargs.get('database')
               else DatabaseDummy())
         db_id = db._db_id(db_id)
-        entry = db.get(key='db_id', value=db_id)[0]
+        entry = db.get(key='db_id', value=db_id)
+        # if isinstance(entry, list):
+        #     entry = entry[0]
         job = db.dict_to_obj(entry)
         job.db_id = db_id
         return {'job': job}
