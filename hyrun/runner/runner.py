@@ -403,12 +403,12 @@ class Runner:
         output_files = ['output_file', 'stdout_file', 'stderr_file']
         dfiles_to_transfer = {}
         for j in jobs.values():
-            finished = all(self.check_finished_single(t)
-                           for t in j['job'].tasks)
-            if not finished:
-                self.logger.warning(f'Job {j["job"].id} not finished, not ' +
-                                    'transferring files')
-                continue
+            # finished = all(self.check_finished_single(t)
+            #                for t in j['job'].tasks)
+            # if not finished:
+            #     self.logger.warning(f'Job {j["job"].id} not finished, not ' +
+            #                         'transferring files')
+            #     continue
             for t, o in zip(j['job'].tasks, j['job'].outputs):
                 wdir_local = str(getattr(t, 'work_dir_local'))
                 if wdir_local not in dfiles_to_transfer:
@@ -549,7 +549,8 @@ class Runner:
                 # scheduler.teardown(jobs_to_fetch, ctx)
 
                 if len(jobs_to_run) == 0:
-                    self.logger.info('No jobs to run, fetching results...')
+                    self.logger.info('No more jobs to run with ' +
+                                     'this scheduler ...')
                     continue
 
                 self.transfer_to_cluster(jobs=jobs_to_run,
@@ -575,7 +576,15 @@ class Runner:
                 jobs_to_run = self.wait(jobs_to_run, connection=ctx)
                 jobs_to_run = self.update_db(jobs_to_run)
 
-                self.transfer_from_cluster(jobs=jobs_to_run,
+                jobs_to_fetch = {i: j for i, j in jobs_to_run.items()
+                                 if j['job'].status in ['COMPLETED']}
+                jobs_to_not_fetch = {i: j for i, j in jobs_to_run.items()
+                                     if j['job'].status not in ['COMPLETED']}
+                if jobs_to_not_fetch:
+                    self.logger.warning('Jobs not finished: ' +
+                                        f'{jobs_to_not_fetch}')
+
+                self.transfer_from_cluster(jobs=jobs_to_fetch,
                                            scheduler=scheduler,
                                            connection=ctx, **kwargs)
 
@@ -622,11 +631,19 @@ class Runner:
                 jobs_to_run = self.get_status_run(
                     jobs_to_run, connection=ctx)
 
+                jobs_to_fetch = {i: j for i, j in jobs_to_run.items()
+                                 if j['job'].status in ['COMPLETED']}
+                jobs_to_not_fetch = {i: j for i, j in jobs_to_run.items()
+                                     if j['job'].status not in ['COMPLETED']}
+                if jobs_to_not_fetch:
+                    self.logger.warning('Jobs not finished: ' +
+                                        f'{jobs_to_not_fetch}')
+
                 if not fetch_results:
                     scheduler.teardown(jobs_to_run, ctx)
                     continue
 
-                self.transfer_from_cluster(jobs=jobs_to_run,
+                self.transfer_from_cluster(jobs=jobs_to_fetch,
                                            scheduler=scheduler,
                                            connection=ctx, **kwargs)
 
