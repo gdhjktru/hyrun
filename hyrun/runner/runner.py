@@ -543,7 +543,16 @@ class Runner:
                         del jobs_to_run[i]
 
                 self.logger.info(f'Jobs to fetch: {len(jobs_to_fetch)}')
-                self.transfer_from_cluster(jobs=jobs_to_fetch,
+                jobs_to_fetch = self.get_status_run(jobs_to_fetch,
+                                                    connection=ctx)
+                jobs_to_do_fetch = {i: j for i, j in jobs_to_fetch.items()
+                                    if j['job'].status in ['COMPLETED']}
+                jobs_to_not_fetch = {i: j for i, j in jobs_to_fetch.items()
+                                     if j['job'].status not in ['COMPLETED']}
+                if jobs_to_not_fetch:
+                    self.logger.warning('Jobs not finished: ' +
+                                        f'{jobs_to_not_fetch}')
+                self.transfer_from_cluster(jobs=jobs_to_do_fetch,
                                            scheduler=scheduler,
                                            connection=ctx, **kwargs)
                 # scheduler.teardown(jobs_to_fetch, ctx)
@@ -576,6 +585,7 @@ class Runner:
                 jobs_to_run = self.wait(jobs_to_run, connection=ctx)
                 jobs_to_run = self.update_db(jobs_to_run)
 
+                jobs_to_run = self.get_status_run(jobs_to_run, connection=ctx)
                 jobs_to_fetch = {i: j for i, j in jobs_to_run.items()
                                  if j['job'].status in ['COMPLETED']}
                 jobs_to_not_fetch = {i: j for i, j in jobs_to_run.items()
