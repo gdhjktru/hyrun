@@ -1,32 +1,31 @@
-import hashlib
-from collections import defaultdict
-from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
-from socket import gethostname
 from time import sleep
 from typing import Generator
 
-from hydb import DatabaseDummy
-from hytools.logger import Logger, LoggerDummy
+from hytools.logger import LoggerDummy
 
-from hyrun.job import Job, loop_update_jobs
+from hyrun.job import loop_update_jobs
 
-from .filemanager import FileManager
+from .db import JobDatabaseManager
 from .gen_jobs import gen_jobs
+from .job_prep import JobPrep
+from .transfer import FileTransferManager
 
-try:
-    from hytools.file import File
-except ImportError:
-    from hyset import File
+# try:
+#     from hytools.file import File
+# except ImportError:
+#     from hyset import File
 
 
-class Runner(FileManager):
+class Runner(FileTransferManager, JobDatabaseManager, JobPrep):
     """Runner."""
 
     def __init__(self, *args, **kwargs):
         """Initialize."""
-        self.logger = self.get_logger(*args, **kwargs)
+        self.logger = kwargs.get('logger',
+                                 self._get_attr('logger', *args, **kwargs)
+                                 or LoggerDummy())
         # self.parser = kwargs.get('parser', kwargs.get('method', None))
 
     def _get_attr(self, attr_name, *args, **kwargs):
@@ -36,77 +35,6 @@ class Runner(FileManager):
             return a
         a = args[0][0] if isinstance(args[0], list) else args[0]
         return getattr(a, attr_name, None)
-
-    @loop_update_jobs
-    def get_jobs_from_db(self,
-                         *args,
-                         job=None,
-                         database=None,
-                         key=None,
-                         val=None,
-                         **kwargs):
-        """Resolve db_id."""
-        db = database or DatabaseDummy()
-        db_id = job.db_id
-        key = str(key) or 'db_id'
-        val = str(val) or int(db_id)
-        entry = db.get(key=key, value=val)
-        if isinstance(entry, list):
-            if len(entry) > 1:
-                self.logger.error('Multiple entries found in database')
-                return None
-            entry = entry[0]
-        db_id = entry.doc_id
-        if not entry:
-            self.logger.debug(f'No job found in database with {key} {val}')
-            return None
-        self.logger.debug(f'Found job in database with id {db_id}')
-
-        job = db.dict_to_obj(entry)
-        job.db_id = db_id
-        return job
-
-    def get_logger(self, *args, **kwargs):
-        """Get logger."""
-        return kwargs.get('logger',
-                          self._get_attr('logger', *args, **kwargs)
-                          or LoggerDummy())
-
-    # @loop_update_jobs
-    # def get_from_db(self, *args, job=None, database=None, **kwargs):
-    #     """Get job from database."""
-    #     job_db = database.get(job.db_id)
-    #     return replace(job, **job_db)
-
-    @loop_update_jobs
-    def add_to_db(self, *args, job=None, database=None, **kwargs):
-        """Add job to database."""
-        if job.db_id is not None:
-            self.logger.debug('Job already in database, updating...')
-            return self.update_db(job=job, database=database)
-        db_id = database.add(job)
-        if db_id < 0:
-            self.logger.error('Error adding job to database')
-            return job
-        else:
-            job.db_id = db_id
-            job = self.update_db(job=job, database=database)
-            self.logger.info(f'Added job to database with id {db_id}')
-            self.logger.debug('db entry: ' +
-                              f'{database.get(key="db_id", value=db_id)}')
-        return job
-
-    @loop_update_jobs
-    def update_db(self, *args, job=None, database=None, **kwargs):
-        """Update job in database."""
-        db_id = getattr(job, 'db_id', None)
-        if db_id is None:
-            raise ValueError('db_id must be set to update job in database')
-        database.update(db_id, job)
-        self.logger.info(f'Updated job in database with id {db_id}')
-        self.logger.debug('db entry: ' +
-                          f'{database.get(key="db_id", value=db_id)}')
-        return job
 
     def _increment_t(self, t, tmin=1, tmax=60) -> int:
         """Increment t."""
@@ -123,16 +51,6 @@ class Runner(FileManager):
         """Check if job is finished."""
         return all(job['scheduler'].is_finished(job['job'])
                    for job in jobs.values())
-
-    @loop_update_jobs
-    def get_status_run(self,
-                       *args,
-                       job=None,
-                       scheduler=None,
-                       connection=None, **kwargs) -> dict:
-        """Get status."""
-        return scheduler.get_status(job,  # type: ignore
-                                    connection=connection)
 
     def _get_timeout(self, jobs):
         """Get timeout."""
@@ -156,108 +74,15 @@ class Runner(FileManager):
                 break
         return jobs
 
-    def gen_job_script(self, job=None, scheduler=None):
-        """Generate job script."""
-        job_script_str = scheduler.gen_job_script(job)  # type: ignore
-        job_hash = hashlib.sha256(job_script_str.encode()).hexdigest()
-
-        job_script_name = (getattr(job.tasks[0],  # type: ignore
-                                   'job_script_filename', None)
-                           or f'job_script_{job_hash}.sh')
-        job_script = File(name=job_script_name,
-                          content=job_script_str)  # type: ignore
-        return replace(job,
-                       job_script=job_script,
-                       job_hash=job_hash)
-
-    def check_types(self, obj):
-        """Check types."""
-        # move to hydb?
-        self.logger.debug(f'Checking types in {obj} ({type(obj)}) ' +
-                          'for storage in database')
-        ignore_types = (Logger, timedelta, Path)
-        std_types = (str, int, float, bool)
-        seqs = (list, tuple, set)
-        if isinstance(obj, ignore_types + std_types) or not obj:
-            return
-        if isinstance(obj, seqs):
-            for e in obj:
-                self.check_types(e)
-        else:
-            d = obj if isinstance(obj, dict) else obj.__dict__
-            for k, v in d.items():
-                if v is None or isinstance(v, ignore_types + std_types):
-                    continue
-                elif isinstance(v, dict) or isinstance(v, seqs):
-                    self.check_types(v)
-                else:
-                    self.logger.error(f'Found non-standard type {type(v)} ' +
-                                      f'in task: {k}')
-
     @loop_update_jobs
-    def prepare_jobs(self,
-                     *args,
-                     job=None,
-                     scheduler=None,
-                     **kwargs) -> Job:
-        """Prepare jobs."""
-        parent = getattr(job.tasks[0], 'submit_dir_local', None)
-        host = gethostname()
-        job = self.gen_job_script(job=job, scheduler=scheduler)
-        self.write_file_local(job.job_script, parent=parent, host=host)
-
-        job.job_script = self.resolve_file_name(
-            job.job_script, parent=parent, host=host)
-        for t in job.tasks:
-            parent = getattr(t, 'work_dir_local', None)
-            host = gethostname()
-            if not all([parent, host]):
-                self.logger.error('work_dir_local and host must be set')
-                continue
-
-            self.write_file_local(t.files_to_write, parent=parent, host=host)
-            t.files_to_write = self.resolve_file_names(
-                t.files_to_write, parent, host)
-            t.files_for_restarting = self.resolve_file_names(
-                t.files_for_restarting, parent, host)
-            t.files_to_parse = self.resolve_file_names(
-                t.files_to_parse, parent, host)
-
-            host = getattr(
-                t,
-                'host',
-                None) or getattr(
-                t,
-                'connection',
-                {}).get(
-                'host',
-                gethostname())
-            parent = getattr(t, 'work_dir_remote', None)
-            if host == gethostname():
-                parent = getattr(t, 'work_dir_local', None)
-
-            for f in ['output_file', 'stdout_file', 'stderr_file']:
-                if hasattr(t, f):
-                    setattr(t, f, self.resolve_file_name(getattr(t, f),
-                                                         parent=parent,
-                                                         host=host))
-            for f in ['file_handler', 'cluster_settings', 'logger']:
-                if hasattr(t, f):
-                    setattr(t, f, None)
-            self.check_types(t)
-
-        for o in job.outputs:
-            parent = getattr(o, 'work_dir_local', None)
-            host = gethostname()
-            for f in ['output_file', 'stdout_file', 'stderr_file']:
-                if hasattr(o, f):
-                    setattr(o, f, self.resolve_file_name(getattr(o, f),
-                                                         parent=parent,
-                                                         host=host))
-
-            o.files_to_parse = self.resolve_file_names(
-                o.files_to_parse, parent, host)
-        return job
+    def get_status_run(self,
+                       *args,
+                       job=None,
+                       scheduler=None,
+                       connection=None, **kwargs) -> dict:
+        """Get status."""
+        return scheduler.get_status(job,  # type: ignore
+                                    connection=connection)
 
     def check_finished_jobs(self, jobs: dict) -> dict:
         """Check if all jobs are finished."""
@@ -318,97 +143,6 @@ class Runner(FileManager):
 
     #             job.outputs.append(output)
     #     return jobs
-
-    def get_remote_folder(self, jobs) -> str:
-        """Get remote folder."""
-        remote_folders = [getattr(t, 'submit_dir_remote', None)
-                          or getattr(t, 'work_dir_remote', None)
-                          for j in jobs.values()
-                          for t in j['job'].tasks
-                          if getattr(t, 'submit_dir_remote', None)
-                          or getattr(t, 'work_dir_remote', None)]
-        if len(list(set(remote_folders))) > 1:
-            raise ValueError('All tasks in a job must have the same ' +
-                             'remote folder')
-        return str(remote_folders[0]) if len(remote_folders) == 1 else ''
-
-    def transfer_from_cluster(self,
-                              jobs=None,
-                              scheduler=None,
-                              connection=None,
-                              **kwargs):
-        """Transfer files from cluster."""
-        transfer_all = kwargs.get('transfer_all', True)
-        output_files = ['output_file', 'stdout_file', 'stderr_file']
-        dfiles_to_transfer = {}
-        for j in jobs.values():
-            # finished = all(self.check_finished_single(t)
-            #                for t in j['job'].tasks)
-            # if not finished:
-            #     self.logger.warning(f'Job {j["job"].id} not finished, not ' +
-            #                         'transferring files')
-            #     continue
-            for t, o in zip(j['job'].tasks, j['job'].outputs):
-                wdir_local = str(getattr(t, 'work_dir_local'))
-                if wdir_local not in dfiles_to_transfer:
-                    dfiles_to_transfer[wdir_local] = []
-
-                if transfer_all:
-                    for f in output_files:
-                        output_file = getattr(o, f, None)
-                        remote_dir = Path(output_file['path']).parent
-                        alls = str(Path(remote_dir) / '*')
-                        dfiles_to_transfer[wdir_local].append(
-                            {'path': alls,
-                             'host': getattr(connection,
-                                             'host',
-                                             gethostname())})
-                        continue
-
-                for f in output_files:
-                    remote_file = getattr(o, f, None)
-                    if remote_file:
-                        dfiles_to_transfer[wdir_local].append(
-                            remote_file)
-
-        for wdir_local, files in dfiles_to_transfer.items():
-            transfer = scheduler.transfer_files(  # type: ignore
-                files_to_transfer=files,
-                connection=connection,
-                folder=wdir_local)
-            log_method = (self.logger.info
-                          if getattr(transfer, 'ok', True)
-                          else self.logger.error)
-            log_method(getattr(transfer, 'stdout'
-                               if getattr(transfer, 'ok', True)
-                               else 'stderr', ''))
-
-    def transfer_to_cluster(self,
-                            jobs=None,
-                            scheduler=None,
-                            connection=None):
-        """Transfer files to cluster."""
-        files_to_transfer = [j['job'].job_script for j in jobs.values()]
-
-        files_to_transfer.extend([f for j in jobs.values()
-                                  for t in j['job'].tasks
-                                  for f in t.files_to_write])
-
-        remote_folder = self.get_remote_folder(jobs)
-
-        loc = f'{getattr(connection, "host", gethostname())}'
-        loc += f':{remote_folder}' if remote_folder else ''
-        self.logger.debug(f'Files to transfer: {files_to_transfer} to {loc}')
-
-        transfer = scheduler.transfer_files(  # type: ignore
-            files_to_transfer=files_to_transfer,
-            connection=connection,
-            folder=remote_folder)
-        log_method = (self.logger.info
-                      if getattr(transfer, 'ok', True)
-                      else self.logger.error)
-        log_method(getattr(transfer, 'stdout'
-                           if getattr(transfer, 'ok', True) else 'stderr', ''))
 
     @loop_update_jobs
     def initiate_job(self, *args, job=None, scheduler=None, database=None,
@@ -563,15 +297,6 @@ class Runner(FileManager):
         if dry_run:
             return self.gen_db_info(jobs)
         return [j['job'].outputs for j in jobs.values()]
-
-    def gen_db_info(self, jobs: dict) -> dict:
-        """Generate database info."""
-        result = defaultdict(list)
-        for job in jobs.values():
-            db_id = int(job['job'].db_id)
-            database = str(job['database'].name)
-            result[database].append(db_id)
-        return dict(result)
 
     def get_status(self, *args, fetch_results=False, **kwargs):
         """Get status/Fetch results."""
