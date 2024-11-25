@@ -1,20 +1,18 @@
 import hashlib
 from collections import defaultdict
-from contextlib import suppress
 from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
 from socket import gethostname
-from string import Template
 from time import sleep
-from typing import Generator, Optional
+from typing import Generator
 
 from hydb import DatabaseDummy
 from hytools.logger import Logger, LoggerDummy
 
-from hyrun.decorators import list_exec
 from hyrun.job import Job, loop_update_jobs
 
+from .filemanager import FileManager
 from .gen_jobs import gen_jobs
 
 try:
@@ -23,7 +21,7 @@ except ImportError:
     from hyset import File
 
 
-class Runner:
+class Runner(FileManager):
     """Runner."""
 
     def __init__(self, *args, **kwargs):
@@ -73,29 +71,6 @@ class Runner:
         return kwargs.get('logger',
                           self._get_attr('logger', *args, **kwargs)
                           or LoggerDummy())
-
-    def get_files_to_transfer(self,
-                              jobs,
-                              files_to_transfer=None,
-                              job_keys=None,
-                              task_keys=None):
-        """Get files to transfer."""
-        files_to_transfer = files_to_transfer or []
-        job_keys = job_keys or []
-        task_keys = task_keys or []
-        for j in jobs.values():
-            for k in job_keys:
-                _list = getattr(j['job'], k, [])
-                _list = [_list] if not isinstance(_list, list) else _list
-                for f in _list:
-                    files_to_transfer.append(f)
-            for t in j['job'].tasks:
-                for k in task_keys:
-                    ll = getattr(t, k, [])
-                    ll = [ll] if not isinstance(ll, list) else ll
-                    for f in ll:
-                        files_to_transfer.append(f)
-        return [f for f in files_to_transfer if f is not None]
 
     # @loop_update_jobs
     # def get_from_db(self, *args, job=None, database=None, **kwargs):
@@ -181,14 +156,6 @@ class Runner:
                 break
         return jobs
 
-    @list_exec
-    def replace_var_in_file_content(self, file):
-        """Replace variables in file content."""
-        with suppress(AttributeError):
-            file.content = Template(file.content
-                                    ).safe_substitute(**file.variables)
-        return file
-
     def gen_job_script(self, job=None, scheduler=None):
         """Generate job script."""
         job_script_str = scheduler.gen_job_script(job)  # type: ignore
@@ -226,11 +193,6 @@ class Runner:
                 else:
                     self.logger.error(f'Found non-standard type {type(v)} ' +
                                       f'in task: {k}')
-
-    def resolve_file_names(self, files, parent, host):
-        """Resolve file names."""
-        return [self.resolve_file_name(f, parent=parent, host=host)
-                for f in files]
 
     @loop_update_jobs
     def prepare_jobs(self,
@@ -296,29 +258,6 @@ class Runner:
             o.files_to_parse = self.resolve_file_names(
                 o.files_to_parse, parent, host)
         return job
-
-    def resolve_file_name(self,
-                          file,
-                          parent: Optional[str] = None,
-                          host: Optional[str] = None) -> dict:
-        """Resolve file name."""
-        if not file:
-            return {}
-        parent = parent or str(Path('.'))
-        file = (Path(file.folder) / file.name
-                if file.folder is not None
-                else Path(parent) / file.name)
-        return {'path': str(file), 'host': host or gethostname()}
-
-    @list_exec
-    def write_file_local(self, file, overwrite=True, **kwargs):
-        """Write file locally."""
-        p = Path(self.resolve_file_name(file, **kwargs).get('path'))
-        if p.exists() and not overwrite:
-            return file
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(self.replace_var_in_file_content(file).content)
-        return str(p)
 
     def check_finished_jobs(self, jobs: dict) -> dict:
         """Check if all jobs are finished."""
@@ -521,7 +460,7 @@ class Runner:
 
     async def arun(self, *args, **kwargs):
         """Run."""
-        return await self.run(*args, wait=False, **kwargs)
+        return self.run(*args, wait=False, **kwargs)
 
     def run(self, *args, **kwargs):
         """Run."""
