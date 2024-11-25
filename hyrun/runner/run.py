@@ -21,6 +21,6 @@ def fetch_results(*args, **kwargs):
     return Runner(*args, **kwargs).fetch_results(*args, **kwargs)
 
 
-# async def arun(*args, **kwargs):
-#     """Run."""
-#     return await Runner(*args, **kwargs).arun()  # pragma: no cover
+async def arun(*args, **kwargs):
+    """Run."""
+    return run(*args, wait=True, **kwargs)

@@ -519,6 +519,10 @@ class Runner:
                                    connection=connection, **kwargs)
         return jobs
 
+    async def arun(self, *args, **kwargs):
+        """Run."""
+        return await self.run(*args, wait=False, **kwargs)
+
     def run(self, *args, **kwargs):
         """Run."""
         jobs = gen_jobs(*args, logger=self.logger, **kwargs)
@@ -537,7 +541,8 @@ class Runner:
         for i, j in jobs.items():
             self.logger.info(f'   job {i} ({j["scheduler"].name}) task(s): ' +
                              f'{len(j["job"].tasks)} tasks')
-        wait = any([t.wait for j in jobs.values() for t in j['job'].tasks])
+        wait = kwargs.get('wait') or any([t.wait for j in jobs.values()
+                                          for t in j['job'].tasks])
         dry_run = any([t.dry_run for j in jobs.values()
                        for t in j['job'].tasks])
         rerun = any([t.rerun for j in jobs.values() for t in j['job'].tasks])
