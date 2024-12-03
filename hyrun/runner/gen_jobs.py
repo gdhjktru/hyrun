@@ -1,6 +1,6 @@
 import json
 
-from hydb import Database, DatabaseDummy  # noqa: F401
+from hydb import Database, DatabaseDummy, get_database  # noqa: F401
 from hytools.logger import LoggerDummy
 
 from hyrun.job import Job, Output  # noqa: F401
@@ -70,7 +70,7 @@ class ArrayJob:
 
     def resolve_db_id(self, db_id: int, **kwargs) -> dict:
         """Resolve db_id."""
-        db = (Database(kwargs['database'], logger=self.logger)
+        db = (get_database(kwargs['database'], logger=self.logger)
               if kwargs.get('database')
               else DatabaseDummy())
         db_id = db._db_id(db_id)
@@ -125,7 +125,7 @@ class ArrayJob:
             if len(db) > 1:
                 self.logger.error('All tasks in a job must have the same ' +
                                   'database')
-            job['database'] = (Database(db[0], logger=self.logger)
+            job['database'] = (get_database(db[0], logger=self.logger)
                                if db[0]
                                else kwargs.get('database', DatabaseDummy()))
         return jobs

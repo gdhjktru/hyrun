@@ -7,7 +7,7 @@ class GenCmd:
     """Generate command for running a list of commands."""
 
     def sanitize_cmd(self,
-                     cmd: Union[str, list],
+                     cmd: Union[str, List[str]],
                      delimiters: Optional[List[str]] = None
                      ) -> List[str]:
         """Sanitize command."""
@@ -53,7 +53,11 @@ class GenCmd:
 
         return result
 
-    def get_final_idx(self, cmds, post_cmd, running_list) -> int:
+    def get_final_idx(self,
+                      cmds: List[List[str]],
+                      post_cmd: List[str],
+                      running_list: List[str]
+                      ) -> int:
         """Get index of final result based on post_cmd and running_list."""
         if not post_cmd:
             return -1  # return the last result
