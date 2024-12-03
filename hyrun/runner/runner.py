@@ -87,11 +87,8 @@ class Runner(FileTransferManager, JobDatabaseManager, JobPrep):
     def check_finished_jobs(self, jobs: dict) -> dict:
         """Check if all jobs are finished."""
         for j in jobs.values():
-            job = j['job']
-
-            job.finished = all(
-                self.check_finished_single(t)
-                for t in job.tasks)  # type: ignore
+            j['job'].finished = all(self.check_finished_single(t)
+                                    for t in j['job'].tasks)  # type: ignore
         return jobs
 
     def check_finished_single(self, run_settings) -> bool:
@@ -148,16 +145,19 @@ class Runner(FileTransferManager, JobDatabaseManager, JobPrep):
     def initiate_job(self, *args, job=None, scheduler=None, database=None,
                      **kwargs):
         """Initiate job."""
-        if job.db_id is not None:
+        db_id = getattr(job, 'db_id', None)
+        job_hash = getattr(job, 'job_hash', None)
+        if db_id is not None:
             self.logger.debug('Job already in database, updating...')
+            print('should we not update the stsus here?')
             return self.update_db(job=job, database=database)
-        if job.job_hash is not None:
+        if job_hash is not None:
             self.logger.debug('Job hash found, checking database...')
             job_db = self.get_jobs_from_db(job=job,
                                            scheduler=scheduler,
                                            database=database,
                                            key='job_hash',
-                                           val=job.job_hash)
+                                           val=getattr(job, 'job_hash'))
             if job_db is not None:
                 self.logger.debug('Job found in database, updating...')
                 return job_db

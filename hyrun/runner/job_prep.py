@@ -86,12 +86,12 @@ class JobPrep(FileManager):
             return
 
         self.write_file_local(task.files_to_write, parent=parent, host=host)
-        task.files_to_write = self.resolve_file_names(
-            task.files_to_write, parent, host)
-        task.files_for_restarting = self.resolve_file_names(
-            task.files_for_restarting, parent, host)
-        task.files_to_parse = self.resolve_file_names(
-            task.files_to_parse, parent, host)
+        task.files_to_write = self.resolve_file_name(
+            task.files_to_write, parent=parent, host=host)
+        task.files_for_restarting = self.resolve_file_name(
+            task.files_for_restarting, parent=parent, host=host)
+        task.files_to_parse = self.resolve_file_name(
+            task.files_to_parse, parent=parent, host=host)
 
         host = getattr(
             task,

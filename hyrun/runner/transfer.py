@@ -5,6 +5,26 @@ from socket import gethostname
 class FileTransferManager:
     """File transfer manager."""
 
+    def get_files_to_transfer(self, jobs, files_to_transfer=None,
+                              job_keys=None, task_keys=None):
+        """Get files to transfer."""
+        files_to_transfer = files_to_transfer or []
+        job_keys = job_keys or []
+        task_keys = task_keys or []
+        for j in jobs.values():
+            for k in job_keys:
+                _list = getattr(j['job'], k, [])
+                _list = [_list] if not isinstance(_list, list) else _list
+                for f in _list:
+                    files_to_transfer.append(f)
+            for t in j['job'].tasks:
+                for k in task_keys:
+                    ll = getattr(t, k, [])
+                    ll = [ll] if not isinstance(ll, list) else ll
+                    for f in ll:
+                        files_to_transfer.append(f)
+        return [f for f in files_to_transfer if f is not None]
+
     def get_remote_folder(self, jobs) -> str:
         """Get remote folder."""
         remote_folders = [getattr(t, 'submit_dir_remote', None)
