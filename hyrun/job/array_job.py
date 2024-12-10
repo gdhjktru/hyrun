@@ -7,7 +7,7 @@ from hyrun.job import Job, Output  # noqa: F401
 from hyrun.scheduler import get_scheduler
 
 
-def gen_jobs(arg, **kwargs) -> dict:
+def gen_array_job(arg, **kwargs) -> dict:
     """Generate jobs."""
     aj = ArrayJob()
     # case only one job/task

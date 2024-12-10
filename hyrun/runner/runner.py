@@ -8,7 +8,7 @@ from hytools.logger import LoggerDummy
 from hyrun.job import loop_update_jobs
 
 from .db import JobDatabaseManager
-from .gen_jobs import gen_jobs
+from hyrun.job import gen_array_job as gen_jobs
 from .job_prep import JobPrep
 from .transfer import FileTransferManager
 

@@ -1,5 +1,7 @@
 import unittest
+
 from hyrun.runner.gen_cmd import GenCmd
+
 
 class TestGenCmd(unittest.TestCase):
 

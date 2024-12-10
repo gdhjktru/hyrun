@@ -5,6 +5,7 @@ from pathlib import Path
 from shlex import quote, split
 from sys import executable as python_ex
 from typing import Any, Dict, List, Optional
+import os 
 
 from hytools.logger import LoggerDummy
 
@@ -91,6 +92,11 @@ class LocalScheduler(Scheduler):
         run_settings = tasks[0]
         cwd = run_settings.work_dir_local
         running_list = self._gen_running_list(run_settings, cwd)
+
+
+        # here record the position where running list ends and post cmd stards
+
+        # also run_settings stdin_file
 
         if getattr(run_settings, 'pre_cmd', None):
             pre_cmd = (split(quote(run_settings.pre_cmd))
@@ -197,18 +203,25 @@ class LocalScheduler(Scheduler):
         rs = job.tasks[0]
         js = job.job_script['path']
         output = job.outputs[0]
-        cmd = Path(js).read_text().split(' ')
-        self.logger.info('Running command: %s\n', cmd)
+
+
+        # maybe write the script to disk and run it with subprocess
+        os.chmod(js, 0o755)
+
+
+        # cmd = Path(js).read_text().split(' ')
+        self.logger.info('Running command: %s\n',
+                         Path(js).read_text().split('\n'))
         self.logger.info('Working directory: %s\n', rs.work_dir_local)
         run_opts = {'capture_output': True,
                     'text': True,
                     'cwd': str(rs.work_dir_local),
                     'env': rs.env,
                     'shell': False}
-        if ';' in cmd or '&&' in cmd:
-            run_opts['shell'] = True
-            cmd = ' '.join(cmd)
-        result = subprocess.run(cmd, **run_opts)
+        # if ';' in cmd or '&&' in cmd:
+        #     run_opts['shell'] = True
+        #     cmd = ' '.join(cmd)
+        result = subprocess.run(str(js), **run_opts)
         self.logger.debug('Result: %s\n', result)
         output = self.update_output(result=result,
                                     run_settings=rs,
