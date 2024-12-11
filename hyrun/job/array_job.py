@@ -1,6 +1,8 @@
 import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Union
+from functools import singledispatchmethod
+from .output import Output
 
 
 from hydb import Database, DatabaseDummy, get_database  # noqa: F401
@@ -14,17 +16,14 @@ from hyrun.scheduler import get_scheduler
 @dataclass
 class ArrayJob:
 
-    jobs: List[Union[List, Job, int, Dict[str, Any]]] = field(default_factory=list)
+    jobs: List[Union[Any, Job, int, Dict[str, Any]]] = field(default_factory=list)
     logger: Any = None
 
     def __post_init__(self):
-        self.logger.debug('ArrayJob')
-        self.logger.debug(self.jobs)
-        self.jobs = self._normalize_input(self.jobs)
         self.logger = self.logger or get_logger()
+        self.logger.debug(f'ArrayJob initialized with {len(self.jobs)} jobs')
         # convert jobs to a list of lists of jobs
-
-        # Additional initialization logic if needed
+        self.jobs = self._normalize_input(self.jobs)
         
     def __getitem__(self, job_index: int) -> Union[Job, int, Dict[str, Any]]:
         return self.jobs[job_index]
@@ -38,21 +37,58 @@ class ArrayJob:
     def _normalize_input(self,
                          jobs_input: Union[Job,
                                            List[Union[Job, List[Any]]]]
-                        ) -> List[List[Job]]:
-        """Convert input into a list of lists.""" 
-        if (not isinstance(jobs_input, list) or
-            not all(isinstance(item, Job) for item in jobs_input)):
-            return self._normalize_input(
-                [jobs_input] if not isinstance(jobs_input, list)
-                else jobs_input)
-            
-        # now we know that jobs_input is a list of lists
-        for job in jobs_input:
-            self.logger.debug(f'job normalization detected type {type(job)}')
-            if not isinstance(job, Job):
-                raise ValueError("Invalid input format. Expected Job, list of Jobs, or list of lists of Jobs.")
+                        ) -> List[Job]:
+        """Convert input into a list of lists."""
+        if not isinstance(jobs_input, list):
+            return self._normalize_input([jobs_input])
+        return [self._convert_to_job(job) for job in jobs_input]
+    
 
-        return jobs_input
+    @singledispatchmethod
+    def _convert_to_job(self, job: Any) -> Job:
+        # assume we have a task or a list of tasks
+        self.logger.debug(f'job normalization detected task {type(job)}')
+        if isinstance(job, list):
+            return Job(tasks=job)
+        return Job(tasks=[job])
+    
+    @_convert_to_job.register(Job)
+    def _(self, job: Job) -> Job:
+        self.logger.debug(f'job normalization detected Job {type(job)}')
+        return job
+    
+    @_convert_to_job.register(dict)
+    def _(self, job: dict) -> Job:
+        self.logger.debug(f'job normalization detected dictionary {type(job)}')
+        return Job(**job)
+    
+    # @_convert_to_job.register(int)
+    # def _(self, job: int) -> Job:
+    #     self.logger.debug(f'job normalization detected database id {type(job)}')
+    #     return self.resolve_db_id(job)
+    
+    #     def resolve_db_id(self, db_id: int, **kwargs) -> dict:
+    #     """Resolve db_id."""
+    #     db = (get_database(kwargs['database'], logger=self.logger)
+    #           if kwargs.get('database')
+    #           else DatabaseDummy())
+    #     db_id = db._db_id(db_id)
+    #     entry = db.get(key='db_id', value=db_id)
+    #     # if isinstance(entry, list):
+    #     #     entry = entry[0]
+    #     job = db.dict_to_obj(entry)
+    #     job.db_id = db_id
+    #     return {'job': job}
+    
+
+    
+
+    #     tasks: Optional[List[Any]] = None
+    # outputs: Optional[List[Output]] = None
+    # job_script: Optional[str] = None
+    # database: Optional[Union[str, Path, Database]] = None
+    # scheduler: Optional[Union[str, Scheduler]] = None
+    # metadata: Optional[dict] = field(default_factory=dict)
 
 
            
