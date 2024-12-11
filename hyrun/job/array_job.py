@@ -1,16 +1,10 @@
-# import json
 from dataclasses import dataclass, field, fields
 from functools import singledispatchmethod
 from typing import Any, Dict, List, Union
 
-# from hydb import Database, DatabaseDummy, get_database  # noqa: F401
 from hytools.logger import get_logger
 
 from .job import Job  # noqa: F401
-
-# from hyrun.scheduler import get_scheduler
-
-# from .output import Output
 
 
 @dataclass
@@ -39,7 +33,7 @@ class ArrayJob:
         self.logger.debug(f'ArrayJob set job {job_index} to {job}')
         self.jobs = sorted(self.jobs,
                            key=lambda job: (job.scheduler, job.database))
-        self.logger.debug(f'ArrayJob re-sorted jobs by scheduler and database')
+        self.logger.debug('ArrayJob re-sorted jobs by scheduler and database')
 
     def __len__(self) -> int:
         """Get length."""
@@ -62,8 +56,15 @@ class ArrayJob:
         self.logger.debug(f'job normalization detected task {type(job)}')
         if not isinstance(job, list):
             job = [job]
-        self._check_common_attributes(job, ['database', 'database_opt',
-                                            'scheduler', 'scheduler_opt'])
+        check = self._check_common_attributes(job,
+                                              ['database', 'database_opt',
+                                               'scheduler', 'scheduler_opt'])
+        if not check:
+            msg = 'All tasks in a job must have the same ' + \
+                    'database, database_opt, scheduler, and scheduler_opt'
+            self.logger.error(msg)
+            raise ValueError(msg)
+
         job_dict = {f.name: getattr(job[0], f.name, None) for f in fields(Job)}
         job_dict['tasks'] = job
         return self._convert_to_job(job_dict)
@@ -80,9 +81,9 @@ class ArrayJob:
         self.logger.debug(f'job normalization detected dictionary {type(job)}')
         try:
             return Job(**job)
-        except AttributeError:
+        except AttributeError as e:
             self.logger.error(f'Could not convert dictionary to Job: {job}')
-            return None
+            raise e
 
     def _check_common_attributes(self,
                                  jobs: List[Any],
