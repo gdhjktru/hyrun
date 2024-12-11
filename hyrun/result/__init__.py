@@ -1,3 +1,4 @@
-from .get_result import Result, get_result
+from .get_result import ResultManager, get_result
+from .result import Result
 
-__all__ = ['get_result', 'Result']
+__all__ = ['get_result', 'Result', 'ResultManager']
