@@ -6,7 +6,7 @@ from socket import gethostname
 
 from hytools.logger import Logger
 
-from hyrun.job import Job, loop_update_jobs
+from hyrun.job import Job, update_arrayjob
 
 from .filemanager import FileManager
 
@@ -57,7 +57,7 @@ class JobPrep(FileManager):
                     self.logger.error(f'Found non-standard type {type(v)} ' +
                                       f'in task: {k}')
 
-    @loop_update_jobs
+    @update_arrayjob
     def prepare_jobs(self,
                      *args,
                      job=None,

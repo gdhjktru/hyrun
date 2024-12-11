@@ -9,11 +9,11 @@ from typing import Any, Dict, List, Optional
 
 from hytools.logger import LoggerDummy
 
-from hyrun.decorators import list_exec
-
 from ..abc import Scheduler
 from .conda import get_conda_launcher
 from .docker import get_docker_launcher
+
+# from hyrun.decorators import list_exec
 
 
 class LocalScheduler(Scheduler):
@@ -92,7 +92,6 @@ class LocalScheduler(Scheduler):
         run_settings = tasks[0]
         cwd = run_settings.work_dir_local
         running_list = self._gen_running_list(run_settings, cwd)
-
 
         # here record the position where running list ends and post cmd stards
 
@@ -204,10 +203,8 @@ class LocalScheduler(Scheduler):
         js = job.job_script['path']
         output = job.outputs[0]
 
-
         # maybe write the script to disk and run it with subprocess
         os.chmod(js, 0o755)
-
 
         # cmd = Path(js).read_text().split(' ')
         self.logger.info('Running command: %s\n',
@@ -256,9 +253,10 @@ class LocalScheduler(Scheduler):
         """Quick return."""
         pass
 
-    @list_exec
     def fetch_results(self, jobs, *args, **kwargs):
         """Fetch results."""
+        if isinstance(jobs, list):
+            return [self.fetch_results(j) for j in jobs]
         return jobs
 
     # def check_finished(self, run_settings) -> bool:

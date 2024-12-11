@@ -6,7 +6,7 @@ from typing import Generator
 from hytools.logger import LoggerDummy
 
 # from hyrun.job import gen_array_job as gen_jobs
-from hyrun.job import loop_update_jobs
+from hyrun.job import update_arrayjob
 
 from .db import JobDatabaseManager
 from .job_prep import JobPrep
@@ -77,7 +77,7 @@ class Runner(FileTransferManager, JobDatabaseManager, JobPrep):
                 break
         return jobs
 
-    @loop_update_jobs
+    @update_arrayjob
     def get_status_run(self,
                        *args,
                        job=None,
@@ -123,7 +123,7 @@ class Runner(FileTransferManager, JobDatabaseManager, JobPrep):
                          '' if force_recompute else 'not ')
         return not force_recompute
 
-    @loop_update_jobs
+    @update_arrayjob
     def submit_jobs(self, *args, job=None, scheduler=None, **kwargs):
         """Submit jobs."""
         return scheduler.submit(job=job, **kwargs)  # type: ignore
@@ -144,7 +144,7 @@ class Runner(FileTransferManager, JobDatabaseManager, JobPrep):
     #             job.outputs.append(output)
     #     return jobs
 
-    @loop_update_jobs
+    @update_arrayjob
     def initiate_job(self, *args, job=None, scheduler=None, database=None,
                      **kwargs):
         """Initiate job."""
@@ -201,7 +201,7 @@ class Runner(FileTransferManager, JobDatabaseManager, JobPrep):
 
     def run(self, *args, **kwargs):
         """Run."""
-        jobs = gen_jobs(*args, logger=self.logger, **kwargs)
+        # jobs = gen_jobs(*args, logger=self.logger, **kwargs)
         # check if jobs has an id
 
         jobs = self.check_finished_jobs(jobs)

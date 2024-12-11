@@ -1,13 +1,7 @@
 import unittest
-
-from hytools.logger import LoggerDummy
+from unittest.mock import MagicMock
 
 from hyrun.job import ArrayJob, Job, update_arrayjob
-
-
-def get_logger():
-    """Get logger."""
-    return LoggerDummy()
 
 
 class TestArrayJob(unittest.TestCase):
@@ -15,7 +9,7 @@ class TestArrayJob(unittest.TestCase):
 
     def setUp(self):
         """Set up."""
-        self.logger = get_logger()
+        self.logger = MagicMock()
         self.jobs = [
             Job(name='job0', scheduler='s0', database='db0'),
             Job(name='job1', scheduler='s0', database='db1'),
@@ -93,6 +87,35 @@ class TestArrayJob(unittest.TestCase):
             processor.process_job(empty_array_job)
 
         self.assertEqual(str(context.exception), 'No jobs provided')
+
+    def test_convert_to_job_from_job(self):
+        """Test converting a Job object to a Job."""
+        job = Job(id=1, name='test_job')
+        converted_job = self.array_job._convert_to_job(job)
+        self.assertEqual(converted_job.id, 1)
+        self.assertEqual(converted_job.name, 'test_job')
+
+    def test_convert_to_job_from_dict(self):
+        """Test converting a dictionary to a Job."""
+        job_dict = {'id': 2, 'name': 'test_job_dict'}
+        converted_job = self.array_job._convert_to_job(job_dict)
+        self.assertEqual(converted_job.id, 2)
+        self.assertEqual(converted_job.name, 'test_job_dict')
+
+    def test_convert_to_job_from_list(self):
+        """Test converting a list of tasks to a Job."""
+        job_list = [Job(id=3, name='task1'), Job(id=3, name='task2')]
+        converted_job = self.array_job._convert_to_job(job_list)
+        self.assertEqual(converted_job.id, 3)
+        self.assertEqual(converted_job.name, 'task1')
+        self.assertEqual(len(converted_job.tasks), 2)
+
+    def test_convert_to_job_common_attributes_check(self):
+        """Test that common attributes are checked."""
+        job_list = [Job(id=4, name='task1', database='db1'),
+                    Job(id=4, name='task2', database='db2')]
+        with self.assertRaises(ValueError):
+            self.array_job._convert_to_job(job_list)
 
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from hydb import get_database
 
-from hyrun.job import loop_update_jobs
+from hyrun.job import update_arrayjob
 
 
 class JobDatabaseManager:
@@ -17,7 +17,7 @@ class JobDatabaseManager:
             result[database].append(db_id)
         return dict(result)
 
-    @loop_update_jobs
+    @update_arrayjob
     def get_jobs_from_db(self,
                          *args,
                          job=None,
@@ -46,7 +46,7 @@ class JobDatabaseManager:
         job.db_id = db_id
         return job
 
-    @loop_update_jobs
+    @update_arrayjob
     def add_to_db(self, *args, job=None, database=None, **kwargs):
         """Add job to database."""
         if job.db_id is not None:
@@ -64,7 +64,7 @@ class JobDatabaseManager:
                               f'{database.get(key="db_id", value=db_id)}')
         return job
 
-    @loop_update_jobs
+    @update_arrayjob
     def update_db(self, *args, job=None, database=None, **kwargs):
         """Update job in database."""
         db_id = getattr(job, 'db_id', None)
