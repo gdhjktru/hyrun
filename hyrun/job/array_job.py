@@ -39,16 +39,18 @@ class ArrayJob:
                          jobs_input: Union[Job,
                                            List[Union[Job, List[Any]]]]
                         ) -> List[List[Job]]:
-        """Convert input into a list of lists."""
-        if not isinstance(jobs_input, list):
-            return self._normalize_input([jobs_input])
-        # else:
-        #     if not all(isinstance(item, Job) for item in jobs_input):
-        #         return self._normalize_input(jobs_input)
+        """Convert input into a list of lists.""" 
+        if (not isinstance(jobs_input, list) or
+            not all(isinstance(item, Job) for item in jobs_input)):
+            return self._normalize_input(
+                [jobs_input] if not isinstance(jobs_input, list)
+                else jobs_input)
             
         # now we know that jobs_input is a list of lists
         for job in jobs_input:
             self.logger.debug(f'job normalization detected type {type(job)}')
+            if not isinstance(job, Job):
+                raise ValueError("Invalid input format. Expected Job, list of Jobs, or list of lists of Jobs.")
 
         return jobs_input
 
