@@ -5,10 +5,10 @@ from typing import Generator
 
 from hytools.logger import LoggerDummy
 
+# from hyrun.job import gen_array_job as gen_jobs
 from hyrun.job import loop_update_jobs
 
 from .db import JobDatabaseManager
-from hyrun.job import gen_array_job as gen_jobs
 from .job_prep import JobPrep
 from .transfer import FileTransferManager
 
@@ -17,6 +17,9 @@ from .transfer import FileTransferManager
 # except ImportError:
 #     from hyset import File
 
+
+def gen_jobs(jobs, *args, **kwargs):
+    return jobs
 
 class Runner(FileTransferManager, JobDatabaseManager, JobPrep):
     """Runner."""

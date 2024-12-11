@@ -100,7 +100,7 @@ class GenCmd:
                 c = c.replace('python', python_ex)
 
         return self.split_by_delimiters(cmd, [';', '|', '&&'])
-    
+
     def cmds_to_str(self, cmds: List[List[str]]) -> str:
         """Convert list of commands to a single command string."""
         return '\n'.join(' '.join(cmd) if cmd[-1] not in ['|', '&&']
@@ -112,25 +112,25 @@ class GenCmd:
 #         # Step 1: Write the script to a file
 #         with open(script_path, 'w') as script_file:
 #             script_file.write(script_content)
-        
+
 #         # Step 2: Set the script to be executable
 #         os.chmod(script_path, 0o755)  # 0o755 sets read, write, execute permissions for owner, and read, execute for others.
-        
+
 #         # Step 3: Run the shell script with subprocess.run
 #         command = [script_path] + list(args)
 #         result = subprocess.run(command, check=True, text=True, capture_output=True)
-        
+
 #         # Print or process the script's output
 #         print("Output:", result.stdout)
 #         print("Error:", result.stderr)  # In case there are error messages
-        
+
 #     except subprocess.CalledProcessError as e:
 #         # Handle errors in the called script
 #         print(f"Error running script: {e}")
 #         print(f"Return code: {e.returncode}")
 #         print(f"Output: {e.output}")
 #         print(f"Error: {e.stderr}")
-        
+
 #     except Exception as e:
 #         print(f"An error occurred: {e}")
 

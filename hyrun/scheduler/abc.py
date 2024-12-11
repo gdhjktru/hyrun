@@ -18,7 +18,7 @@ class Scheduler(ABC):
     @abstractmethod
     def __hash__(self) -> int:
         """Hash."""
-    
+
     @abstractmethod
     def __eq__(self, value: object) -> bool:
         pass

@@ -1,18 +1,12 @@
 import unittest
-from dataclasses import dataclass
-from unittest.mock import Mock
 
-from hytools.logger import get_logger
+from hytools.logger import LoggerDummy
 
-from hyrun.job import ArrayJob
+from hyrun.job import ArrayJob, Job
 
 
-@dataclass
-class RS:
-    """Run settings."""
-
-    run_settings: list
-    scheduler: str = 'local'
+def get_logger():
+    return LoggerDummy()
 
 
 class TestArrayJob(unittest.TestCase):
@@ -20,34 +14,48 @@ class TestArrayJob(unittest.TestCase):
 
     def setUp(self):
         """Set up."""
-        self.array_job = ArrayJob(jobs=[RS(1), RS(2), RS(3)],
-                                  logger=get_logger(print_level='debug'))
-        
-        # self.mock_scheduler_local = Mock()
-        # self.mock_scheduler_local.__class__.__name__ = 'LocalScheduler'
-        # self.mock_scheduler_remote = Mock()
-        # self.mock_scheduler_remote.__class__.__name__ = 'SlurmScheduler'
-    def test0(self):
-        print('array hob', self.array_job)
+        self.logger = get_logger()
+        self.jobs = [
+            Job(scheduler='s0', database='db0'),
+            Job(scheduler='s0', database='db1'),
+            Job(scheduler='s1', database='db0'),
+            Job(scheduler='s1', database='db0'),
+            Job(scheduler='s1', database='db1')
+        ]
+        self.array_job = ArrayJob(jobs=self.jobs, logger=self.logger)
 
-    # def test_get_settings_1d(self):
-    #     """Test that 1D run_settings are correctly flattened."""
-    #     run_settings = [RS(1), RS(2), RS(3)]
-    #     result = self.array_job.get_settings(run_settings)
-    #     self.assertEqual(result, [[RS(1), RS(2), RS(3)]])
+    def test_initialization(self):
+        """Test that array job is initialized."""
+        self.assertEqual(len(self.array_job), 5)
+        self.assertEqual(self.array_job[0].scheduler, 's0')
+        self.assertEqual(self.array_job[0].database, 'db0')
 
-    # def test_get_settings_2d(self):
-    #     """Test that 2D run_settings are correctly flattened."""
-    #     run_settings = [RS(1), [RS(2), RS(3)], [RS(4), RS(5), RS(6)]]
-    #     result = self.array_job.get_settings(run_settings)
-    #     self.assertEqual(result, [[RS(1)], [RS(2), RS(3)], [RS(4),RS(5) ,
-    #                               RS(6)]])
+    def test_getitem(self):
+        """Test that item is retrieved."""
+        job = self.array_job[1]
+        self.assertEqual(job.scheduler, 's0')
+        self.assertEqual(job.database, 'db1')
 
-    # def test_get_settings_3d(self):
-    #     """Test that ValueError is raised when run_settings is 3D."""
-    #     run_settings = [RS(1), [RS(2), [RS(3), RS(4)], [RS(5), RS(6)]]]
-    #     with self.assertRaises(ValueError):
-            # self.array_job.get_settings(run_settings)
+    def test_setitem(self):
+        """Test that item is set."""
+        new_job = Job(scheduler='s2', database='db2')
+        self.array_job[1] = new_job
+        self.assertEqual(self.array_job[1].scheduler, 's2')
+        self.assertEqual(self.array_job[1].database, 'db2')
+
+    def test_normalize_input(self):
+        """Test that input is normalized."""
+        normalized_jobs = self.array_job._normalize_input(self.jobs)
+        self.assertEqual(len(normalized_jobs), 5)
+        self.assertEqual(normalized_jobs[0].scheduler, 's0')
+        self.assertEqual(normalized_jobs[0].database, 'db0')
+        self.assertEqual(normalized_jobs[-1].scheduler, 's1')
+        self.assertEqual(normalized_jobs[-1].database, 'db1')
+
+    def test_check_common_attributes(self):
+        """Test that common attributes are checked."""
+        self.assertTrue(self.array_job._check_common_attributes(self.jobs[0:2],
+                                                                ['scheduler']))
 
 
 if __name__ == '__main__':

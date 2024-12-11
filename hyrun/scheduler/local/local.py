@@ -1,3 +1,4 @@
+import os
 import subprocess
 from contextlib import nullcontext
 from dataclasses import replace
@@ -5,7 +6,6 @@ from pathlib import Path
 from shlex import quote, split
 from sys import executable as python_ex
 from typing import Any, Dict, List, Optional
-import os 
 
 from hytools.logger import LoggerDummy
 
