@@ -15,12 +15,13 @@ from .job import Job  # noqa: F401
 
 @dataclass
 class ArrayJob:
+    """Array job tools."""
 
-    jobs: List[Union[Any, Job, int, Dict[str, Any]]
-               ] = field(default_factory=list)
+    jobs: List[Job] = field(default_factory=list)
     logger: Any = None
 
     def __post_init__(self):
+        """Post init."""
         self.logger = self.logger or get_logger()
         self.logger.debug(f'ArrayJob initialized with {len(self.jobs)} jobs')
         # convert jobs to a list of lists of jobs
@@ -28,13 +29,20 @@ class ArrayJob:
         self.logger.debug(f'ArrayJob normalized to {len(self.jobs)} jobs')
 
     def __getitem__(self, job_index: int) -> Union[Job, int, Dict[str, Any]]:
+        """Get job."""
         return self.jobs[job_index]
 
     def __setitem__(self, job_index: int,
                     job: Union[Job, int, Dict[str, Any]]):
-        self.jobs[job_index] = job
+        """Set job."""
+        self.jobs[job_index] = self._convert_to_job(job)
+        self.logger.debug(f'ArrayJob set job {job_index} to {job}')
+        self.jobs = sorted(self.jobs,
+                           key=lambda job: (job.scheduler, job.database))
+        self.logger.debug(f'ArrayJob re-sorted jobs by scheduler and database')
 
     def __len__(self) -> int:
+        """Get length."""
         return len(self.jobs)
 
     def _normalize_input(self,
