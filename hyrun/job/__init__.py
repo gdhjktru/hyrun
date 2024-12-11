@@ -1,7 +1,5 @@
-from .array_job import ArrayJob
-from .decorators import loop_update_jobs
-from .job import Job
-from .job_info import JobInfo
+from .array_job import ArrayJob, update_arrayjob
+from .job import Job, JobInfo
 from .output import Output
 
-__all__ = ['Job', 'JobInfo', 'Output', 'loop_update_jobs', 'ArrayJob']
+__all__ = ['Job', 'JobInfo', 'Output', 'ArrayJob', 'update_arrayjob']

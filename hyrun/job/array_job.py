@@ -1,10 +1,23 @@
 from dataclasses import dataclass, field, fields
-from functools import singledispatchmethod
+from functools import singledispatchmethod, wraps
 from typing import Any, Dict, List, Union
 
 from hytools.logger import get_logger
 
 from .job import Job  # noqa: F401
+
+
+def update_arrayjob(func):
+    """Decorate to loop over jobs."""
+    @wraps(func)
+    def wrapper(self, arrayjob: ArrayJob, *args, **kwargs) -> ArrayJob:
+        """Loop over jobs."""
+        if len(arrayjob) < 1:
+            raise ValueError('No jobs provided')
+        for i, job in enumerate(arrayjob.jobs):
+            arrayjob[i] = func(self, job, *args, **kwargs)
+        return arrayjob
+    return wrapper
 
 
 @dataclass

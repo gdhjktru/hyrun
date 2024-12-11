@@ -2,10 +2,11 @@ import unittest
 
 from hytools.logger import LoggerDummy
 
-from hyrun.job import ArrayJob, Job
+from hyrun.job import ArrayJob, Job, update_arrayjob
 
 
 def get_logger():
+    """Get logger."""
     return LoggerDummy()
 
 
@@ -16,9 +17,9 @@ class TestArrayJob(unittest.TestCase):
         """Set up."""
         self.logger = get_logger()
         self.jobs = [
-            Job(scheduler='s0', database='db0'),
-            Job(scheduler='s0', database='db1'),
-            Job(scheduler='s1', database='db0'),
+            Job(name='job0', scheduler='s0', database='db0'),
+            Job(name='job1', scheduler='s0', database='db1'),
+            Job(name='job2', scheduler='s1', database='db0'),
             Job(scheduler='s1', database='db0'),
             Job(scheduler='s1', database='db1')
         ]
@@ -40,8 +41,9 @@ class TestArrayJob(unittest.TestCase):
         """Test that item is set."""
         new_job = Job(scheduler='s2', database='db2')
         self.array_job[1] = new_job
-        self.assertEqual(self.array_job[1].scheduler, 's2')
-        self.assertEqual(self.array_job[1].database, 'db2')
+        # note, the jobs get sorted by scheduler and database
+        self.assertEqual(self.array_job[4].scheduler, 's2')
+        self.assertEqual(self.array_job[4].database, 'db2')
 
     def test_normalize_input(self):
         """Test that input is normalized."""
@@ -56,6 +58,41 @@ class TestArrayJob(unittest.TestCase):
         """Test that common attributes are checked."""
         self.assertTrue(self.array_job._check_common_attributes(self.jobs[0:2],
                                                                 ['scheduler']))
+
+    def test_update_arrayjob_decorator(self):
+        """Test the update_arrayjob decorator."""
+
+        class JobProcessor:
+            @update_arrayjob
+            def process_job(self, job, *args, **kwargs):
+                """Process job."""
+                if job.name is not None:
+                    job.name += '_processed'
+                return job
+
+        processor = JobProcessor()
+        updated_array_job = processor.process_job(self.array_job)
+
+        self.assertEqual(len(updated_array_job.jobs), 5)
+        self.assertEqual(updated_array_job.jobs[0].name, 'job0_processed')
+        self.assertEqual(updated_array_job.jobs[1].name, 'job1_processed')
+        self.assertEqual(updated_array_job.jobs[2].name, 'job2_processed')
+
+    def test_update_arrayjob_decorator_no_jobs(self):
+        """Test the update_arrayjob decorator with no jobs."""
+        empty_array_job = ArrayJob(jobs=[])
+
+        class JobProcessor:
+            @update_arrayjob
+            def process_job(self, job, *args, **kwargs):
+                """Process job."""
+                return job
+
+        processor = JobProcessor()
+        with self.assertRaises(ValueError) as context:
+            processor.process_job(empty_array_job)
+
+        self.assertEqual(str(context.exception), 'No jobs provided')
 
 
 if __name__ == '__main__':

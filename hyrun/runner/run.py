@@ -14,6 +14,9 @@ def run(*args, **kwargs):
     #     databases = list(set([j['scheduler'] for j in jobs.values()]))
     # jobs = sort_jobs_by('scheduler', *args, **kwargs)
     # wait, dryrun, rerun
+    # db connections
+    # loop jobs
+    #
 
 
 # def rerun(*args, **kwargs):
