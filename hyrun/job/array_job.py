@@ -1,15 +1,93 @@
 import json
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Union
+
 
 from hydb import Database, DatabaseDummy, get_database  # noqa: F401
-from hytools.logger import LoggerDummy
+from hytools.logger import get_logger
 
 from hyrun.job import Job, Output  # noqa: F401
 from hyrun.scheduler import get_scheduler
 
 
+
+@dataclass
+class ArrayJob:
+
+    jobs: List[Union[List, Job, int, Dict[str, Any]]] = field(default_factory=list)
+    logger: Any = None
+
+    def __post_init__(self):
+        self.logger.debug('ArrayJob')
+        self.logger.debug(self.jobs)
+        self.jobs = self._normalize_input(self.jobs)
+        self.logger = self.logger or get_logger()
+        # convert jobs to a list of lists of jobs
+
+        # Additional initialization logic if needed
+        
+    def __getitem__(self, job_index: int) -> Union[Job, int, Dict[str, Any]]:
+        return self.jobs[job_index]
+    
+    def __setitem__(self, job_index: int, job: Union[Job, int, Dict[str, Any]]):
+        self.jobs[job_index] = job
+
+    def __len__(self) -> int:
+        return len(self.jobs)
+    
+    def _normalize_input(self,
+                         jobs_input: Union[Job,
+                                           List[Union[Job, List[Any]]]]
+                        ) -> List[List[Job]]:
+        """Convert input into a list of lists."""
+        if not isinstance(jobs_input, list):
+            return self._normalize_input([jobs_input])
+        # else:
+        #     if not all(isinstance(item, Job) for item in jobs_input):
+        #         return self._normalize_input(jobs_input)
+            
+        # now we know that jobs_input is a list of lists
+        for job in jobs_input:
+            self.logger.debug(f'job normalization detected type {type(job)}')
+
+        return jobs_input
+
+
+           
+
+        # if isinstance(jobs_input, Job):
+        #     return [[jobs_input]]
+        # elif isinstance(jobs_input, list):
+        #     return [[job] if isinstance(job, Job) else job
+        #             for job in jobs_input]
+
+
+
+
+
+
+    # def add_task_to_job(self, job_index: int, task: Task):
+    #     job = self.jobs[job_index]
+    #     if isinstance(job, Job):
+    #         job.tasks.append(task)
+
+    # def add_job(self, job: Union[Job, int, Dict[str, Any]]):
+    #     self.jobs.append(job)
+
+    # def remove_job(self, job_index: int):
+    #     self.jobs.pop(job_index)
+
+
+
+# job in jobs.values():
+#             connections = []
+#             if getattr(job['job'].tasks[0], 'connection', None):
+#                 connections.append(job['job'].tasks[0].connection)
+#
+
 def gen_array_job(arg, **kwargs) -> dict:
     """Generate jobs."""
-    aj = ArrayJob()
+    aj = ArrayJobOld()
     # case only one job/task
     if not isinstance(arg, list):
         arg = [[arg]]
@@ -29,13 +107,48 @@ def gen_array_job(arg, **kwargs) -> dict:
     jobs = aj._check_job_params(jobs)
     return jobs
 
+# def normalize_to_list_of_lists(jobs_input: Union[Job, List[Union[Job, List[Any]]]], current_level: int = 0) -> List[List[Job]]:
+#     """
+#     Recursively normalize input to a list of lists of jobs while ensuring the nesting level is within limits.
+#     """
+#     MAX_NESTING_LEVEL = 2
 
-class ArrayJob:
+#     # Check if the current level exceeds the maximum allowed nesting level
+#     if current_level > MAX_NESTING_LEVEL:
+#         raise ValueError("Nesting level too large. Only up to list of lists is allowed.")
+    
+#     if isinstance(jobs_input, Job):
+#         return [[jobs_input]]
+
+#     # If it's a list, determine if it contains jobs or nested lists with jobs
+#     if isinstance(jobs_input, list):
+#         # If the list contains jobs, wrap it in another list
+#         if all(isinstance(item, Job) for item in jobs_input):
+#             if current_level == 0:
+#                 return [jobs_input]  # Top-level list of jobs
+#             else:
+#                 return jobs_input  # Sub-level list of jobs (one more level will be added in the parent call)
+
+#         # If the list contains lists, recursively normalize each sub-list
+#         elif all(isinstance(item, list) for item in jobs_input):
+#             normalized = [normalize_to_list_of_lists(item, current_level + 1) for item in jobs_input]
+#             # Flatten the list of lists by one level
+#             if current_level + 1 == MAX_NESTING_LEVEL:
+#                 return [sublist for innerlist in normalized for sublist in innerlist]
+#             else:
+#                 return normalized
+
+#     # If input format is not recognized, raise an error
+#     raise ValueError("Invalid input format. Expected Job, list of Jobs, or list of lists of Jobs.")
+
+
+class ArrayJobOld:
     """Array job tools."""
 
     def __init__(self, *args, **kwargs):
         """Initialize."""
-        self.logger = kwargs.get('logger', LoggerDummy())
+        self.logger = kwargs.get('logger', get_logger())
+
 
     def _check_all_types_of_nested_list(self, list_, type_to_check):
         """Check all types of nested list."""
@@ -170,3 +283,17 @@ class ArrayJob:
                 new_jobs[i]['database'] = job['database']
                 i += 1
         return new_jobs
+    
+    def _sort_jobs(self, jobs, key):
+        """Sort jobs."""
+        return {i: j for i, j in sorted(jobs.items(), key=lambda x: x[1][key])}
+    
+    def _sort_jobs_by_scheduler(self, jobs):
+        """Sort jobs by scheduler."""
+        return self._sort_jobs(jobs, 'scheduler')
+    
+    # sort the sorted jobs by database
+    def _sort_jobs_by_database(self, jobs):
+        """Sort jobs by database."""
+        return self._sort_jobs(jobs, 'database')
+    
