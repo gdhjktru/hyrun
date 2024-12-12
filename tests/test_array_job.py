@@ -30,6 +30,9 @@ class TestArrayJob(unittest.TestCase):
         job = self.array_job[1]
         self.assertEqual(job.scheduler, 's0')
         self.assertEqual(job.database, 'db1')
+        job = self.array_job[0, 1]
+        self.assertEqual(job.scheduler, 's0')   
+        self.assertEqual(job.database, 'db1')
 
     def test_setitem(self):
         """Test that item is set."""
@@ -38,6 +41,8 @@ class TestArrayJob(unittest.TestCase):
         # note, the jobs get sorted by scheduler and database
         self.assertEqual(self.array_job[4].scheduler, 's2')
         self.assertEqual(self.array_job[4].database, 'db2')
+        # with self.assertRaises(NotImplementedError):
+        #     self.array_job[1] = Job()
 
     def test_normalize_input(self):
         """Test that input is normalized."""
@@ -116,6 +121,16 @@ class TestArrayJob(unittest.TestCase):
                     Job(id=4, name='task2', database='db2')]
         with self.assertRaises(ValueError):
             self.array_job._convert_to_job(job_list)
+
+    def test_group_jobs(self):
+        """Test grouping jobs by scheduler."""
+        groups = self.array_job._group_jobs(self.jobs)
+        self.assertEqual(len(groups), 2)
+        self.assertEqual(len(groups[0]), 2)  # Two jobs with scheduler 's0'
+        self.assertEqual(len(groups[1]), 3)  # Three jobs with scheduler 's1'
+
+        self.assertEqual(groups[0][0].scheduler, 's0')
+        self.assertEqual(groups[1][0].scheduler, 's1')
 
 
 if __name__ == '__main__':

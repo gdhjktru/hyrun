@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field, fields
 from functools import singledispatchmethod, wraps
 from typing import Any, Dict, List, Union
-
+from itertools import groupby
 from hytools.logger import get_logger
 
 from .job import Job  # noqa: F401
@@ -33,34 +33,60 @@ class ArrayJob:
         self.logger.debug(f'ArrayJob initialized with {len(self.jobs)} jobs')
         # convert jobs to a list of lists of jobs
         self.jobs = self._normalize_input(self.jobs)
+        self.groups = self._group_jobs(self.jobs)
+
         self.logger.debug(f'ArrayJob normalized to {len(self.jobs)} jobs')
 
-    def __getitem__(self, job_index: int) -> Union[Job, int, Dict[str, Any]]:
-        """Get job."""
-        return self.jobs[job_index]
+    def __getitem__(self, index: Union[int, tuple]
+                    ) -> Union[Job, int, Dict[str, Any]]:
+        """Get job or group job."""
+        if isinstance(index, tuple):
+            group_index, job_index = index
+            return self.groups[group_index][job_index]
+        # print('put here self.groups[index] ???? ')
+        return self.jobs[index]
 
     def __setitem__(self, job_index: int,
                     job: Union[Job, int, Dict[str, Any]]):
         """Set job."""
+        # raise NotImplementedError('ArrayJob does not support setting jobs')
         self.jobs[job_index] = self._convert_to_job(job)
         self.logger.debug(f'ArrayJob set job {job_index} to {job}')
         self.jobs = sorted(self.jobs,
                            key=lambda job: (job.scheduler, job.database))
+        self.groups = self._group_jobs(self.jobs)
+
         self.logger.debug('ArrayJob re-sorted jobs by scheduler and database')
+      
 
     def __len__(self) -> int:
         """Get length."""
         return len(self.jobs)
 
     def _normalize_input(self,
-                         jobs_input: Union[Job,
+                         jobs: Union[Job,
                                            List[Union[Job, List[Any]]]]
                          ) -> List[Job]:
         """Convert input into a list of lists."""
-        if not isinstance(jobs_input, list):
-            return self._normalize_input([jobs_input])
-        return sorted([self._convert_to_job(job) for job in jobs_input],
+        if not isinstance(jobs, list):
+            return self._normalize_input([jobs])
+        return sorted([self._convert_to_job(job) for job in jobs],
                       key=lambda job: (job.scheduler, job.database))
+    
+    def _group_jobs(self,
+                    jobs: List[Job],
+                    keyfunc: Any = None) -> List[List[Job]]:
+        """Group jobs by scheduler."""
+        keyfunc = keyfunc or (lambda job: (job.scheduler, job.database))
+        groups = []
+        uniquekeys = []
+        for k, g in groupby(jobs,
+                            key=lambda job: (job.scheduler)):
+            groups.append(list(g))
+            uniquekeys.append(k)
+        self.logger.debug('ArrayJob grouped jobs, produced groups:' + 
+                          f'{[len(group) for group in groups]}')
+        return groups
 
     @singledispatchmethod
     def _convert_to_job(self, job: Any) -> Job:
