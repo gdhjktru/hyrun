@@ -31,7 +31,7 @@ class TestArrayJob(unittest.TestCase):
         self.assertEqual(job.scheduler, 's0')
         self.assertEqual(job.database, 'db1')
         job = self.array_job[0, 1]
-        self.assertEqual(job.scheduler, 's0')   
+        self.assertEqual(job.scheduler, 's0')
         self.assertEqual(job.database, 'db1')
 
     def test_setitem(self):

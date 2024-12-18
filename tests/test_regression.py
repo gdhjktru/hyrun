@@ -1,95 +1,78 @@
-# # requires pytest-regressions installed (pip install pytest-regressions)
-# import os
-# from pathlib import Path
+# requires pytest-regressions installed (pip install pytest-regressions)
+import os
+from pathlib import Path
 
-# import pytest
-# from hyif import Xtb
-# from hyobj import Molecule
-# from hyset import create_compute_settings as ccs
+import pytest
+from hyif import Xtb
+from hyobj import Molecule
+from hyset import create_compute_settings as ccs
 
-# # from hyrun.runner import fetch_results, get_status
-# from hyrun.runner import run
-
-
-# @pytest.fixture(scope='session')
-# def original_datadir(request) -> Path:
-#     """Return the original data directory."""
-#     config = request.config
-#     return config.rootpath / config.getini('original_datadir')
+# from hyrun.runner import fetch_results, get_status
+from hyrun.runner import run
 
 
-# @pytest.fixture(scope='session')
-# def datadir(request) -> Path:
-#     """Return the data directory."""
-#     config = request.config
-#     return config.rootpath / config.getini('datadir')
+@pytest.fixture(scope='session')
+def original_datadir(request) -> Path:
+    """Return the original data directory."""
+    config = request.config
+    return config.rootpath / config.getini('original_datadir')
 
 
-# default_tolerance = dict(atol=1e-6, rtol=1e-6)
-# keys_to_extract = ['energy']
-
-# default_cs = {'print_level': 'debug',
-#               'force_recompute': True,
-#               'database': 'mydb'}
-# compute_settings = {
-#     'local': ccs('local', **default_cs),
-#     # 'docker': ccs('docker', container_image='xtb', **default_cs),
-#     # 'conda': ccs('conda', conda_env='base', **default_cs),
-#     'saga': ccs('saga', modules=['xtb/6.4.1-intel-2021a'],
-#                 user=os.getlogin(),
-#                 memory_per_cpu=2000, progress_bar=False, **default_cs)
-#     }
-# molecules = {'water': Molecule('O')}
+@pytest.fixture(scope='session')
+def datadir(request) -> Path:
+    """Return the data directory."""
+    config = request.config
+    return config.rootpath / config.getini('datadir')
 
 
-# def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
-#     """Generate data."""
-#     x = Xtb(compute_settings=compute_settings,
-#             check_version=False, properties=['gradient'])
-#     setup = x.setup(mol)
-#     output = run(setup, parser=x)
-#     print(output)
-#     try:
-#         # result = x.parse(output)
-#         result = x.parse(output[0])[0]
-#         print('parsed result', result)
-#         return {key: result[key] for key in keys_to_extract}
-#     except Exception as e:
-#         print(e)
-#         return {}
+default_tolerance = dict(atol=1e-6, rtol=1e-6)
+keys_to_extract = ['energy']
+
+default_cs = {'print_level': 'debug',
+              'force_recompute': True,
+              'database': 'mydb'}
+compute_settings = {
+    'local': ccs('local', **default_cs),
+    # 'docker': ccs('docker', container_image='xtb', **default_cs),
+    # 'conda': ccs('conda', conda_env='base', **default_cs),
+    'saga': ccs('saga', modules=['xtb/6.4.1-intel-2021a'],
+                user=os.getlogin(),
+                memory_per_cpu=2000, progress_bar=False, **default_cs)
+    }
+molecules = {'water': Molecule('O')}
 
 
-# @pytest.mark.parametrize('mol',
-#                          list(molecules.values()),
-#                          ids=list(molecules.keys()))
-# def test_gen_jobs(mol):
-#     """Test gen_jobs."""
-#     from hydb import Database
+def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
+    """Generate data."""
+    x = Xtb(compute_settings=compute_settings,
+            check_version=False, properties=['gradient'])
+    setup = x.setup(mol)
+    output = run(setup)
+    try:
+        # result = x.parse(output)
+        result = x.parse(output[0])[0]
+        return {key: result[key] for key in keys_to_extract}
+    except Exception as e:
+        print(e)
+        return {}
 
-#     from hyrun.runner import gen_jobs
-#     x = Xtb(check_version=False)
-#     jobs_ref = gen_jobs([x.setup(mol) for _ in range(2)])
-#     jobs_ref[0]['database'] = None
-#     # test generating from a list of db_ids
-#     jobs0 = gen_jobs([-2, -1], database='mydb')
-#     wd = str(jobs0[0]['job'].tasks[0].work_dir_local)
-#     wd_ref = str(jobs_ref[0]['job'].tasks[0].work_dir_local)
-#     assert wd == wd_ref
+def test():
+    """Generate data."""
+    w = molecules['water']
+    l = compute_settings['local']
+    s = compute_settings['saga']
 
-#     # test generating from a list of Job objects
-#     # load jobs from db
-#     db = Database('mydb')
-#     db_ids = [-2, -1]
-#     jobs_db = []
-#     for id in db_ids:
-#         db_id = db._db_id(id)
-#         entry = db.get(key='db_id', value=db_id)
-#         job = db.dict_to_obj(entry)
-#         job.db_id = db_id
-#         jobs_db.append(job)
-#     jobs1 = gen_jobs(jobs_db)
-#     assert jobs1[0]['job'] == jobs0[0]['job']
-
+    mols = [w, [w, w]]
+    scheds = [l, s]
+    setup_list = []
+    for sched in scheds:
+        x = Xtb(compute_settings=sched,
+                check_version=False,
+                properties=['gradient'])
+        for mol in mols:
+            setup = x.setup(mol)
+            setup_list.append(setup)
+    output = run(setup_list)
 
 # @pytest.mark.parametrize('mol',
 #                          list(molecules.values()),

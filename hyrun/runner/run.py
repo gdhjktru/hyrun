@@ -1,3 +1,7 @@
+from hytools.logger import get_logger
+
+from hyrun.job import ArrayJob
+
 from .runner import Runner
 
 
@@ -5,20 +9,55 @@ def run(*args, **kwargs):
     """Run."""
 
     # # return Runner(*args, **kwargs).run(*args, **kwargs)
-    # jobs = gen_jobs(*args, logger=self.logger, **kwargs)
-    #     # check if jobs has an id
+    aj = ArrayJob(*args, logger=get_logger(print_level='DEBUG'), **kwargs)
+    #     # check if jobs has an id in database
     # jobs = self.check_finished_jobs(jobs)
-    # jobs = {i: j for i, j in jobs.items() if not j['job'].finished}
-    #         schedulers = list(set([j['scheduler'] for j in jobs.values()]))
 
-    #     databases = list(set([j['scheduler'] for j in jobs.values()]))
-    # jobs = sort_jobs_by('scheduler', *args, **kwargs)
+    # prep jobs
+    for job in aj.jobs:
+        # check if job is in database
+        print('checking if job is in database')
+        # check if job is finished
+        print('checking if job is finished')
+        # generate job scripts
+        print('generating job script')
+        # write all files to disk and add to job.files
+        print('writing all files to disk')
+
+    for job_group in aj.job_groups:
+        # initiate scheduler
+        print('initiating scheduler')
+        # transfer files to cluster
+        print('transferring files to cluster')
+        for job in job_group:
+            # submit job
+            print('submitting job')
+            # add job to database
+            print('adding job to database')
+            # exit point: if not wait return database entry
+            print('exiting')
+            # check if job is running
+            print('checking if job is running')
+            # check if job is finished
+            print('checking if job is finished')
+            # fetch results
+            print('fetching results')
+            # transfer files from cluster
+            print('transferring files from cluster')
+    # loop jobs by scheduler
+    #
+    # get all files to transfer
+    # for jobs in aj.job_groups:
+
+
+    # print(files_to_transfer     )
     # wait, dryrun, rerun
     # db connections
     # loop jobs
     #
 
 
+    pokpokookpkpo
 # def rerun(*args, **kwargs):
 #     """Run."""
 #     return Runner(*args, rerun=True, **kwargs).run()

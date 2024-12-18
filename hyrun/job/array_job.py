@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field, fields
 from functools import singledispatchmethod, wraps
-from typing import Any, Dict, List, Union
 from itertools import groupby
+from typing import Any, Dict, List, Union
+
 from hytools.logger import get_logger
 
 from .job import Job  # noqa: F401
@@ -30,10 +31,13 @@ class ArrayJob:
     def __post_init__(self):
         """Post init."""
         self.logger = self.logger or get_logger()
-        self.logger.debug(f'ArrayJob initialized with {len(self.jobs)} jobs')
+        if not isinstance(self.jobs, list):
+            self.jobs = [self.jobs]
+        self.logger.debug('ArrayJob initialized with ' +
+                          f'{len(self.jobs)} jobs')
         # convert jobs to a list of lists of jobs
         self.jobs = self._normalize_input(self.jobs)
-        self.groups = self._group_jobs(self.jobs)
+        self.job_groups = self._group_jobs(self.jobs)
 
         self.logger.debug(f'ArrayJob normalized to {len(self.jobs)} jobs')
 
@@ -42,8 +46,8 @@ class ArrayJob:
         """Get job or group job."""
         if isinstance(index, tuple):
             group_index, job_index = index
-            return self.groups[group_index][job_index]
-        # print('put here self.groups[index] ???? ')
+            return self.job_groups[group_index][job_index]
+        # print('put here self.job_groups[index] ???? ')
         return self.jobs[index]
 
     def __setitem__(self, job_index: int,
@@ -54,10 +58,23 @@ class ArrayJob:
         self.logger.debug(f'ArrayJob set job {job_index} to {job}')
         self.jobs = sorted(self.jobs,
                            key=lambda job: (job.scheduler, job.database))
-        self.groups = self._group_jobs(self.jobs)
+        self.job_groups = self._group_jobs(self.jobs)
 
         self.logger.debug('ArrayJob re-sorted jobs by scheduler and database')
-      
+
+    # def combine_group_attrs(self, jobs: List[Job], attr: str) -> List[Any]:
+    #     # first check type of getattr(self.job_groups[group_index][0], attr)
+    #     # if it is a list, then flatten the list
+    #     # if it is not a list, add all the values to a list
+    #     output_list = []
+    #     for j in jobs:
+    #         for t in getattr(j, 'tasks', []):
+    #             a = getattr(t, attr, None)
+    #             if isinstance(a, list):
+    #                 output_list.extend(a)
+    #             elif a is not None:
+    #                 output_list.append(a)
+    #     return output_list
 
     def __len__(self) -> int:
         """Get length."""
@@ -72,7 +89,7 @@ class ArrayJob:
             return self._normalize_input([jobs])
         return sorted([self._convert_to_job(job) for job in jobs],
                       key=lambda job: (job.scheduler, job.database))
-    
+
     def _group_jobs(self,
                     jobs: List[Job],
                     keyfunc: Any = None) -> List[List[Job]]:
@@ -84,7 +101,7 @@ class ArrayJob:
                             key=lambda job: (job.scheduler)):
             groups.append(list(g))
             uniquekeys.append(k)
-        self.logger.debug('ArrayJob grouped jobs, produced groups:' + 
+        self.logger.debug('ArrayJob grouped jobs, produced groups:' +
                           f'{[len(group) for group in groups]}')
         return groups
 
@@ -92,9 +109,11 @@ class ArrayJob:
     def _convert_to_job(self, job: Any) -> Job:
         """Convert input to Job."""
         # assume we have a task or a list of tasks
-        self.logger.debug(f'job normalization detected task {type(job)}')
+
         if not isinstance(job, list):
             job = [job]
+        self.logger.debug('job normalization detected tasks ' +
+                          f'{[type(j) for j in job]}')
         check = self._check_common_attributes(job,
                                               ['database', 'database_opt',
                                                'scheduler', 'scheduler_opt'])
@@ -111,18 +130,19 @@ class ArrayJob:
     @_convert_to_job.register(Job)
     def _(self, job: Job) -> Job:
         """Convert Job to Job."""
-        self.logger.debug(f'job normalization detected Job {type(job)}')
         return job
 
     @_convert_to_job.register(dict)
     def _(self, job: dict) -> Job:
         """Convert dictionary to Job."""
-        self.logger.debug(f'job normalization detected dictionary {type(job)}')
         try:
-            return Job(**job)
+            job_ = Job(**job)
         except AttributeError as e:
             self.logger.error(f'Could not convert dictionary to Job: {job}')
             raise e
+        else:
+            # self.logger.debug(f'Converted dictionary to Job: {job_}')
+            return job_
 
     def _check_common_attributes(self,
                                  jobs: List[Any],
