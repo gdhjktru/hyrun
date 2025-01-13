@@ -25,8 +25,6 @@ def run(*args, **kwargs):
         # write all files to disk and add to job.files
         print('writing all files to disk')
 
-
-
     for job_group in aj.job_groups:
         # initiate scheduler
         print('initiating scheduler')
@@ -59,8 +57,6 @@ def run(*args, **kwargs):
     # loop jobs
     #
 
-
-    pokpokookpkpo
 # def rerun(*args, **kwargs):
 #     """Run."""
 #     return Runner(*args, rerun=True, **kwargs).run()

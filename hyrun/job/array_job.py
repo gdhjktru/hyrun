@@ -81,8 +81,7 @@ class ArrayJob:
         return len(self.jobs)
 
     def _normalize_input(self,
-                         jobs: Union[Job,
-                                           List[Union[Job, List[Any]]]]
+                         jobs: Union[Job, List[Union[Job, List[Any]]]]
                          ) -> List[Job]:
         """Convert input into a list of lists."""
         if not isinstance(jobs, list):
@@ -105,7 +104,7 @@ class ArrayJob:
             uniquekeys.append(k)
         self.logger.debug('ArrayJob grouped jobs, produced groups: ' +
                           f'{[len(group) for group in groups]} by ' +
-                           f'keys {uniquekeys}' )
+                          f'keys {uniquekeys}')
         return groups
 
     @singledispatchmethod
