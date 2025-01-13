@@ -36,6 +36,8 @@ class Job(JobInfo):
     database_opt: Optional[dict] = field(default_factory=dict)
     scheduler: Optional[Union[str, Scheduler]] = 'local'
     scheduler_opt: Optional[dict] = field(default_factory=dict)
+    connection_type: Optional[str] = None
+    connection_opt: Optional[dict] = field(default_factory=dict)
     files: Optional[List[Union[Path, str]]] = None
 
     # def __post_init__(self):

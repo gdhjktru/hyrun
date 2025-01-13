@@ -88,7 +88,9 @@ class ArrayJob:
         if not isinstance(jobs, list):
             return self._normalize_input([jobs])
         return sorted([self._convert_to_job(job) for job in jobs],
-                      key=lambda job: (job.scheduler, job.database))
+                      key=lambda job: (job.connection_type,
+                                       job.scheduler,
+                                       job.database))
 
     def _group_jobs(self,
                     jobs: List[Job],
@@ -101,8 +103,9 @@ class ArrayJob:
                             key=lambda job: (job.scheduler)):
             groups.append(list(g))
             uniquekeys.append(k)
-        self.logger.debug('ArrayJob grouped jobs, produced groups:' +
-                          f'{[len(group) for group in groups]}')
+        self.logger.debug('ArrayJob grouped jobs, produced groups: ' +
+                          f'{[len(group) for group in groups]} by ' +
+                           f'keys {uniquekeys}' )
         return groups
 
     @singledispatchmethod

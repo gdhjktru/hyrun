@@ -15,6 +15,7 @@ def run(*args, **kwargs):
 
     # prep jobs
     for job in aj.jobs:
+        # init all classes
         # check if job is in database
         print('checking if job is in database')
         # check if job is finished
@@ -23,6 +24,8 @@ def run(*args, **kwargs):
         print('generating job script')
         # write all files to disk and add to job.files
         print('writing all files to disk')
+
+
 
     for job_group in aj.job_groups:
         # initiate scheduler
