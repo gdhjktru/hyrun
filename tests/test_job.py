@@ -79,7 +79,10 @@ class TestJob(unittest.TestCase):
             'db_id': 123,
             'database_opt': {'opt1': 'value1'},
             'scheduler': 'test_scheduler',
-            'scheduler_opt': {'opt2': 'value2'}
+            'scheduler_opt': {'opt2': 'value2'},
+            'connection_type': None,
+            'connection_opt': {},
+            'files': None
             }
         self.assertEqual(job_dict, expected_dict)
 
