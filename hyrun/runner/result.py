@@ -9,6 +9,7 @@ PathLikeList = Union[PathLike, List[PathLike]]
 @dataclass
 class ResultContainer:
     """Container for local results."""
+
     files_to_parse: Optional[PathLikeList] = None
     output_file: Optional[PathLike] = None
     output_folder: Optional[PathLike] = None

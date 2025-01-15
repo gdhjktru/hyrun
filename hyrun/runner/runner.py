@@ -19,7 +19,9 @@ from .transfer import FileTransferManager
 
 
 def gen_jobs(jobs, *args, **kwargs):
+    """Generate jobs."""
     return jobs
+
 
 class Runner(FileTransferManager, JobDatabaseManager, JobPrep):
     """Runner."""
@@ -203,7 +205,7 @@ class Runner(FileTransferManager, JobDatabaseManager, JobPrep):
         """Run."""
         # jobs = gen_jobs(*args, logger=self.logger, **kwargs)
         # check if jobs has an id
-
+        jobs = args[0]
         jobs = self.check_finished_jobs(jobs)
         self.logger.debug('The following jobs are finished: ' +
                           ', '.join([str(i) for i, j in jobs.items()

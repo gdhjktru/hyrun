@@ -87,15 +87,17 @@ class ArrayJob:
         if not isinstance(jobs, list):
             return self._normalize_input([jobs])
         return sorted([self._convert_to_job(job) for job in jobs],
-                      key=lambda job: (job.connection_type,
-                                       job.scheduler,
+                      key=lambda job: (job.scheduler,
+                                       job.connection_type,
                                        job.database))
 
     def _group_jobs(self,
                     jobs: List[Job],
                     keyfunc: Any = None) -> List[List[Job]]:
         """Group jobs by scheduler."""
-        keyfunc = keyfunc or (lambda job: (job.scheduler, job.database))
+        keyfunc = keyfunc or (lambda job: (job.scheduler,
+                                           job.connection_type,
+                                           job.database))
         groups = []
         uniquekeys = []
         for k, g in groupby(jobs,

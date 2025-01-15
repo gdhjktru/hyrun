@@ -6,8 +6,7 @@ from .runner import Runner
 
 
 def run(*args, **kwargs):
-    """Run."""
-
+    """Run hsp job."""
     # # return Runner(*args, **kwargs).run(*args, **kwargs)
     aj = ArrayJob(*args, logger=get_logger(print_level='DEBUG'), **kwargs)
     #     # check if jobs has an id in database
@@ -49,8 +48,6 @@ def run(*args, **kwargs):
     #
     # get all files to transfer
     # for jobs in aj.job_groups:
-
-
     # print(files_to_transfer     )
     # wait, dryrun, rerun
     # db connections

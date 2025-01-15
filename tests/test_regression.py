@@ -56,14 +56,15 @@ def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
         print(e)
         return {}
 
+
 def test():
     """Generate data."""
     w = molecules['water']
-    l = compute_settings['local']
-    s = compute_settings['saga']
+    local = compute_settings['local']
+    saga = compute_settings['saga']
 
     mols = [w, [w, w]]
-    scheds = [l, s]
+    scheds = [local, saga]
     setup_list = []
     for sched in scheds:
         x = Xtb(compute_settings=sched,
@@ -73,6 +74,7 @@ def test():
             setup = x.setup(mol)
             setup_list.append(setup)
     output = run(setup_list)
+    print(output)
 
 # @pytest.mark.parametrize('mol',
 #                          list(molecules.values()),
@@ -83,7 +85,8 @@ def test():
 # def test_all(cs, mol, num_regression, request):
 #     """Test all."""
 #     data = calculate(cs, mol)
-#     # check if value is identical to the reference calculated with same method
+#     # check if value is identical to the reference calculated with same
+# method
 #     num_regression.check(data,
 #                          basename=f'{request.node.name}_{mol.hash}',
 #                          default_tolerance=default_tolerance)
@@ -129,7 +132,8 @@ def test():
 # def test_rerun(cs, mol, num_regression, request):
 #     """Test all."""
 #     data = calculate(cs, mol)
-#     # check if value is identical to the reference calculated with same method
+#     # check if value is identical to the reference calculated with same
+# method
 #     num_regression.check(data,
 #                          basename=f'{request.node.name}_{mol.hash}',
 #                          default_tolerance=default_tolerance)

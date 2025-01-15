@@ -103,6 +103,7 @@ def get_result(result: Any, **kwargs
 
 
 class ResultManager:
+    """Manage the result of a calculation."""
 
     def __init__(self, logger: Optional[Logger] = None,
                  output_type: Optional[str] = None,
