@@ -1,5 +1,5 @@
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 
 from .timedelta import timedelta_to_slurmtime
@@ -202,6 +202,8 @@ class SlurmJobScript:
         if len(set(job_names)) == 1 and job_names[0] is not None:
             return job_names[0]
 
-        program = 'slurm_job' if len(job_names) == 1 else 'slurm_bundle'
-        return (
-            f"{program}_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}")
+        return 'hyrun_job'
+
+        # program = 'slurm_job' if len(job_names) == 1 else 'slurm_bundle'
+        # return (
+        #     f"{program}_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}")
