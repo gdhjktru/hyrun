@@ -1,3 +1,4 @@
+import os
 import subprocess
 from contextlib import nullcontext
 from dataclasses import replace
@@ -8,11 +9,11 @@ from typing import Any, Dict, List, Optional
 
 from hytools.logger import LoggerDummy
 
-from hyrun.decorators import list_exec
-
 from ..abc import Scheduler
 from .conda import get_conda_launcher
 from .docker import get_docker_launcher
+
+# from hyrun.decorators import list_exec
 
 
 class LocalScheduler(Scheduler):
@@ -91,6 +92,10 @@ class LocalScheduler(Scheduler):
         run_settings = tasks[0]
         cwd = run_settings.work_dir_local
         running_list = self._gen_running_list(run_settings, cwd)
+
+        # here record the position where running list ends and post cmd stards
+
+        # also run_settings stdin_file
 
         if getattr(run_settings, 'pre_cmd', None):
             pre_cmd = (split(quote(run_settings.pre_cmd))
@@ -197,18 +202,23 @@ class LocalScheduler(Scheduler):
         rs = job.tasks[0]
         js = job.job_script['path']
         output = job.outputs[0]
-        cmd = Path(js).read_text().split(' ')
-        self.logger.info('Running command: %s\n', cmd)
+
+        # maybe write the script to disk and run it with subprocess
+        os.chmod(js, 0o755)
+
+        # cmd = Path(js).read_text().split(' ')
+        self.logger.info('Running command: %s\n',
+                         Path(js).read_text().split('\n'))
         self.logger.info('Working directory: %s\n', rs.work_dir_local)
         run_opts = {'capture_output': True,
                     'text': True,
                     'cwd': str(rs.work_dir_local),
                     'env': rs.env,
                     'shell': False}
-        if ';' in cmd or '&&' in cmd:
-            run_opts['shell'] = True
-            cmd = ' '.join(cmd)
-        result = subprocess.run(cmd, **run_opts)
+        # if ';' in cmd or '&&' in cmd:
+        #     run_opts['shell'] = True
+        #     cmd = ' '.join(cmd)
+        result = subprocess.run(str(js), **run_opts)
         self.logger.debug('Result: %s\n', result)
         output = self.update_output(result=result,
                                     run_settings=rs,
@@ -243,9 +253,10 @@ class LocalScheduler(Scheduler):
         """Quick return."""
         pass
 
-    @list_exec
     def fetch_results(self, jobs, *args, **kwargs):
         """Fetch results."""
+        if isinstance(jobs, list):
+            return [self.fetch_results(j) for j in jobs]
         return jobs
 
     # def check_finished(self, run_settings) -> bool:

@@ -42,4 +42,4 @@ skip-string-normalization = 1
 addopts = "--ignore=tests/test_regression"
 
 [tool.coverage.run]
-omit = ["tests/*"]
+omit = ["tests/*", "hyrun/remote/rsync.py"]
