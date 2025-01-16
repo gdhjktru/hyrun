@@ -4,6 +4,13 @@ from hyrun.job import ArrayJob
 
 from .runner import Runner
 
+# from hyrun.scheduler import get_scheduler
+
+
+def scheduler_exec(connection, scheduler_func, *args, **kwargs):
+    """Execute scheduler function."""
+    return connection.execute(scheduler_func(*args, **kwargs))
+
 
 def run(*args, **kwargs):
     """Run hsp job."""
@@ -14,6 +21,13 @@ def run(*args, **kwargs):
 
     # prep jobs
     for job in aj.jobs:
+        print('prepping job', job)
+        # init scheduler
+
+        # job.scheduler = get_scheduler(job.scheduler, **job.scheduler_opt)
+        # print(job)
+
+        # init database
         # init all classes
         # check if job is in database
         print('checking if job is in database')

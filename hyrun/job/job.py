@@ -32,16 +32,20 @@ class Job(JobInfo):
     outputs: Optional[List[Output]] = None
     job_script: Optional[str] = None
     database: Optional[Union[str, Path, Database]] = 'dummy'
+    database_opt: Optional[dict] = None
     db_id: Optional[int] = None
-    database_opt: Optional[dict] = field(default_factory=dict)
     scheduler: Optional[Union[str, Scheduler]] = 'local'
-    scheduler_opt: Optional[dict] = field(default_factory=dict)
+    scheduler_opt: Optional[dict] = None
     connection_type: Optional[str] = None
-    connection_opt: Optional[dict] = field(default_factory=dict)
+    connection_opt: Optional[dict] = None
     files: Optional[List[Union[Path, str]]] = None
 
-    # def __post_init__(self):
-    #     """Post init."""
+    def __post_init__(self):
+        """Post init."""
+        self.database_opt = self.database_opt or {}
+        self.scheduler_opt = self.scheduler_opt or {}
+        self.connection_opt = self.connection_opt or {}
+
     #     self.database = self.database or 'dummy'
     #     self.scheduler = self.scheduler or 'local'
     #     # not sure if this is the right place here

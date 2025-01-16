@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 
 class Scheduler(ABC):
-    """Base class for remote Schedulers."""
+    """Base class for Schedulers."""
 
     @abstractmethod
     def __hash__(self) -> int:
@@ -17,22 +17,20 @@ class Scheduler(ABC):
         pass
 
     @abstractmethod
-    def __enter__(self):
-        """Enter."""
-        pass
-
-    @abstractmethod
-    def __exit__(self, *args):
-        """Exit."""
-        pass
-
-    @abstractmethod
     def cancel(self):
         """Cancel job."""
 
     @abstractmethod
     def is_finished(self, *args, **kwargs):
         """Check if job finishes."""
+
+    @abstractmethod
+    def job_script(self, *args, **kwargs):
+        """Generate job script."""
+
+    @abstractmethod
+    def submit(self, *args, **kwargs):
+        """Generate command for job submission."""
 
     # @abstractmethod
     # def fetch_results(self, *args, **kwargs):

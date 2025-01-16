@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field, fields
 from functools import singledispatchmethod, wraps
 from itertools import groupby
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from hytools.logger import get_logger
 
@@ -56,8 +56,8 @@ class ArrayJob:
         # raise NotImplementedError('ArrayJob does not support setting jobs')
         self.jobs[job_index] = self._convert_to_job(job)
         self.logger.debug(f'ArrayJob set job {job_index} to {job}')
-        self.jobs = sorted(self.jobs,
-                           key=lambda job: (job.scheduler, job.database))
+        # self.jobs = sorted(self.jobs,
+        #                    key=lambda job: (job.scheduler, job.database))
         self.job_groups = self._group_jobs(self.jobs)
 
         self.logger.debug('ArrayJob re-sorted jobs by scheduler and database')
@@ -87,27 +87,24 @@ class ArrayJob:
         if not isinstance(jobs, list):
             return self._normalize_input([jobs])
         return sorted([self._convert_to_job(job) for job in jobs],
-                      key=lambda job: (job.scheduler,
-                                       job.connection_type,
+                      key=lambda job: (job.connection_type,
+                                       job.scheduler,
                                        job.database))
 
     def _group_jobs(self,
                     jobs: List[Job],
-                    keyfunc: Any = None) -> List[List[Job]]:
-        """Group jobs by scheduler."""
-        keyfunc = keyfunc or (lambda job: (job.scheduler,
-                                           job.connection_type,
-                                           job.database))
+                    keyfunc: Any = None) -> Tuple[list, list]:
+        """Group jobs by connection."""
+        keyfunc = keyfunc or (lambda job: job.connection_opt)
         groups = []
         uniquekeys = []
-        for k, g in groupby(jobs,
-                            key=lambda job: (job.scheduler)):
+        for k, g in groupby(jobs, key=keyfunc):
             groups.append(list(g))
             uniquekeys.append(k)
         self.logger.debug('ArrayJob grouped jobs, produced groups: ' +
                           f'{[len(group) for group in groups]} by ' +
                           f'keys {uniquekeys}')
-        return groups
+        return groups, uniquekeys
 
     @singledispatchmethod
     def _convert_to_job(self, job: Any) -> Job:
@@ -119,16 +116,21 @@ class ArrayJob:
         self.logger.debug('job normalization detected tasks ' +
                           f'{[type(j) for j in job]}')
         check = self._check_common_attributes(job,
-                                              ['database', 'database_opt',
-                                               'scheduler', 'scheduler_opt'])
+                                              ['connection_type',
+                                               'database',
+                                               'scheduler'])
         if not check:
             msg = 'All tasks in a job must have the same ' + \
-                    'database, database_opt, scheduler, and scheduler_opt'
+                  'connection_type, database, scheduler'
             self.logger.error(msg)
             raise ValueError(msg)
 
         job_dict = {f.name: getattr(job[0], f.name, None) for f in fields(Job)}
+        job_dict['name'] = None
         job_dict['tasks'] = job
+        job_dict['connection_opt'] = job_dict.get('connection_opt', {})
+        job_dict['connection_opt'].setdefault(  # type: ignore
+            'connection_type', job_dict['connection_type'])
         return self._convert_to_job(job_dict)
 
     @_convert_to_job.register(Job)
