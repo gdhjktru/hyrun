@@ -37,7 +37,7 @@ class ArrayJob:
                           f'{len(self.jobs)} jobs')
         # convert jobs to a list of lists of jobs
         self.jobs = self._normalize_input(self.jobs)
-        self.job_groups = self._group_jobs(self.jobs)
+        self.job_groups, self.job_group_keys = self._group_jobs(self.jobs)
 
         self.logger.debug(f'ArrayJob normalized to {len(self.jobs)} jobs')
 
@@ -56,11 +56,16 @@ class ArrayJob:
         # raise NotImplementedError('ArrayJob does not support setting jobs')
         self.jobs[job_index] = self._convert_to_job(job)
         self.logger.debug(f'ArrayJob set job {job_index} to {job}')
+        # reinitialize jobs as in post_init
+        self.jobs = self._normalize_input(self.jobs)  # type: ignore
+        self.job_groups, self.job_group_keys = self._group_jobs(self.jobs)
+
         # self.jobs = sorted(self.jobs,
         #                    key=lambda job: (job.scheduler, job.database))
-        self.job_groups = self._group_jobs(self.jobs)
+        # self.job_groups = self._group_jobs(self.jobs)
 
-        self.logger.debug('ArrayJob re-sorted jobs by scheduler and database')
+        # self.logger.debug('ArrayJob re-sorted jobs by scheduler and
+        # database')
 
     # def combine_group_attrs(self, jobs: List[Job], attr: str) -> List[Any]:
     #     # first check type of getattr(self.job_groups[group_index][0], attr)
@@ -84,18 +89,18 @@ class ArrayJob:
                          jobs: Union[Job, List[Union[Job, List[Any]]]]
                          ) -> List[Job]:
         """Convert input into a list of lists."""
+        key = (lambda job: job.connection_opt.get('host', ''))  # type: ignore
         if not isinstance(jobs, list):
-            return self._normalize_input([jobs])
-        return sorted([self._convert_to_job(job) for job in jobs],
-                      key=lambda job: (job.connection_type,
-                                       job.scheduler,
-                                       job.database))
+            jobs = [jobs]
+        jobs = sorted([self._convert_to_job(job) for job in jobs], key=key)
+        return [job for group in
+                self._group_jobs(jobs)[0] for job in group]  # type: ignore
 
     def _group_jobs(self,
                     jobs: List[Job],
                     keyfunc: Any = None) -> Tuple[list, list]:
         """Group jobs by connection."""
-        keyfunc = keyfunc or (lambda job: job.connection_opt)
+        keyfunc = keyfunc or (lambda job: job.connection_opt.get('host', ''))
         groups = []
         uniquekeys = []
         for k, g in groupby(jobs, key=keyfunc):
@@ -127,7 +132,7 @@ class ArrayJob:
 
         job_dict = {f.name: getattr(job[0], f.name, None) for f in fields(Job)}
         job_dict['name'] = None
-        job_dict['tasks'] = job
+        job_dict['tasks'] = [getattr(j, 'tasks', j) for j in job]
         job_dict['connection_opt'] = job_dict.get('connection_opt', {})
         job_dict['connection_opt'].setdefault(  # type: ignore
             'connection_type', job_dict['connection_type'])
