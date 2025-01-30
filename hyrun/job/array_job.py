@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field, fields
 from functools import singledispatchmethod, wraps
 from itertools import groupby
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, Optional
 
-from hytools.logger import get_logger
+from hytools.logger import Logger, get_logger
+from hyset import RunSettings
 
 from .job import Job  # noqa: F401
 
@@ -26,7 +27,9 @@ class ArrayJob:
     """Array job tools."""
 
     jobs: List[Job] = field(default_factory=list)
-    logger: Any = None
+    logger: Optional[Logger] = None
+    jobs_grouped: Optional[List[List[Job]]] = None
+    job_group_keys: Optional[List[str]] = None
 
     def __post_init__(self):
         """Post init."""
@@ -36,19 +39,28 @@ class ArrayJob:
         self.logger.debug('ArrayJob initialized with ' +
                           f'{len(self.jobs)} jobs')
         # convert jobs to a list of lists of jobs
-        self.jobs = self._normalize_input(self.jobs)
-        self.job_groups, self.job_group_keys = self._group_jobs(self.jobs)
-
-        self.logger.debug(f'ArrayJob normalized to {len(self.jobs)} jobs')
-
+        self.jobs, self.jobs_grouped, self.job_group_keys = \
+            self._group_jobs(self.jobs)
+        
+        self.logger.debug('ArrayJob grouped jobs: ' +
+                          f'{[len(group) for group in self.jobs_grouped]} ' +
+                          f' by keys {self.job_group_keys }')
+        self.logger.debug('ArrayJob jobs and tasks: ')
+        for i, job in enumerate(self.jobs):
+            self.logger.debug(f'{i}: {len(job.tasks)} tasks at '+ 
+                              f'{job.connection_opt.get("host", "?")}')
+    
     def __getitem__(self, index: Union[int, tuple]
                     ) -> Union[Job, int, Dict[str, Any]]:
         """Get job or group job."""
         if isinstance(index, tuple):
             group_index, job_index = index
-            return self.job_groups[group_index][job_index]
-        # print('put here self.job_groups[index] ???? ')
-        return self.jobs[index]
+            return self.jobs_grouped[group_index][job_index]
+        elif isinstance(index, int):
+            return self.jobs[index]
+        else:
+            raise ValueError('Index must be an integer or a tuple of integers')
+                             
 
     def __setitem__(self, job_index: int,
                     job: Union[Job, int, Dict[str, Any]]):
@@ -57,8 +69,9 @@ class ArrayJob:
         self.jobs[job_index] = self._convert_to_job(job)
         self.logger.debug(f'ArrayJob set job {job_index} to {job}')
         # reinitialize jobs as in post_init
-        self.jobs = self._normalize_input(self.jobs)  # type: ignore
-        self.job_groups, self.job_group_keys = self._group_jobs(self.jobs)
+        self.jobs, self.jobs_grouped, self.job_group_keys = \
+            self._group_jobs(self.jobs)
+
 
         # self.jobs = sorted(self.jobs,
         #                    key=lambda job: (job.scheduler, job.database))
@@ -92,34 +105,32 @@ class ArrayJob:
         key = (lambda job: job.connection_opt.get('host', ''))  # type: ignore
         if not isinstance(jobs, list):
             jobs = [jobs]
-        jobs = sorted([self._convert_to_job(job) for job in jobs], key=key)
-        return [job for group in
-                self._group_jobs(jobs)[0] for job in group]  # type: ignore
+        return sorted([self._convert_to_job(job) for job in jobs], key=key)
 
     def _group_jobs(self,
                     jobs: List[Job],
-                    keyfunc: Any = None) -> Tuple[list, list]:
+                    keyfunc: Any = None) -> Tuple[list, list, list]:
         """Group jobs by connection."""
+        jobs = self._normalize_input(jobs)
         keyfunc = keyfunc or (lambda job: job.connection_opt.get('host', ''))
         groups = []
         uniquekeys = []
         for k, g in groupby(jobs, key=keyfunc):
             groups.append(list(g))
             uniquekeys.append(k)
-        self.logger.debug('ArrayJob grouped jobs, produced groups: ' +
-                          f'{[len(group) for group in groups]} by ' +
-                          f'keys {uniquekeys}')
-        return groups, uniquekeys
+
+        jobs = [job for group in groups for job in group]
+        return jobs, groups, uniquekeys
 
     @singledispatchmethod
     def _convert_to_job(self, job: Any) -> Job:
         """Convert input to Job."""
-        # assume we have a task or a list of tasks
-
-        if not isinstance(job, list):
-            job = [job]
-        self.logger.debug('job normalization detected tasks ' +
-                          f'{[type(j) for j in job]}')
+        raise NotImplementedError('Cannot convert input to Job from type ' +
+                                  f'{type(job)}')
+    
+    @_convert_to_job.register(list)
+    def _(self, job: list) -> Job:
+        """Convert list to Job."""
         check = self._check_common_attributes(job,
                                               ['connection_type',
                                                'database',
@@ -129,14 +140,16 @@ class ArrayJob:
                   'connection_type, database, scheduler'
             self.logger.error(msg)
             raise ValueError(msg)
+        return Job(tasks=job,
+                   connection_opt=job[0].connection_opt,
+                   connection_type=job[0].connection_type,
+                   database=job[0].database,
+                   scheduler=job[0].scheduler)
 
-        job_dict = {f.name: getattr(job[0], f.name, None) for f in fields(Job)}
-        job_dict['name'] = None
-        job_dict['tasks'] = [getattr(j, 'tasks', j) for j in job]
-        job_dict['connection_opt'] = job_dict.get('connection_opt', {})
-        job_dict['connection_opt'].setdefault(  # type: ignore
-            'connection_type', job_dict['connection_type'])
-        return self._convert_to_job(job_dict)
+    @_convert_to_job.register(RunSettings)
+    def _(self, job: RunSettings) -> Job:
+        """Convert RunSettings to Job."""
+        return self._convert_to_job([job])
 
     @_convert_to_job.register(Job)
     def _(self, job: Job) -> Job:
@@ -152,7 +165,6 @@ class ArrayJob:
             self.logger.error(f'Could not convert dictionary to Job: {job}')
             raise e
         else:
-            # self.logger.debug(f'Converted dictionary to Job: {job_}')
             return job_
 
     def _check_common_attributes(self,

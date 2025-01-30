@@ -2,7 +2,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, List, Optional, Union
-
+from hashlib import sha256
 from hydb import Database
 
 from hyrun.scheduler.abc import Scheduler
@@ -45,6 +45,17 @@ class Job(JobInfo):
         self.database_opt = self.database_opt or {}
         self.scheduler_opt = self.scheduler_opt or {}
         self.connection_opt = self.connection_opt or {}
+
+    def _gen_hash(self) -> str:
+        """Generate hash."""
+        # construct has from the following fields
+        scheduler = getattr(self.scheduler, 'name', self.scheduler)
+        job_script = self.job_script or ''
+        name = self.name or ''
+        host = self.connection_opt.get('host', '')
+        user = self.connection_opt.get('user', '')
+        return sha256(
+            f'{name}{user}{host}{scheduler}{job_script}'.encode()).hexdigest()
 
     #     self.database = self.database or 'dummy'
     #     self.scheduler = self.scheduler or 'local'

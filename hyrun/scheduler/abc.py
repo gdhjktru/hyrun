@@ -25,7 +25,7 @@ class Scheduler(ABC):
         """Check if job finishes."""
 
     @abstractmethod
-    def job_script(self, *args, **kwargs):
+    def gen_job_script(self, *args, **kwargs):
         """Generate job script."""
 
     @abstractmethod

@@ -8,6 +8,7 @@ from sys import executable as python_ex
 from typing import Any, Dict, List, Optional
 
 from hytools.logger import LoggerDummy
+from .job_script import JobScript
 
 from ..abc import Scheduler
 from .conda import get_conda_launcher
@@ -22,8 +23,8 @@ class LocalScheduler(Scheduler):
     def __init__(self, **kwargs):
         """Initialize."""
         self.logger = kwargs.get('logger', LoggerDummy())
-        self.logger.debug('Local scheduler initialized\n')
-        self.default_data_path = 'data_path_local'
+        self.logger.debug('Local scheduler initialized')
+        # self.default_data_path = 'data_path_local'
         self.name = 'local'
 
     def __repr__(self):
@@ -40,77 +41,54 @@ class LocalScheduler(Scheduler):
         """Hash."""
         return hash(self.name)
 
-    def check_job_params(self, job):
-        """Check job params."""
-        if len(job.tasks) > 1:
-            self.logger.warning('Local scheduler only supports one task per ' +
-                                'job, converting...')
-            return self.separate_jobs(job)
-        return job
+    # def check_job_params(self, job):
+    #     """Check job params."""
+    #     if len(job.tasks) > 1:
+    #         self.logger.warning('Local scheduler only supports one task per ' +
+    #                             'job, converting...')
+    #         return self.separate_jobs(job)
+    #     return job
 
-    def separate_jobs(self, job) -> list:
-        """Separate jobs."""
-        return [replace(job, tasks=[t]) for t in job.tasks]
+    # def separate_jobs(self, job) -> list:
+    #     """Separate jobs."""
+    #     return [replace(job, tasks=[t]) for t in job.tasks]
 
     def run_ctx(self, arg: Optional[Any] = None):
         """Return context manager."""
         return nullcontext(arg)
 
-    def get_launcher(self, run_settings):
-        """Get launcher."""
-        # allows conda in docker but not docker in conda
-        return get_conda_launcher(run_settings.conda_env,
-                                  [*get_docker_launcher(
-                                      **run_settings.__dict__),
-                                      *run_settings.launcher])
+    # def get_launcher(self, run_settings):
+    #     """Get launcher."""
+    #     # allows conda in docker but not docker in conda
+    #     return get_conda_launcher(run_settings.conda_env,
+    #                               [*get_docker_launcher(
+    #                                   **run_settings.__dict__),
+    #                                   *run_settings.launcher])
 
-    def _gen_running_list(self, run_settings,
-                          cwd: Path) -> List[str]:
-        """Generate running list."""
-        running_list: List[str] = [
-            *run_settings.launcher,
-            run_settings.program,
-            *run_settings.args  # type: ignore
-            ]  # type: ignore #14891
-        running_list = [str(x).strip() for x in running_list]
+    # def _gen_running_list(self, run_settings,
+    #                       cwd: Path) -> List[str]:
+    #     """Generate running list."""
+    #     running_list: List[str] = [
+    #         *run_settings.launcher,
+    #         run_settings.program,
+    #         *run_settings.args  # type: ignore
+    #         ]  # type: ignore #14891
+    #     running_list = [str(x).strip() for x in running_list]
 
-        if not all([isinstance(x, str) for x in running_list]):
-            raise TypeError(
-                'subprocess call command must be a list of strings ',
-                running_list)
+    #     if not all([isinstance(x, str) for x in running_list]):
+    #         raise TypeError(
+    #             'subprocess call command must be a list of strings ',
+    #             running_list)
 
-        running_list = [c.replace('python', python_ex)
-                        if 'python' in c
-                        else c for c in running_list]
-        return running_list
+    #     running_list = [c.replace('python', python_ex)
+    #                     if 'python' in c
+    #                     else c for c in running_list]
+    #     return running_list
 
-    def gen_job_script(self, job):
+
+    def gen_job_script(self, tasks):
         """Generate command."""
-        tasks = job.tasks
-        if len(tasks) > 1:
-            raise ValueError('Local scheduler only supports one task')
-        run_settings = tasks[0]
-        cwd = run_settings.work_dir_local
-        running_list = self._gen_running_list(run_settings, cwd)
-
-        # here record the position where running list ends and post cmd stards
-
-        # also run_settings stdin_file
-
-        if getattr(run_settings, 'pre_cmd', None):
-            pre_cmd = (split(quote(run_settings.pre_cmd))
-                       if not isinstance(run_settings.pre_cmd, list)
-                       else run_settings.pre_cmd)
-            running_list = pre_cmd + [';'] + running_list
-
-        if getattr(run_settings, 'post_cmd', None):
-            post_cmd = (split(quote(run_settings.post_cmd))
-                        if not isinstance(run_settings.post_cmd, list)
-                        else run_settings.pre_cmd)
-            running_list = running_list + ['&&'] + post_cmd
-
-        cmd = ' '.join(running_list)
-        return cmd
+        return '\n'.join(JobScript.gen_job_script(t) for t in tasks)
 
     def get_files_to_transfer(self, job):
         """Get files to transfer."""

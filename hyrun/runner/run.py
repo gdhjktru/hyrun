@@ -1,27 +1,55 @@
-from hytools.logger import get_logger
+# from hytools.logger import get_logger
 
 from hyrun.job import ArrayJob
 
 from .runner import Runner
 
-# from hyrun.scheduler import get_scheduler
+from hyrun.scheduler import get_scheduler
+from hydb import get_database
 
 
 def scheduler_exec(connection, scheduler_func, *args, **kwargs):
     """Execute scheduler function."""
     return connection.execute(scheduler_func(*args, **kwargs))
 
+def _get_logger(*args, print_level='ERROR', **kwargs):
+    """Get logger."""
+    logger = next(
+        (a.logger for arg in args 
+         for a in (arg if isinstance(arg, list) else [arg])
+         if hasattr(a, 'logger')),
+        None
+    )
+    if logger:
+        return logger
+    if 'logger' in kwargs:
+        return kwargs['logger']
+
+    from hytools.logger import get_logger
+    return get_logger(print_level=print_level)
+
+
 
 def run(*args, **kwargs):
     """Run hsp job."""
     # # return Runner(*args, **kwargs).run(*args, **kwargs)
-    aj = ArrayJob(*args, logger=get_logger(print_level='DEBUG'), **kwargs)
+    logger = _get_logger(*args, print_level='DEBUG', **kwargs)
+    aj = ArrayJob(*args, logger=logger, **kwargs)
     #     # check if jobs has an id in database
     # jobs = self.check_finished_jobs(jobs)
 
     # prep jobs
-    for job in aj.jobs:
-        print('prepping job', job)
+    for i, job in enumerate(aj.jobs):
+        logger.debug(f'prepping job {i}')
+        job.scheduler = get_scheduler(job.scheduler,
+                                      logger=logger,
+                                      **job.scheduler_opt)
+        job.job_script = job.scheduler.gen_job_script(job.tasks)
+        logger.debug(f'job script: \n{job.job_script}')
+        job.job_hash = job._gen_hash()
+        logger.debug(f'job hash: {job.job_hash}')
+        job.database = get_database(job.database, **job.database_opt)
+        logger.debug(f'database: {job.database}')
         # init scheduler
 
         # job.scheduler = get_scheduler(job.scheduler, **job.scheduler_opt)
@@ -38,7 +66,7 @@ def run(*args, **kwargs):
         # write all files to disk and add to job.files
         print('writing all files to disk')
 
-    for job_group in aj.job_groups:
+    for job_group in aj.job_grouped:
         # initiate scheduler
         print('initiating scheduler')
         # transfer files to cluster
