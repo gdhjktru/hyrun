@@ -1,8 +1,9 @@
 
 from dataclasses import dataclass, field
+from hashlib import sha256
 from pathlib import Path
 from typing import Any, List, Optional, Union
-from hashlib import sha256
+
 from hydb import Database
 
 from hyrun.scheduler.abc import Scheduler

@@ -195,9 +195,9 @@ class SlurmScheduler(Scheduler):
                 setattr(t, f, {'path': str(p), 'host': host})
         return job
 
-    def gen_job_script(self, job):
+    def gen_job_script(self, name, tasks):
         """Generate job script."""
-        return gjs(job)
+        return gjs(name or '$job_name', tasks)
 
     def transfer_files(self,
                        files_to_transfer: Optional[list] = None,

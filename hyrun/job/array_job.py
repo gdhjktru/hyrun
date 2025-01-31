@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field, fields
 from functools import singledispatchmethod, wraps
 from itertools import groupby
-from typing import Any, Dict, List, Tuple, Union, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from hytools.logger import Logger, get_logger
 from hyset import RunSettings
+from hytools.logger import Logger, get_logger
 
 from .job import Job  # noqa: F401
 
@@ -40,15 +40,15 @@ class ArrayJob:
                           f'{len(self.jobs)} jobs')
         # convert jobs to a list of lists of jobs
         self.update()
-        
+
         self.logger.debug('ArrayJob grouped jobs: ' +
                           f'{[len(group) for group in self.jobs_grouped]} ' +
                           f' by keys {self.job_group_keys }')
         self.logger.debug('ArrayJob jobs and tasks: ')
         for i, job in enumerate(self.jobs):
-            self.logger.debug(f'{i}: {len(job.tasks)} tasks at '+ 
+            self.logger.debug(f'{i}: {len(job.tasks)} tasks at '+
                               f'{job.connection_opt.get("host", "?")}')
-    
+
     def __getitem__(self, index: Union[int, tuple]
                     ) -> Union[Job, int, Dict[str, Any]]:
         """Get job or group job."""
@@ -59,7 +59,7 @@ class ArrayJob:
             return self.jobs[index]
         else:
             raise ValueError('Index must be an integer or a tuple of integers')
-                             
+
 
     def __setitem__(self, job_index: int,
                     job: Union[Job, int, Dict[str, Any]]):
@@ -69,7 +69,7 @@ class ArrayJob:
         self.logger.debug(f'ArrayJob set job {job_index} to {job}')
         # reinitialize jobs as in post_init
         self.update()
-        
+
 
     def update(self) -> None:
         """Update jobs."""
@@ -131,7 +131,7 @@ class ArrayJob:
         """Convert input to Job."""
         raise NotImplementedError('Cannot convert input to Job from type ' +
                                   f'{type(job)}')
-    
+
     @_convert_to_job.register(list)
     def _(self, job: list) -> Job:
         """Convert list to Job."""

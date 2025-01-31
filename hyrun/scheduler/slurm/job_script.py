@@ -5,9 +5,9 @@ from pathlib import Path
 from .timedelta import timedelta_to_slurmtime
 
 
-def gen_job_script(job):
+def gen_job_script(*args, **kwargs):
     """Generate job script."""
-    return SlurmJobScript().job_script(job)
+    return SlurmJobScript().job_script(*args, **kwargs)
 
 
 class SlurmJobScript:
@@ -47,14 +47,14 @@ class SlurmJobScript:
     #     # for key in ['work_dir_remote']:
     #     #     self._check_key_not_equal(rs, key)
 
-    def job_script(self, job) -> str:
+    def job_script(self, job_name, tasks) -> str:
         """Generate SLURM job script for running the `program`."""
-        rs = job.tasks[0]  # reference run_settings
+        rs = tasks[0]  # reference run_settings
         job_time = sum([t.job_time.total_seconds()
-                        for t in job.tasks])
+                        for t in tasks])
         slurm_job_time = timedelta_to_slurmtime(timedelta(seconds=job_time))
 
-        job_name = self._gen_job_name_bundle(job)
+        # job_name = self._gen_job_name_bundle(job)
         s = rs.submit_dir_remote
 
         job_script = '#!/bin/bash\n'
@@ -76,20 +76,20 @@ class SlurmJobScript:
         job_script += '\nset -o errexit\n\n'
         job_script += 'set -x\n\n'
 
-        modules = [t.modules for t in job.tasks]
+        modules = [t.modules for t in tasks]
         if self._check_nested_list_equal(modules, modules, 2):
-            modules = [[] for _ in range(len(job.tasks))]
+            modules = [[] for _ in range(len(tasks))]
             modules[0] = rs.modules
 
-        envs = [t.env for t in job.tasks]
+        envs = [t.env for t in tasks]
         if self._check_nested_list_equal(envs, envs, 2):
-            envs = [[] for _ in range(len(job.tasks))]
+            envs = [[] for _ in range(len(tasks))]
             envs[0] = rs.env
         multiple_remote_dirs = (
-            len(list({r.work_dir_remote for r in job.tasks})) > 1
+            len(list({r.work_dir_remote for r in tasks})) > 1
         )
 
-        for i in range(len(job.tasks)):
+        for i in range(len(tasks)):
 
             if modules[i]:
                 job_script += '# Load modules\n'
@@ -104,7 +104,7 @@ class SlurmJobScript:
                     job_script += f'{env_line}\n'
                 job_script += '\n'
 
-            run_settings = job.tasks[i]
+            run_settings = tasks[i]
             job_script += f'# Run job no. {i}\n'
             wdir = (run_settings.work_dir_remote.parent
                     if 'job_id' in run_settings.work_dir_remote.name

@@ -8,11 +8,11 @@ from sys import executable as python_ex
 from typing import Any, Dict, List, Optional
 
 from hytools.logger import LoggerDummy
-from .job_script import JobScript
 
 from ..abc import Scheduler
 from .conda import get_conda_launcher
 from .docker import get_docker_launcher
+from .job_script import JobScript
 
 # from hyrun.decorators import list_exec
 
@@ -86,9 +86,10 @@ class LocalScheduler(Scheduler):
     #     return running_list
 
 
-    def gen_job_script(self, tasks):
+    def gen_job_script(self, name, tasks):
         """Generate command."""
-        return '\n'.join(JobScript.gen_job_script(t) for t in tasks)
+        return (f'# job {name or "$job_name"}\n' + 
+                '\n'.join(JobScript.gen_job_script(t) for t in tasks))
 
     def get_files_to_transfer(self, job):
         """Get files to transfer."""
