@@ -39,8 +39,7 @@ class ArrayJob:
         self.logger.debug('ArrayJob initialized with ' +
                           f'{len(self.jobs)} jobs')
         # convert jobs to a list of lists of jobs
-        self.jobs, self.jobs_grouped, self.job_group_keys = \
-            self._group_jobs(self.jobs)
+        self.update()
         
         self.logger.debug('ArrayJob grouped jobs: ' +
                           f'{[len(group) for group in self.jobs_grouped]} ' +
@@ -69,6 +68,11 @@ class ArrayJob:
         self.jobs[job_index] = self._convert_to_job(job)
         self.logger.debug(f'ArrayJob set job {job_index} to {job}')
         # reinitialize jobs as in post_init
+        self.update()
+        
+
+    def update(self) -> None:
+        """Update jobs."""
         self.jobs, self.jobs_grouped, self.job_group_keys = \
             self._group_jobs(self.jobs)
 

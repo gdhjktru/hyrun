@@ -5,7 +5,10 @@ from hyrun.job import ArrayJob
 from .runner import Runner
 
 from hyrun.scheduler import get_scheduler
+from hytools.connection import get_connection
 from hydb import get_database
+from hytools.logger import Logger
+from typing import Optional
 
 
 def scheduler_exec(connection, scheduler_func, *args, **kwargs):
@@ -25,22 +28,15 @@ def _get_logger(*args, print_level='ERROR', **kwargs):
     if 'logger' in kwargs:
         return kwargs['logger']
 
-    from hytools.logger import get_logger
+    from hytools.logger import get_logger, Logger
     return get_logger(print_level=print_level)
 
 
-
-def run(*args, **kwargs):
-    """Run hsp job."""
-    # # return Runner(*args, **kwargs).run(*args, **kwargs)
-    logger = _get_logger(*args, print_level='DEBUG', **kwargs)
-    aj = ArrayJob(*args, logger=logger, **kwargs)
-    #     # check if jobs has an id in database
-    # jobs = self.check_finished_jobs(jobs)
-
-    # prep jobs
+def prepare_jobs(aj, logger: Optional[Logger] = None):
+    """Prepare jobs."""
+    logger = logger or  get_logger()
     for i, job in enumerate(aj.jobs):
-        logger.debug(f'prepping job {i}')
+        logger.debug(f'...prepping job {i}')
         job.scheduler = get_scheduler(job.scheduler,
                                       logger=logger,
                                       **job.scheduler_opt)
@@ -50,28 +46,51 @@ def run(*args, **kwargs):
         logger.debug(f'job hash: {job.job_hash}')
         job.database = get_database(job.database, **job.database_opt)
         logger.debug(f'database: {job.database}')
-        # init scheduler
+        job.database.open()
+        entry = job.database.search_one(job_hash=job.job_hash, resolve=True)
+        if entry:
+            logger.info(f'Job {job.job_hash} found in database')
+            job.id = entry.id
+            job.db_id = entry.id
+            job.status = entry.status
+            job.finished = entry.finished
+            job.metadata = entry.metadata
+        job.database.close()
+    aj.update()
+    return aj
 
-        # job.scheduler = get_scheduler(job.scheduler, **job.scheduler_opt)
-        # print(job)
 
-        # init database
-        # init all classes
-        # check if job is in database
+def run(*args, **kwargs):
+    """Run hsp job."""
+    # # return Runner(*args, **kwargs).run(*args, **kwargs)
+    logger = _get_logger(*args, print_level='DEBUG', **kwargs)
+    aj = ArrayJob(*args, logger=logger, **kwargs)
+    aj = prepare_jobs(aj, logger)
+    
+    if kwargs.get('dryrun', False):
+        for job in aj.jobs:
+            job.scheduler = getattr(job.scheduler, 'name', str(job.scheduler))
+            job.database = getattr(job.database, 'name', str(job.database))
+        return aj
+
+
+
+
         print('checking if job is in database')
         # check if job is finished
         print('checking if job is finished')
         # generate job scripts
         print('generating job script')
         # write all files to disk and add to job.files
-        print('writing all files to disk')
+        
 
     for job_group in aj.job_grouped:
-        # initiate scheduler
-        print('initiating scheduler')
+        print('writing all files to disk')
         # transfer files to cluster
-        print('transferring files to cluster')
+        print('transferring files to cluster if job.db_id is None')
         for job in job_group:
+            if not job.finished:
+                continue
             # submit job
             print('submitting job')
             # add job to database
