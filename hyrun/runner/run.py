@@ -1,16 +1,17 @@
 # from hytools.logger import get_logger
 
+from hashlib import sha256
+from pathlib import Path
+from string import Template
 from typing import Optional
 
 from hydb import get_database
 from hytools.connection import get_connection
+from hytools.file import File
 from hytools.logger import Logger
 
 from hyrun.job import ArrayJob
 from hyrun.scheduler import get_scheduler
-from hytools.file import File
-from string import Template
-from pathlib import Path
 
 from .runner import Runner
 
@@ -46,8 +47,14 @@ def prepare_jobs(aj, logger: Optional[Logger] = None):
                                       **job.scheduler_opt)
         job.job_script = job.scheduler.gen_job_script(job.name,
                                                       job.tasks)
-        job.job_hash = job._gen_hash()
-    
+
+        job.job_hash = _gen_hash([job.name or '',
+                                  job.connection_opt.get('user', ''),
+                                  job.connection_opt.get('host', ''),
+                                  getattr(job.scheduler, 'name',
+                                          str(job.scheduler)),
+                                  job.job_script or '',
+                                  ])
         logger.debug(f'job hash: {job.job_hash}')
         job.job_script = Template(job.job_script).safe_substitute(
             job_name=job.job_hash)
@@ -64,8 +71,16 @@ def prepare_jobs(aj, logger: Optional[Logger] = None):
             logger.info(f'Job {job.job_hash} found in database')
             job.__dict__.update(entry)
         job.database.close()
+        logger.debug('\n')
     aj.update()
     return aj
+
+def _gen_hash(hashlist: list) -> str:
+    """Generate hash."""
+    return sha256(
+        ''.join(hashlist).encode()).hexdigest()
+
+
 
 
 def run(*args, **kwargs):
@@ -80,9 +95,9 @@ def run(*args, **kwargs):
             job.scheduler = getattr(job.scheduler, 'name', str(job.scheduler))
             job.database = getattr(job.database, 'name', str(job.database))
         return aj
-    
+
     for job_group in aj.jobs_grouped:
-       
+
         for job in job_group:
             files = []
             for task in job.tasks:
@@ -92,7 +107,7 @@ def run(*args, **kwargs):
                                       parent=getattr(f, 'folder', work_dir_local),
                                       content=getattr(f, 'content', None),
                                       host='localhost'))
-                    
+
             job_script_file = File(name=f'job_{job.job_hash}.sh',
                                    parent=Path.cwd(),
                                    content=job.job_script,
@@ -114,7 +129,7 @@ def run(*args, **kwargs):
         # connection_type = list(set(job.connection_type for job in job_group))
         # if len(connection_type) > 1:
         #     raise ValueError('Connection type must be identical in every group')
-        
+
 
         # with get_connection(connection_type[0],
         #                     **job_group[0].connection_opt) as connection:
@@ -134,7 +149,7 @@ def run(*args, **kwargs):
         # write all files to disk and add to job.files
 
 
-    for job_group in aj.job_grouped:
+    for job_group in aj.jobs_grouped:
         print('writing all files to disk')
         # transfer files to cluster
         print('transferring files to cluster if job.db_id is None')

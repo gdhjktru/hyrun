@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 from functools import singledispatchmethod, wraps
 from itertools import groupby
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -46,7 +46,7 @@ class ArrayJob:
                           f' by keys {self.job_group_keys }')
         self.logger.debug('ArrayJob jobs and tasks: ')
         for i, job in enumerate(self.jobs):
-            self.logger.debug(f'{i}: {len(job.tasks)} tasks at '+
+            self.logger.debug(f'{i}: {len(job.tasks)} tasks at ' +
                               f'{job.connection_opt.get("host", "?")}')
 
     def __getitem__(self, index: Union[int, tuple]
@@ -60,7 +60,6 @@ class ArrayJob:
         else:
             raise ValueError('Index must be an integer or a tuple of integers')
 
-
     def __setitem__(self, job_index: int,
                     job: Union[Job, int, Dict[str, Any]]):
         """Set job."""
@@ -70,12 +69,10 @@ class ArrayJob:
         # reinitialize jobs as in post_init
         self.update()
 
-
     def update(self) -> None:
         """Update jobs."""
         self.jobs, self.jobs_grouped, self.job_group_keys = \
-            self._group_jobs(self.jobs)
-
+            self._group_jobs(list(self.jobs))  # type: ignore
 
         # self.jobs = sorted(self.jobs,
         #                    key=lambda job: (job.scheduler, job.database))
@@ -83,7 +80,6 @@ class ArrayJob:
 
         # self.logger.debug('ArrayJob re-sorted jobs by scheduler and
         # database')
-
     # def combine_group_attrs(self, jobs: List[Job], attr: str) -> List[Any]:
     #     # first check type of getattr(self.job_groups[group_index][0], attr)
     #     # if it is a list, then flatten the list
@@ -112,10 +108,10 @@ class ArrayJob:
         return sorted([self._convert_to_job(job) for job in jobs], key=key)
 
     def _group_jobs(self,
-                    jobs: List[Job],
+                    jobs: Union[Job, List[Union[Job, List[Any]]]],
                     keyfunc: Any = None) -> Tuple[list, list, list]:
         """Group jobs by connection."""
-        jobs = self._normalize_input(jobs)
+        jobs = list(self._normalize_input(jobs))
         keyfunc = keyfunc or (lambda job: job.connection_opt.get('host', ''))
         groups = []
         uniquekeys = []

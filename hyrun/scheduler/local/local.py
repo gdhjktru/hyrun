@@ -88,8 +88,12 @@ class LocalScheduler(Scheduler):
 
     def gen_job_script(self, name, tasks):
         """Generate command."""
-        return (f'# job {name or "$job_name"}\n' + 
-                '\n'.join(JobScript.gen_job_script(t) for t in tasks))
+        job_script = f'# job {name or "$job_name"}\n'
+        for i, t in enumerate(tasks):
+            job_script += f'# run job no. {i}\n'
+            job_script += JobScript.gen_job_script(t)
+            job_script += '\n'
+        return job_script
 
     def get_files_to_transfer(self, job):
         """Get files to transfer."""
