@@ -105,7 +105,7 @@ class SlurmJobScript:
                 job_script += '\n'
 
             run_settings = tasks[i]
-            job_script += f'# Run job no. {i}\n'
+            job_script += f'# Run task no. {i}\n'
             wdir = (run_settings.work_dir_remote.parent
                     if 'job_id' in run_settings.work_dir_remote.name
                     else run_settings.work_dir_remote)

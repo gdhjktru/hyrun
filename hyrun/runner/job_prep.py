@@ -16,7 +16,12 @@ except ImportError:
     from hyset import File
 
 
-class JobPrep(FileManager):
+
+class JobPrep:
+
+
+
+class JobPrepOld(FileManager):
     """Prepare jobs for execution."""
 
     def gen_job_script(self, job=None, scheduler=None):

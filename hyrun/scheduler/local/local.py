@@ -88,11 +88,12 @@ class LocalScheduler(Scheduler):
 
     def gen_job_script(self, name, tasks):
         """Generate command."""
-        job_script = f'# job {name or "$job_name"}\n'
+        job_script = f'# Job: {name or "$job_name"}\n'
         for i, t in enumerate(tasks):
-            job_script += f'# run job no. {i}\n'
+            wdir = getattr(t, 'work_dir_local', Path.cwd())
+            job_script += f'# Run task no. {i} in {wdir}\n'
             job_script += JobScript.gen_job_script(t)
-            job_script += '\n'
+            job_script += '\n' if i < len(tasks) - 1 else ''
         return job_script
 
     def get_files_to_transfer(self, job):
@@ -146,10 +147,10 @@ class LocalScheduler(Scheduler):
             # output_dict['stdout'] = stdout_file
         return output_dict
 
-    def teardown(self, *args, **kwargs):
+    def teardown(self) -> dict:
         """Teardown."""
         # removing files
-        pass
+        return {'name': self.name}
 
     def update_output(self, result=None, run_settings=None, output=None):
         """Update output."""

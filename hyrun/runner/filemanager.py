@@ -5,6 +5,8 @@ from socket import gethostname
 from string import Template
 from typing import Optional
 
+from hytools.logger import Logger
+
 
 def list_exec(func):
     """Decorate to execute a function on a list of arguments."""
@@ -20,6 +22,8 @@ def list_exec(func):
 
 class FileManager:
     """File manager."""
+
+    self.logger: Logger # type: ignore
 
     @list_exec
     def write_file_local(self, file, overwrite=True, **kwargs):
@@ -42,12 +46,12 @@ class FileManager:
     @list_exec
     def resolve_file_name(self,
                           file,
-                          parent: Optional[str] = None,
+                          parent: Optional[Union[str, Path]] = None,
                           host: Optional[str] = None) -> dict:
         """Resolve file name."""
         if not file:
             return {}
-        parent = parent or str(Path('.'))
+        parent = parent or Path.cwd()
         file = (Path(file.folder) / file.name
                 if file.folder is not None
                 else Path(parent) / file.name)

@@ -18,6 +18,7 @@ def update_arrayjob(func):
             raise ValueError('No jobs provided')
         for i, job in enumerate(arrayjob.jobs):
             arrayjob[i] = func(self, job, *args, **kwargs)
+        arrayjob.update()
         return arrayjob
     return wrapper
 

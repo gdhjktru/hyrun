@@ -7,8 +7,8 @@ from typing import Optional
 
 from hydb import get_database
 from hytools.connection import get_connection
-from hytools.file import File
-from hytools.logger import Logger
+from hytools.file import File, get_file
+from hytools.logger import Logger, get_logger
 
 from hyrun.job import ArrayJob
 from hyrun.scheduler import get_scheduler
@@ -55,7 +55,36 @@ def prepare_jobs(aj, logger: Optional[Logger] = None):
                                           str(job.scheduler)),
                                   job.job_script or '',
                                   ])
+
         logger.debug(f'job hash: {job.job_hash}')
+        print('check if job hash is in database. if yes, update db id -> for this one one only gets the status updated')
+        print('problem: if alrady updated with the latest we dont want to overwrite it with potentital Nones, \
+              that meens when updating we need to make sure we add information/have more than before')
+        print('use the slurm status and create a mapping')
+
+        status_mapping = {'UNKNOWN': 0,
+                          'PENDING': 1,
+                          'RUNNING': 2,
+                          'COMPLETED': 3,
+                          'FAILED': 3,
+                          'CANCELLED': 3,
+                          'TIMEOUT': 3,
+                          'DEADLINE': 3,
+                          'PREEMPTED': 3,
+                          'NODE_FAIL': 3,
+                          'OUT_OF_MEMORY': 3,
+                          'BOOT_FAIL': 3}
+        print('then only update if status >= status before')
+
+        # job.status = status_mapping.get(job.status, 0)
+        # if job.db_id is not None:
+        #     print('if job is in the database, update the status')
+        #     print('if job is not
+
+
+                          }
+
+
         job.job_script = Template(job.job_script).safe_substitute(
             job_name=job.job_hash)
         logger.debug(f'job script: \n{job.job_script}')
@@ -63,17 +92,40 @@ def prepare_jobs(aj, logger: Optional[Logger] = None):
         # job.job_script = File(f'job_{job.job_hash}.sh',
         #                       content=job.job_script,
         #                       host='localhost')
+
+        print('add job script to files to write and sanitize all files')
+        print('check that all objects can go into a database)')
+              )
+
+
+
         job.database = get_database(job.database, **job.database_opt)
         logger.debug(f'database: {job.database}')
         job.database.open()
         entry = job.database.search_one(job_hash=job.job_hash, resolve=True)
         if entry:
             logger.info(f'Job {job.job_hash} found in database')
+            print('here we need to be careful!!!')
             job.__dict__.update(entry)
         job.database.close()
         logger.debug('\n')
+        # add job script to files_to_write and then sanitize files_to_write,
+        #files_to_remote, files_for_restarting
+        for task in job.tasks:
+            task.files_to_write.append(File(name=f'job_{job.job_hash}.sh',
+                                            content=job.job_script,
+                                            host='localhost'))
+            task.files_to_write = sanitize_files(task.files_to_write)
+            task.files_to_remote = sanitize_files(task.files_to_remote)
+            task.files_for_restarting = sanitize_files(task.files_for_restarting)
     aj.update()
     return aj
+
+def sanitize_files(files):
+    """Sanitize files."""
+    for i, f in enumerate(files):
+        files[i] = get_file(f)
+    return [get_file(f) for f in files]
 
 def _gen_hash(hashlist: list) -> str:
     """Generate hash."""
@@ -88,9 +140,10 @@ def run(*args, **kwargs):
     # # return Runner(*args, **kwargs).run(*args, **kwargs)
     logger = _get_logger(*args, print_level='DEBUG', **kwargs)
     aj = ArrayJob(*args, logger=logger, **kwargs)
-    aj = prepare_jobs(aj, logger)
+    aj = prepare_jobs(aj, logger=logger)
 
     if kwargs.get('dryrun', False):
+        print('teardown')
         for job in aj.jobs:
             job.scheduler = getattr(job.scheduler, 'name', str(job.scheduler))
             job.database = getattr(job.database, 'name', str(job.database))
@@ -101,18 +154,20 @@ def run(*args, **kwargs):
         for job in job_group:
             files = []
             for task in job.tasks:
-                work_dir_local = getattr(task, 'work_dir_local', Path.cwd())
-                for f in task.files_to_write:
-                    files.append(File(name=getattr(f, 'name', f),
-                                      parent=getattr(f, 'folder', work_dir_local),
-                                      content=getattr(f, 'content', None),
-                                      host='localhost'))
+                print('files should already be sanitized')
+            #     # ths should alreadu been done
+            #     work_dir_local = getattr(task, 'work_dir_local', Path.cwd())
+            #     for f in task.files_to_write:
+            #         files.append(File(name=getattr(f, 'name', f),
+            #                           parent=getattr(f, 'folder', work_dir_local),
+            #                           content=getattr(f, 'content', None),
+            #                           host='localhost'))
 
-            job_script_file = File(name=f'job_{job.job_hash}.sh',
-                                   parent=Path.cwd(),
-                                   content=job.job_script,
-                                   host='localhost')
-            files.append(job_script_file)
+            # job_script_file = File(name=f'job_{job.job_hash}.sh',
+            #                        parent=Path.cwd(),
+            #                        content=job.job_script,
+            #                        host='localhost')
+            # files.append(job_script_file)
             for f in files:
                 print(f'writing {f.path} to disk')
                 Path(f.path).write_text(f.content)

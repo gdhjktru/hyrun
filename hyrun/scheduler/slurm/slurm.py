@@ -26,6 +26,10 @@ class SlurmScheduler(Scheduler):
         self.connection = kwargs.get('connection',
                                      self.get_connection(**kwargs))
 
+    def teardown(self) -> dict:
+        """Teardown."""
+        return {'name': self.name}
+
     def __repr__(self):
         """Represent."""
         return f'{self.__class__.__name__}({self.connection})'
@@ -111,10 +115,6 @@ class SlurmScheduler(Scheduler):
         self.logger.info(f'Job {job.id} has status {status}')
 
         return replace(job, status=status, metadata=metadata)
-
-    def teardown(self, *args, **kwargs):
-        """Teardown."""
-        pass
 
     def get_connection(self, **kwargs):
         """Get connection."""
