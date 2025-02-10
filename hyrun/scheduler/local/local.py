@@ -86,9 +86,9 @@ class LocalScheduler(Scheduler):
     #     return running_list
 
 
-    def gen_job_script(self, name, tasks):
+    def gen_job_script(self, name: str, tasks: list) -> str:
         """Generate command."""
-        job_script = f'# Job: {name or "$job_name"}\n'
+        job_script = f'# Job: {name or "$job_hash"}\n'
         for i, t in enumerate(tasks):
             wdir = getattr(t, 'work_dir_local', Path.cwd())
             job_script += f'# Run task no. {i} in {wdir}\n'
@@ -150,7 +150,7 @@ class LocalScheduler(Scheduler):
     def teardown(self) -> dict:
         """Teardown."""
         # removing files
-        return {'name': self.name}
+        return {'scheduler_type': self.name}
 
     def update_output(self, result=None, run_settings=None, output=None):
         """Update output."""

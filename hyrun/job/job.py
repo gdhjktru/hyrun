@@ -44,7 +44,7 @@ class Job:
     job_script: Optional[Union[str, Path, File]] = None
     # to be teared down
     database: Optional[Union[str, Path, dict, Database]] = 'dummy'
-    scheduler: Optional[Union[str, dict, Scheduler]] = 'local'
+    scheduler: Optional[Union[str, dict, Scheduler]] = None
     connection: Optional[Union[str, dict, Connection]] = ''
 
     def __post_init__(self):
@@ -70,7 +70,7 @@ class Job:
         hash_str += f'{self.job_script or ""}'
         if not hash_str:
             raise ValueError('job_hash is empty')
-        self.job_hash = sha256(hash_str.encode()).hexdigest()
+        # self.job_hash = sha256(hash_str.encode()).hexdigest()
         return self.job_hash
     
     def get_level(self) -> int:

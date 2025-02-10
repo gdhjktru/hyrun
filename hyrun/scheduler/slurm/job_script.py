@@ -47,8 +47,9 @@ class SlurmJobScript:
     #     # for key in ['work_dir_remote']:
     #     #     self._check_key_not_equal(rs, key)
 
-    def job_script(self, job_name, tasks) -> str:
+    def job_script(self, job_name: str, tasks: list) -> str:
         """Generate SLURM job script for running the `program`."""
+        job_name = job_name or '$job_hash'
         rs = tasks[0]  # reference run_settings
         job_time = sum([t.job_time.total_seconds()
                         for t in tasks])

@@ -1,7 +1,7 @@
 from typing import Optional
 from hytools.logger import get_logger, Logger
 from hyrun.job import ArrayJob, Job
-from hyrun.scheduler import get_scheduler
+from hyrun.scheduler import get_scheduler, Scheduler
 from hydb import get_database
 from hytools.file import File
 from string import Template
@@ -14,22 +14,46 @@ def prepare_jobs(aj: ArrayJob,
                  **kwargs):
     """Prepare jobs."""
     logger = kwargs.pop('logger', get_logger(print_level='DEBUG'))
+    prepper = JobPrep(logger=logger, **kwargs)
     for i, job in enumerate(aj.jobs):
-        logger.debug(f'...prepping job {i}')
-        JP = JobPrep(job=deepcopy(job), logger=logger, **kwargs)
+        logger.debug(f'Preparing job #{i}')
+        # print(job)
+        job.scheduler = prepper.get_scheduler(job)
+        # print(job.tasks)
+        job.job_script = job.scheduler.gen_job_script(
+             job.metadata.get('name', ''), job.tasks)
+        job.job_hash = job.gen_hash()
+        
+        # print(job.job_script)
+        # print(job.job_hash)
+
+
+    oihjoijhoiioi
 
 
 
 
 class JobPrep:
+        """Class to prepare"""
         
         def __init__(self,
-                     job: Job,
                      logger: Optional[Logger] = None,
                      **kwargs):
-             
-             self.job = job
+             """Initialize."""
              self.logger = logger or get_logger(print_level='ERROR')
+
+        def get_scheduler(self, job: Job):
+            """Set scheduler."""
+            scheduler = getattr(job, 'scheduler') or getattr(job.tasks[0],
+                                                             'scheduler')                
+            if isinstance(scheduler, Scheduler):
+                 return scheduler
+            elif isinstance(scheduler, str):
+                 scheduler = {'scheduler_type': scheduler}
+            elif not isinstance(scheduler, dict):
+                 raise TypeError('scheduler must be of type str, dict or ' +
+                                 'Scheduler')
+            return get_scheduler(logger=self.logger, **scheduler)
 
 
     #     job.scheduler = get_scheduler(job.scheduler,

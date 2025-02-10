@@ -28,7 +28,7 @@ class SlurmScheduler(Scheduler):
 
     def teardown(self) -> dict:
         """Teardown."""
-        return {'name': self.name}
+        return {'scheduler_type': self.name}
 
     def __repr__(self):
         """Represent."""
