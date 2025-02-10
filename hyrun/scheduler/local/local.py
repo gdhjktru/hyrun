@@ -3,15 +3,11 @@ import subprocess
 from contextlib import nullcontext
 from dataclasses import replace
 from pathlib import Path
-from shlex import quote, split
-from sys import executable as python_ex
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from hytools.logger import LoggerDummy
 
 from ..abc import Scheduler
-from .conda import get_conda_launcher
-from .docker import get_docker_launcher
 from .job_script import JobScript
 
 # from hyrun.decorators import list_exec
@@ -57,34 +53,6 @@ class LocalScheduler(Scheduler):
     def run_ctx(self, arg: Optional[Any] = None):
         """Return context manager."""
         return nullcontext(arg)
-
-    def get_launcher(self, run_settings):
-        """Get launcher."""
-        # allows conda in docker but not docker in conda
-        return get_conda_launcher(run_settings.conda_env,
-                                  [*get_docker_launcher(
-                                      **run_settings.__dict__),
-                                      *run_settings.launcher])
-
-    # def _gen_running_list(self, run_settings,
-    #                       cwd: Path) -> List[str]:
-    #     """Generate running list."""
-    #     running_list: List[str] = [
-    #         *run_settings.launcher,
-    #         run_settings.program,
-    #         *run_settings.args  # type: ignore
-    #         ]  # type: ignore #14891
-    #     running_list = [str(x).strip() for x in running_list]
-
-    #     if not all([isinstance(x, str) for x in running_list]):
-    #         raise TypeError(
-    #             'subprocess call command must be a list of strings ',
-    #             running_list)
-
-    #     running_list = [c.replace('python', python_ex)
-    #                     if 'python' in c
-    #                     else c for c in running_list]
-    #     return running_list
 
     def gen_job_script(self, name: str, tasks: list) -> str:
         """Generate command."""
