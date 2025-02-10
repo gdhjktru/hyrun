@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from functools import singledispatchmethod, wraps
 from itertools import groupby
 from typing import Any, Dict, List, Optional, Tuple, Union
+from copy import deepcopy
 
 from hyset import RunSettings
 from hytools.logger import Logger, get_logger
@@ -48,7 +49,7 @@ class ArrayJob:
         self.logger.debug('ArrayJob jobs and tasks: ')
         for i, job in enumerate(self.jobs):
             self.logger.debug(f'{i}: {len(job.tasks)} tasks at ' +
-                              f'{job.connection_opt.get("host", "?")}')
+                              f'{job.connection.get("host", "unknown")}')
 
     def __getitem__(self, index: Union[int, tuple]
                     ) -> Union[Job, int, Dict[str, Any]]:
@@ -103,7 +104,7 @@ class ArrayJob:
                          jobs: Union[Job, List[Union[Job, List[Any]]]]
                          ) -> List[Job]:
         """Convert input into a list of lists."""
-        key = (lambda job: job.connection_opt.get('host', ''))  # type: ignore
+        key = (lambda job: job.connection.get('host', ''))  # type: ignore
         if not isinstance(jobs, list):
             jobs = [jobs]
         return sorted([self._convert_to_job(job) for job in jobs], key=key)
@@ -113,7 +114,7 @@ class ArrayJob:
                     keyfunc: Any = None) -> Tuple[list, list, list]:
         """Group jobs by connection."""
         jobs = list(self._normalize_input(jobs))
-        keyfunc = keyfunc or (lambda job: job.connection_opt.get('host', ''))
+        keyfunc = keyfunc or (lambda job: job.connection.get('host', ''))
         groups = []
         uniquekeys = []
         for k, g in groupby(jobs, key=keyfunc):
@@ -133,7 +134,7 @@ class ArrayJob:
     def _(self, job: list) -> Job:
         """Convert list to Job."""
         check = self._check_common_attributes(job,
-                                              ['connection_type',
+                                              ['connection',
                                                'database',
                                                'scheduler'])
         if not check:
@@ -141,9 +142,9 @@ class ArrayJob:
                   'connection_type, database, scheduler'
             self.logger.error(msg)
             raise ValueError(msg)
+
         return Job(tasks=job,
-                   connection_opt=job[0].connection_opt,
-                   connection_type=job[0].connection_type,
+                   connection=job[0].connection,
                    database=job[0].database,
                    scheduler=job[0].scheduler)
 
@@ -167,18 +168,28 @@ class ArrayJob:
             raise e
         else:
             return job_
+        
+    def _hashable_dict(self, d: dict) -> tuple:
+        """Make dictionary hashable."""
+        t = tuple(sorted(d.items()))
+        result = []
+        for k, v in t:
+            if isinstance(v, dict):
+                v = self._hashable_dict(v)
+            result.append((k, v))
+        return tuple(result)
 
     def _check_common_attributes(self,
-                                 jobs: List[Any],
+                                 tasks: List[Any],
                                  common_attributes: List[str]) -> bool:
         """Check that jobs have the same values for a list of attributes."""
         for attr in common_attributes:
             values = []
-            for run_settings in jobs:
-                value = getattr(run_settings, attr)
+            for run_settings in tasks:
+                value = getattr(run_settings, attr, '')
                 if isinstance(value, dict):
                     # Convert dictionary to a tuple of sorted items
-                    value = tuple(sorted(value.items()))
+                    value = self._hashable_dict(value)
                 values.append(value)
             if len(set(values)) > 1:
                 return False

@@ -15,6 +15,7 @@ from hyrun.scheduler import get_scheduler
 
 from .runner import Runner
 
+from .prepare_job import prepare_jobs
 
 def scheduler_exec(connection, scheduler_func, *args, **kwargs):
     """Execute scheduler function."""
@@ -37,7 +38,7 @@ def _get_logger(*args, print_level='ERROR', **kwargs):
     return get_logger(print_level=print_level)
 
 
-def prepare_jobs(aj, logger: Optional[Logger] = None):
+def prepare_jobs_old(aj, logger: Optional[Logger] = None):
     """Prepare jobs."""
     logger = logger or get_logger()
     for i, job in enumerate(aj.jobs):

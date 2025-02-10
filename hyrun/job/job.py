@@ -1,5 +1,5 @@
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
@@ -14,6 +14,18 @@ from hyrun.scheduler.abc import Scheduler
 
 from .output import Output
 
+STATUS_MAP = {'UNKNOWN': 0,
+              'PENDING': 10,
+              'RUNNING': 20,
+              'COMPLETED': 30,
+              'FAILED': 30,
+              'CANCELLED': 30,
+              'TIMEOUT': 30,
+              'DEADLINE': 30,
+              'PREEMPTED': 30,
+              'NODE_FAIL': 30,
+              'OUT_OF_MEMORY': 30,
+              'BOOT_FAIL': 30}
 
 @dataclass
 class Job:
@@ -60,3 +72,7 @@ class Job:
             raise ValueError('job_hash is empty')
         self.job_hash = sha256(hash_str.encode()).hexdigest()
         return self.job_hash
+    
+    def get_level(self) -> int:
+        """Get level."""
+        return STATUS_MAP.get(str(self.status).upper(), 0)

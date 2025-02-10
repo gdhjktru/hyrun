@@ -9,7 +9,7 @@ from hytools.logger import LoggerDummy
 from hyrun.job import update_arrayjob
 
 from .db import JobDatabaseManager
-from .job_prep import JobPrep
+# from .job_prep import JobPrep
 from .transfer import FileTransferManager
 
 # try:
@@ -23,7 +23,7 @@ def gen_jobs(jobs, *args, **kwargs):
     return jobs
 
 
-class Runner(FileTransferManager, JobDatabaseManager, JobPrep):
+class Runner(FileTransferManager, JobDatabaseManager):
     """Runner."""
 
     def __init__(self, *args, **kwargs):
