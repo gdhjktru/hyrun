@@ -62,19 +62,6 @@ def prepare_jobs(aj, logger: Optional[Logger] = None):
               that meens when updating we need to make sure we add information/have more than before')
         print('use the slurm status and create a mapping')
 
-        status_mapping = {'UNKNOWN': 0,
-                          'PENDING': 1,
-                          'RUNNING': 2,
-                          'COMPLETED': 3,
-                          'FAILED': 3,
-                          'CANCELLED': 3,
-                          'TIMEOUT': 3,
-                          'DEADLINE': 3,
-                          'PREEMPTED': 3,
-                          'NODE_FAIL': 3,
-                          'OUT_OF_MEMORY': 3,
-                          'BOOT_FAIL': 3}
-        print('then only update if status >= status before')
 
         # job.status = status_mapping.get(job.status, 0)
         # if job.db_id is not None:
@@ -82,7 +69,6 @@ def prepare_jobs(aj, logger: Optional[Logger] = None):
         #     print('if job is not
 
 
-                          }
 
 
         job.job_script = Template(job.job_script).safe_substitute(
@@ -95,7 +81,6 @@ def prepare_jobs(aj, logger: Optional[Logger] = None):
 
         print('add job script to files to write and sanitize all files')
         print('check that all objects can go into a database)')
-              )
 
 
 
