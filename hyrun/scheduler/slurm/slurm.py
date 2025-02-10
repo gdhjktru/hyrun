@@ -21,6 +21,7 @@ class SlurmScheduler(Scheduler):
     def __init__(self, **kwargs):
         """Initialize."""
         self.logger = kwargs.get('logger', LoggerDummy())
+        self.logger.debug('Slurm scheduler initialized')
         self.name = 'slurm'
         self.default_data_path = 'data_path_remote'
         self.connection = kwargs.get('connection',
@@ -197,7 +198,7 @@ class SlurmScheduler(Scheduler):
 
     def gen_job_script(self, name, tasks):
         """Generate job script."""
-        return gjs(name or '$job_name', tasks)
+        return gjs(name or '$job_hash', tasks)
 
     def transfer_files(self,
                        files_to_transfer: Optional[list] = None,

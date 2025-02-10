@@ -1,13 +1,12 @@
-from typing import Optional
-from hytools.logger import get_logger, Logger
-from hyrun.job import ArrayJob, Job
-from hyrun.scheduler import get_scheduler, Scheduler
-from hydb import get_database
-from hytools.file import File
 from string import Template
-from hashlib import sha256
-from pathlib import Path
-from copy import deepcopy
+from typing import Optional
+
+from hydb import Database, get_database
+from hytools.file import File
+from hytools.logger import Logger, get_logger
+
+from hyrun.job import ArrayJob, Job
+from hyrun.scheduler import Scheduler, get_scheduler
 
 
 def prepare_jobs(aj: ArrayJob,
@@ -15,107 +14,88 @@ def prepare_jobs(aj: ArrayJob,
     """Prepare jobs."""
     logger = kwargs.pop('logger', get_logger(print_level='DEBUG'))
     prepper = JobPrep(logger=logger, **kwargs)
+    # init databases
+    databases = {}
+    for job in aj.jobs:
+        db_name = prepper.get_database_name(job)
+        if db_name in databases:
+            continue
+        db = prepper.get_database(job)
+        db.open()
+        databases[db.name] = db
+    logger.debug(f'Opened databases: {list(databases.values())}\n')
+    # init jobs
     for i, job in enumerate(aj.jobs):
-        logger.debug(f'Preparing job #{i}')
-        # print(job)
-        job.scheduler = prepper.get_scheduler(job)
-        # print(job.tasks)
-        job.job_script = job.scheduler.gen_job_script(
-             job.metadata.get('name', ''), job.tasks)
-        job.job_hash = job.gen_hash()
-        
-        # print(job.job_script)
-        # print(job.job_hash)
+        job_name = job.metadata.get('name', '')
+        logger.debug(f'-- Preparing job #{i} {job_name} --')
+        # generating job_script and hash
+        init_job_script = prepper.get_scheduler(job).gen_job_script(job_name,
+                                                                    job.tasks)
+        job.job_hash = job.gen_hash(job_script=init_job_script)
+        logger.debug(f'job hash: {job.job_hash}')
 
-
-    oihjoijhoiioi
-
-
+        # update job_script with job_hash
+        job.job_script = File(name=f'job_{job.job_hash}.sh',
+                              content=prepper.update_job_script(
+                                   init_job_script, job.job_hash),
+                              host='localhost')
+        logger.debug(f'job script: \n{job.job_script}')
+        # lookup hash in database
+        job.database_id = prepper.lookup_database(job, databases)
+        if job.database_id:
+            logger.info(f'Job {job.job_hash} found in database\n')
+        else:
+            logger.debug(f'Job {job.job_hash} *not* found in database\n')
+    # close database connections
+    for db in databases.values():
+        db.close()
+    aj.update()
+    logger.debug('-- Preparing jobs done --\n')
+    return aj
 
 
 class JobPrep:
-        """Class to prepare"""
-        
-        def __init__(self,
-                     logger: Optional[Logger] = None,
-                     **kwargs):
-             """Initialize."""
-             self.logger = logger or get_logger(print_level='ERROR')
+    """Class to prepare Jobs."""
 
-        def get_scheduler(self, job: Job):
-            """Set scheduler."""
-            scheduler = getattr(job, 'scheduler') or getattr(job.tasks[0],
-                                                             'scheduler')                
-            if isinstance(scheduler, Scheduler):
-                 return scheduler
-            elif isinstance(scheduler, str):
-                 scheduler = {'scheduler_type': scheduler}
-            elif not isinstance(scheduler, dict):
-                 raise TypeError('scheduler must be of type str, dict or ' +
-                                 'Scheduler')
-            return get_scheduler(logger=self.logger, **scheduler)
+    def __init__(self,
+                 logger: Optional[Logger] = None,
+                 **kwargs):
+        """Initialize."""
+        self.logger = logger or get_logger(print_level='ERROR')
 
+    def get_scheduler(self, job: Job) -> Scheduler:
+        """Set scheduler."""
+        scheduler = (getattr(job, 'scheduler')
+                     or getattr(job.tasks[0], 'scheduler'))
+        return get_scheduler(scheduler, logger=self.logger)
 
-    #     job.scheduler = get_scheduler(job.scheduler,
-    #                                   logger=logger,
-    #                                   **job.scheduler_opt)
-    #     job.job_script = job.scheduler.gen_job_script(job.name,
-    #                                                   job.tasks)
+    def get_database_name(self, job: Job) -> str:
+        """Get database name."""
+        database_name = (getattr(job, 'database')
+                         or getattr(job.tasks[0], 'database'))
+        if isinstance(database_name, dict):
+            return database_name.get('name', str(database_name))
+        return getattr(database_name, 'name', str(database_name))
 
-    #     job.job_hash = _gen_hash([job.name or '',
-    #                               job.connection_opt.get('user', ''),
-    #                               job.connection_opt.get('host', ''),
-    #                               getattr(job.scheduler, 'name',
-    #                                       str(job.scheduler)),
-    #                               job.job_script or '',
-    #                               ])
+    def get_database(self, job: Job) -> Database:
+        """Get database."""
+        database = (getattr(job, 'database')
+                    or getattr(job.tasks[0], 'database'))
+        return get_database(database,
+                            logger=self.logger)
 
-    #     logger.debug(f'job hash: {job.job_hash}')
-    #     print('check if job hash is in database. if yes, update db id -> for this one one only gets the status updated')
-    #     print('problem: if alrady updated with the latest we dont want to overwrite it with potentital Nones, \
-    #           that meens when updating we need to make sure we add information/have more than before')
-    #     print('use the slurm status and create a mapping')
+    def update_job_script(self, job_script, job_hash) -> str:
+        """Update job script."""
+        return Template(job_script).safe_substitute(job_hash=job_hash)
 
+    def lookup_database(self, job: Job,
+                        databases: Optional[dict] = {}) -> Optional[int]:
+        """Lookup job in database."""
+        database_name = self.get_database_name(job)
+        database = databases.get(database_name) or self.get_database(job)
+        database.open()
 
-    #     # job.status = status_mapping.get(job.status, 0)
-    #     # if job.db_id is not None:
-    #     #     print('if job is in the database, update the status')
-    #     #     print('if job is not
+        entry = database.search_one(job_hash=job.job_hash,
+                                    resolve=False) or {}
 
-
-
-
-    #     job.job_script = Template(job.job_script).safe_substitute(
-    #         job_name=job.job_hash)
-    #     logger.debug(f'job script: \n{job.job_script}')
-
-    #     # job.job_script = File(f'job_{job.job_hash}.sh',
-    #     #                       content=job.job_script,
-    #     #                       host='localhost')
-
-    #     print('add job script to files to write and sanitize all files')
-    #     print('check that all objects can go into a database)')
-
-
-
-    #     job.database = get_database(job.database, **job.database_opt)
-    #     logger.debug(f'database: {job.database}')
-    #     job.database.open()
-    #     entry = job.database.search_one(job_hash=job.job_hash, resolve=True)
-    #     if entry:
-    #         logger.info(f'Job {job.job_hash} found in database')
-    #         print('here we need to be careful!!!')
-    #         job.__dict__.update(entry)
-    #     job.database.close()
-    #     logger.debug('\n')
-    #     # add job script to files_to_write and then sanitize files_to_write,
-    #     #files_to_remote, files_for_restarting
-    #     for task in job.tasks:
-    #         task.files_to_write.append(File(name=f'job_{job.job_hash}.sh',
-    #                                         content=job.job_script,
-    #                                         host='localhost'))
-    #         task.files_to_write = sanitize_files(task.files_to_write)
-    #         task.files_to_remote = sanitize_files(task.files_to_remote)
-    #         task.files_for_restarting = sanitize_files(task.files_for_restarting)
-    # aj.update()
-    # return aj
+        return entry.get('id')

@@ -44,7 +44,8 @@ class LocalScheduler(Scheduler):
     # def check_job_params(self, job):
     #     """Check job params."""
     #     if len(job.tasks) > 1:
-    #         self.logger.warning('Local scheduler only supports one task per ' +
+    #         self.logger.warning('Local scheduler only supports
+    #  one task per ' +
     #                             'job, converting...')
     #         return self.separate_jobs(job)
     #     return job
@@ -57,13 +58,13 @@ class LocalScheduler(Scheduler):
         """Return context manager."""
         return nullcontext(arg)
 
-    # def get_launcher(self, run_settings):
-    #     """Get launcher."""
-    #     # allows conda in docker but not docker in conda
-    #     return get_conda_launcher(run_settings.conda_env,
-    #                               [*get_docker_launcher(
-    #                                   **run_settings.__dict__),
-    #                                   *run_settings.launcher])
+    def get_launcher(self, run_settings):
+        """Get launcher."""
+        # allows conda in docker but not docker in conda
+        return get_conda_launcher(run_settings.conda_env,
+                                  [*get_docker_launcher(
+                                      **run_settings.__dict__),
+                                      *run_settings.launcher])
 
     # def _gen_running_list(self, run_settings,
     #                       cwd: Path) -> List[str]:
@@ -84,7 +85,6 @@ class LocalScheduler(Scheduler):
     #                     if 'python' in c
     #                     else c for c in running_list]
     #     return running_list
-
 
     def gen_job_script(self, name: str, tasks: list) -> str:
         """Generate command."""

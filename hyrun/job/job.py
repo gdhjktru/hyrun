@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import List, Optional, Union
 
 from hydb import Database
 from hyset import RunSettings
@@ -26,6 +26,7 @@ STATUS_MAP = {'UNKNOWN': 0,
               'NODE_FAIL': 30,
               'OUT_OF_MEMORY': 30,
               'BOOT_FAIL': 30}
+
 
 @dataclass
 class Job:
@@ -58,7 +59,7 @@ class Job:
         self.connection = getattr(self.connection, 'teardown', self.connection)
         self.database = getattr(self.database, 'teardown', self.database)
 
-    def gen_hash(self) -> str:
+    def gen_hash(self, **kwargs) -> str:
         """Generate hash."""
         hash_str = f'{self.scheduler_id or ""}'
         hash_str += f'{self.database_id or ""}'
@@ -67,12 +68,11 @@ class Job:
         hash_str += f'{getattr(self.connection, "connection_type", "")}'
         hash_str += f'{getattr(self.connection, "user", "")}'
         hash_str += f'{getattr(self.connection, "host", "")}'
-        hash_str += f'{self.job_script or ""}'
+        hash_str += f'{kwargs.get("job_script", self.job_script) or ""}'
         if not hash_str:
             raise ValueError('job_hash is empty')
-        # self.job_hash = sha256(hash_str.encode()).hexdigest()
-        return self.job_hash
-    
+        return sha256(hash_str.encode()).hexdigest()
+
     def get_level(self) -> int:
         """Get level."""
         return STATUS_MAP.get(str(self.status).upper(), 0)

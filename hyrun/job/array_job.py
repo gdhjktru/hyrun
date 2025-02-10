@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from functools import singledispatchmethod, wraps
 from itertools import groupby
 from typing import Any, Dict, List, Optional, Tuple, Union
-from copy import deepcopy
 
 from hyset import RunSettings
 from hytools.logger import Logger, get_logger
@@ -168,7 +167,7 @@ class ArrayJob:
             raise e
         else:
             return job_
-        
+
     def _hashable_dict(self, d: dict) -> tuple:
         """Make dictionary hashable."""
         t = tuple(sorted(d.items()))

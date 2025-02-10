@@ -1,5 +1,5 @@
 
-from typing import Mapping, Optional, Type
+from typing import Mapping, Type
 
 from .abc import Scheduler
 from .local import LocalScheduler
@@ -16,9 +16,17 @@ SCHEDULER_MAPPING = {'pbs': PbsScheduler,  # type: ignore
                      'singularity': LocalScheduler}  # type: ignore
 
 
-def get_scheduler(**kwargs) -> Scheduler:
+def get_scheduler(*args, **kwargs) -> Scheduler:
     """Get scheduler."""
-    scheduler_name = kwargs.get('scheduler_type')
+    if isinstance(args[0], Scheduler):
+        return args[0]
+    elif isinstance(args[0], str):
+        scheduler_name = args[0]
+    elif isinstance(args[0], dict):
+        scheduler_name = args[0].get('scheduler_type', '')
+    else:
+        scheduler_name = kwargs.get('scheduler_type', '')
+
     if scheduler_name not in SCHEDULER_MAPPING:
         raise ValueError(f'Invalid scheduler: {scheduler_name}. '
                          'Available schedulers: ',

@@ -1,6 +1,5 @@
 import re
 import shlex
-from pathlib import Path
 from sys import executable as python_ex
 from typing import List, Optional, Union
 
@@ -30,9 +29,8 @@ class JobScript:
             *launcher,
             run_settings.program,
             *run_settings.args,  # type: ignore
-        ]  # type: ignore #14891
-        return  [str(x).strip() for x in running_list]
-
+            ]  # type: ignore #14891
+        return [str(x).strip() for x in running_list]
 
     @classmethod
     def sanitize_cmd(cls, cmd: Union[str, list],
@@ -78,14 +76,13 @@ class JobScript:
     @classmethod
     def gen_job_script(cls, run_settings: RunSettings) -> str:
         """Generate command."""
-
         running_list = cls.sanitize_cmd(
             cls._gen_running_list(run_settings))
         pre_cmd = cls.sanitize_cmd(getattr(run_settings, 'pre_cmd', []))
         post_cmd = cls.sanitize_cmd(getattr(run_settings, 'post_cmd', []))
         running_list[-1] = (
             '&&' if running_list[-1] == ';' else running_list[-1]
-        )
+            )
 
         cmd = pre_cmd + running_list + post_cmd
 

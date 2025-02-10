@@ -30,7 +30,7 @@ keys_to_extract = ['energy']
 
 default_cs = {'print_level': 'debug',
               'force_recompute': True,
-              'database': 'mydb'}
+              'database': {'name': 'mydb'}}
 compute_settings = {
     'local': ccs('local', **default_cs),
     # 'docker': ccs('docker', container_image='xtb', **default_cs),
