@@ -17,7 +17,6 @@ from .output import Output
 STATUS_MAP = {'UNKNOWN': 0,
               'PENDING': 10,
               'RUNNING': 20,
-              'COMPLETED': 30,
               'FAILED': 30,
               'CANCELLED': 30,
               'TIMEOUT': 30,
@@ -25,7 +24,8 @@ STATUS_MAP = {'UNKNOWN': 0,
               'PREEMPTED': 30,
               'NODE_FAIL': 30,
               'OUT_OF_MEMORY': 30,
-              'BOOT_FAIL': 30}
+              'BOOT_FAIL': 30,
+              'COMPLETED': 40}
 
 
 @dataclass
@@ -73,18 +73,20 @@ class Job:
             raise ValueError('job_hash is empty')
         return sha256(hash_str.encode()).hexdigest()
 
-    def get_level(self) -> int:
+    def get_level(self, d: Optional[dict] = {}) -> int:
         """Get level."""
-        return STATUS_MAP.get(str(self.status).upper(), 0)
+        status = d.get('status', self.status)
+        return STATUS_MAP.get(str(status).upper(), 0)
 
     def update(self, d: Optional[dict] = None):
         """Update."""
         if not d:
             return
-        level_old = STATUS_MAP.get(str(self.status).upper(), 0)
-        level_new = STATUS_MAP.get(str(d.get('status', '')).upper(), -1)
-        if level_new < level_old:
+        if self.get_level(d) <= self.get_level():
             return
-        current_data = asdict(self)
-        current_data.update({k: v for k, v in d.items() if v is not None})
-        self.__dict__.update(replace(self, **current_data).__dict__)
+
+        updated_data = {
+            **asdict(self),
+            **{k: v for k, v in d.items() if v is not None}
+        }
+        self.__dict__.update(replace(self, **updated_data).__dict__)

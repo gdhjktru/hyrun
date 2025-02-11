@@ -1,6 +1,7 @@
 from hyrun.job import ArrayJob
 
-from .prepare_job import prepare_jobs
+from .prepare_job import (prepare_connection, prepare_jobs, prepare_transfer,
+                          send_files)
 
 
 def scheduler_exec(connection, scheduler_func, *args, **kwargs):
@@ -31,9 +32,17 @@ def run(*args, **kwargs):
     if kwargs.get('dryrun', False):
         logger.info('Dryrun')
         return aj
-
-    print('loop over groups')
-    print('collect all files to be send, add job script')
+    for job_group, host in zip(aj.jobs_grouped, aj.job_group_keys):
+        files_remote, folders_remote = prepare_transfer(job_group,
+                                                        host=host,
+                                                        logger=logger)
+        with prepare_connection(job_group) as conn:
+            logger.debug(f'Connection established: {conn}')
+            send_files(files_remote=files_remote,
+                       folders_remote=folders_remote,
+                       **{**conn.__dict__,
+                          'logger': logger,
+                          **kwargs})
 
     # print(files_remote)
 #     for job_group in aj.jobs_grouped:
