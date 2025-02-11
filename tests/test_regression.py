@@ -32,7 +32,7 @@ default_cs = {'print_level': 'debug',
               'force_recompute': True,
               'database': {'name': 'mydb'}}
 compute_settings = {
-    'local': ccs('local', **default_cs),
+    'local': ccs('local', conda_env='base', **default_cs),
     # 'docker': ccs('docker', container_image='xtb', **default_cs),
     # 'conda': ccs('conda', conda_env='base', **default_cs),
     'saga': ccs('saga', modules=['xtb/6.4.1-intel-2021a'],
@@ -40,7 +40,6 @@ compute_settings = {
                 memory_per_cpu=2000, progress_bar=False, **default_cs)
     }
 molecules = {'water': Molecule('O')}
-
 
 def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
     """Generate data."""

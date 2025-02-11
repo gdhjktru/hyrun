@@ -1,7 +1,7 @@
 from hyrun.job import ArrayJob
 
 from .prepare_job import (prepare_connection, prepare_jobs, prepare_transfer,
-                          send_files)
+                          send_files, JobPrep)
 
 
 def scheduler_exec(connection, scheduler_func, *args, **kwargs):
@@ -43,6 +43,21 @@ def run(*args, **kwargs):
                        **{**conn.__dict__,
                           'logger': logger,
                           **kwargs})
+            # what to do with local jobs ????? here do we have to wait???
+            if conn.connection_type == 'local':
+                logger.warning('Running jobs *locally*.')
+            for i, job in enumerate(job_group):
+                job.scheduler = JobPrep().get_scheduler(job)
+                logger.info(f'submitting job {i} to {host} using ' +
+                            f'{job.scheduler}')
+                job.scheduler.submit(job, connection=conn, **kwargs)
+                
+
+
+
+                job.scheduler = job.scheduler.teardown()
+
+                
 
     # print(files_remote)
 #     for job_group in aj.jobs_grouped:
