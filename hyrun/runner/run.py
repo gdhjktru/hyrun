@@ -1,7 +1,7 @@
 from hyrun.job import ArrayJob
 
-from .prepare_job import (prepare_connection, prepare_jobs, prepare_transfer,
-                          send_files, JobPrep)
+from .prepare_job import (JobPrep, prepare_connection, prepare_jobs,
+                          prepare_transfer, send_files)
 
 
 def scheduler_exec(connection, scheduler_func, *args, **kwargs):
@@ -51,13 +51,10 @@ def run(*args, **kwargs):
                 logger.info(f'submitting job {i} to {host} using ' +
                             f'{job.scheduler}')
                 job.scheduler.submit(job, connection=conn, **kwargs)
-                
-
-
-
+                print(job.status)
                 job.scheduler = job.scheduler.teardown()
 
-                
+
 
     # print(files_remote)
 #     for job_group in aj.jobs_grouped:

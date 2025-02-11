@@ -3,11 +3,11 @@ import subprocess
 from contextlib import nullcontext
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Dict, Optional, List, Union
-from hytools.file import FileManager, File, get_file
 from shlex import join, split
-from hyset import RunSettings
+from typing import Any, Dict, List, Optional, Union
 
+from hyset import RunSettings
+from hytools.file import File, FileManager, get_file
 from hytools.logger import LoggerDummy
 
 from ..abc import Scheduler
@@ -149,7 +149,7 @@ class LocalScheduler(Scheduler):
             Path(stdout_file).write_text(result.stdout)
             output_dict['stdout'] = stdout_file
         return replace(output, **output_dict)
-    
+
     def remove_comments_and_split_commands(self, s: str) -> list:
         """Remove comment lines and split the string into commands."""
         lines = s.split('\n')
@@ -159,14 +159,14 @@ class LocalScheduler(Scheduler):
             if line:  # Ignore empty lines
                 commands.append(line)
         return commands
-    
+
     # def split_by_delimiters(
     #         self,
     #         commands: List[str],
     #         delimiters: List[str] = None
     #         ) -> List[List[str]]:
     #     """Split a list of commands by delimiters into different lists."""
-       
+
     #     result = []
     #     current_list = []
 
@@ -243,13 +243,14 @@ class LocalScheduler(Scheduler):
             FileManager.write_file_local(inp.stdout_file)
             output_dict['stdout'] = inp.stdout_file
         return output_dict
-    
+
     def submit(self, job=None, **kwargs):
         """Submit job."""
         cmds = self.remove_comments_and_split_commands(job.job_script.content)
         if len(cmds) != len(job.tasks):
             raise ValueError('Number of commands must match number of tasks')
         results = []
+        returncode = 0
         for i, (t, cmd) in enumerate(zip(job.tasks, cmds)):
             run_opt={'input': None, 'env': t.env or os.environ, 'capture_output': True,
                      'text': True, 'cwd': str(t.work_dir_local),
@@ -260,15 +261,26 @@ class LocalScheduler(Scheduler):
                 run_opt['input'] = stdin
                 self.logger.debug(f'STDIN INPUT: {stdin}')
             cmd = join(cmd) if run_opt['shell'] else split(cmd)
-            print(cmd)
 
             self.logger.debug(f'RUNNING #{i}: {cmd}\n')
             self.logger.debug(f'WORKING DIRECTORY: {t.work_dir_local}\n')
             result = subprocess.run(
                 cmd, **run_opt
             )
-            self.logger.debug(f'RESULT: {result}\n')   
+            returncode += result.returncode
+            self.logger.debug(f'RESULT: {result}\n')
             results.append(self._gen_output(t, result))
+
+
+        if result.returncode == 0:
+            job.status = 'COMPLETED'
+        else:
+            job.status = 'FAILED'
+
+        job.outputs = results
+        return job
+
+
 
         return
 
@@ -306,46 +318,41 @@ class LocalScheduler(Scheduler):
 
         # result = results[idx_final]vars
 
-        print('økmmømkømkøm', cmds)
-        lkmlmkmklmkl
-        return
-        pokokopkopk
-        
-        job_script = job.job_script
+        # job_script = job.job_script
 
-        if len(job.tasks) > 1:
-            raise ValueError('Local scheduler only supports one task')
-        rs = job.tasks[0]
-        js = job.job_script['path']
-        output = job.outputs[0]
+        # if len(job.tasks) > 1:
+        #     raise ValueError('Local scheduler only supports one task')
+        # rs = job.tasks[0]
+        # js = job.job_script['path']
+        # output = job.outputs[0]
 
-        # maybe write the script to disk and run it with subprocess
-        os.chmod(js, 0o755)
+        # # maybe write the script to disk and run it with subprocess
+        # os.chmod(js, 0o755)
 
-        # cmd = Path(js).read_text().split(' ')
-        self.logger.info('Running command: %s\n',
-                         Path(js).read_text().split('\n'))
-        self.logger.info('Working directory: %s\n', rs.work_dir_local)
-        run_opts = {'capture_output': True,
-                    'text': True,
-                    'cwd': str(rs.work_dir_local),
-                    'env': rs.env,
-                    'shell': False}
-        # if ';' in cmd or '&&' in cmd:
-        #     run_opts['shell'] = True
-        #     cmd = ' '.join(cmd)
-        result = subprocess.run(str(js), **run_opts)
-        self.logger.debug('Result: %s\n', result)
-        output = self.update_output(result=result,
-                                    run_settings=rs,
-                                    output=output)
-        job.outputs = [output]
-        if result.returncode == 0:
-            job.status = 'COMPLETED'
-        else:
-            job.status = 'FAILED'
-        job.finished = True
-        return job
+        # # cmd = Path(js).read_text().split(' ')
+        # self.logger.info('Running command: %s\n',
+        #                  Path(js).read_text().split('\n'))
+        # self.logger.info('Working directory: %s\n', rs.work_dir_local)
+        # run_opts = {'capture_output': True,
+        #             'text': True,
+        #             'cwd': str(rs.work_dir_local),
+        #             'env': rs.env,
+        #             'shell': False}
+        # # if ';' in cmd or '&&' in cmd:
+        # #     run_opts['shell'] = True
+        # #     cmd = ' '.join(cmd)
+        # result = subprocess.run(str(js), **run_opts)
+        # self.logger.debug('Result: %s\n', result)
+        # output = self.update_output(result=result,
+        #                             run_settings=rs,
+        #                             output=output)
+        # job.outputs = [output]
+        # if result.returncode == 0:
+        #     job.status = 'COMPLETED'
+        # else:
+        #     job.status = 'FAILED'
+        # job.finished = True
+        # return job
 
     def is_finished(self, job, *args, **kwargs) -> bool:
         """Check if job is finished."""
