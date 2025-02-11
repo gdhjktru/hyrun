@@ -1,5 +1,5 @@
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
@@ -76,3 +76,15 @@ class Job:
     def get_level(self) -> int:
         """Get level."""
         return STATUS_MAP.get(str(self.status).upper(), 0)
+
+    def update(self, d: Optional[dict] = None):
+        """Update."""
+        if not d:
+            return
+        level_old = STATUS_MAP.get(str(self.status).upper(), 0)
+        level_new = STATUS_MAP.get(str(d.get('status', '')).upper(), -1)
+        if level_new < level_old:
+            return
+        current_data = asdict(self)
+        current_data.update({k: v for k, v in d.items() if v is not None})
+        self.__dict__.update(replace(self, **current_data).__dict__)

@@ -32,7 +32,10 @@ def run(*args, **kwargs):
         logger.info('Dryrun')
         return aj
 
+    print('loop over groups')
+    print('collect all files to be send, add job script')
 
+    # print(files_remote)
 #     for job_group in aj.jobs_grouped:
 
 #         for job in job_group:
