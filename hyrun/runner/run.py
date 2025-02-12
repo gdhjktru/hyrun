@@ -47,14 +47,12 @@ def run(*args, **kwargs):
             if conn.connection_type == 'local':
                 logger.warning('Running jobs *locally*.')
             for i, job in enumerate(job_group):
-                job.scheduler = JobPrep().get_scheduler(job)
+                job.scheduler = JobPrep().get_scheduler(job, logger=logger)
                 logger.info(f'submitting job {i} to {host} using ' +
                             f'{job.scheduler}')
                 job.scheduler.submit(job, connection=conn, **kwargs)
                 print(job.status)
                 job.scheduler = job.scheduler.teardown()
-
-
 
     # print(files_remote)
 #     for job_group in aj.jobs_grouped:

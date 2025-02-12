@@ -149,6 +149,8 @@ class SlurmJobScript:
 
             job_script += f'{run_settings.launcher} {run_settings.program} '
             job_script += f'{" ".join(run_settings.args)} '
+            if run_settings.stdin_file:
+                job_script += f'< {run_settings.stdin_file.path} '
             job_script += f'>> {run_settings.stdout_file.path} '
             job_script += f'2>> {run_settings.stderr_file.path}\n'
 

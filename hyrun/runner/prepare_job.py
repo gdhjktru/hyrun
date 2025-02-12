@@ -191,11 +191,12 @@ class JobPrep:
                 )
             )
 
-    def get_scheduler(self, job: Job) -> Scheduler:
+    def get_scheduler(self, job: Job, **kwargs) -> Scheduler:
         """Set scheduler."""
+        logger = kwargs.get('logger', self.logger)
         scheduler = (getattr(job, 'scheduler')
                      or getattr(job.tasks[0], 'scheduler'))
-        return get_scheduler(scheduler, logger=self.logger)
+        return get_scheduler(scheduler, logger=logger)
 
     def get_database_name(self, job: Job) -> str:
         """Get database name."""

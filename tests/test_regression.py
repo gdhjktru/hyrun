@@ -41,6 +41,7 @@ compute_settings = {
     }
 molecules = {'water': Molecule('O')}
 
+
 def calculate(compute_settings, mol, keys_to_extract=keys_to_extract):
     """Generate data."""
     x = Xtb(compute_settings=compute_settings,

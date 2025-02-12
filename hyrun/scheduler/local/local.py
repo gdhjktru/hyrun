@@ -1,13 +1,12 @@
 import os
 import subprocess
 from contextlib import nullcontext
-from dataclasses import replace
 from pathlib import Path
 from shlex import join, split
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, List, Optional, Union
 
 from hyset import RunSettings
-from hytools.file import File, FileManager, get_file
+from hytools.file import File, FileManager
 from hytools.logger import LoggerDummy
 
 from ..abc import Scheduler
@@ -79,43 +78,44 @@ class LocalScheduler(Scheduler):
         """Transfer files."""
         return []
 
-    def gen_output(self, result, run_settings) -> dict:
-        """Generate output."""
-        output_dict: Dict[str, Any]
-        # files_to_parse = run_settings.files_to_parse
-        # for i, f in enumerate(files_to_parse):
-        #     if isinstance(f, File):
-        #         if hasattr(f, 'work_path_local'):
-        #             files_to_parse[i] = f.work_path_local  # type: ignore
-        output_dict = {
-            # 'files_to_parse': files_to_parse,
-            'output_folder': (run_settings.work_dir_local
-                              if run_settings.output_folder
-                              else None),
-            }
+    def get_path(self,
+                 file: Any,
+                 folder_default: Optional[Union[str, Path]] = '') -> Path:
+        """Get path from File object."""
+        file = File(name=getattr(file, 'name', str(file)),
+                    folder=getattr(file, 'folder', str(folder_default)))
+        return Path(file.path)
 
-        if run_settings.output_file:
-            output_dict.update(
-                {'output_file':
-                 run_settings.output_file['path']})  # type: ignore
+    def gen_output(self,
+                   result: Optional[subprocess.CompletedProcess] = None,
+                   task: Optional[RunSettings] = None) -> dict:
+        """Generate output."""
+        try:
+            output_dict = result.__dict__
+        except AttributeError:
+            output_dict = {}
         if result is None:
             return output_dict
-
-        output_dict.update({'returncode': result.returncode})
-
-        exceptions = ['normal termination of xtb']
+        files_to_parse = [self.get_path(f, task.work_dir_local)
+                          for f in task.files_to_parse]
+        output_folder = task.work_dir_local if task.output_folder else None
+        output_file = self.get_path(task.output_file, task.work_dir_local)
+        output_dict['output_file'] = output_file
+        output_dict['output_folder'] = output_folder
+        output_dict['files_to_parse'] = files_to_parse
         if result.stderr:
-            stderr_file = run_settings.stderr_file['path']
-            Path(stderr_file).write_text(result.stderr)
-            self.logger.debug('STDERR: %s', result.stderr) if any(
-                e in result.stderr for e in exceptions
-                ) else self.logger.error('STDERR: %s', result.stderr)
-            # output_dict['stderr'] = result.stderr
-
+            stderr_file = self.get_path(task.stderr_file, task.work_dir_local)
+            FileManager.write_file_local(stderr_file, result.stderr)
+            self.logger.debug('stderr: %s', result.stderr)
+            output_dict['stderr_file'] = stderr_file
+            output_dict['stderr'] = result.stderr
         if result.stdout:
-            stdout_file = run_settings.stdout_file['path']
-            Path(stdout_file).write_text(result.stdout)
-            # output_dict['stdout'] = stdout_file
+            stdout_file = self.get_path(task.stdout_file, task.work_dir_local)
+            FileManager.write_file_local(stdout_file, result.stdout)
+            self.logger.debug('stdout: %s', result.stdout)
+            output_dict['stdout_file'] = stdout_file
+            output_dict['stdout'] = result.stdout
+
         return output_dict
 
     def teardown(self) -> dict:
@@ -123,264 +123,107 @@ class LocalScheduler(Scheduler):
         # removing files
         return {'scheduler_type': self.name}
 
-    def update_output(self, result=None, run_settings=None, output=None):
-        """Update output."""
-        output_dict = {}
-        # if output.output_file:
-        #     output_dict['output_file'] = output.output_file['path']
-        # if output.stdout_file:
-        #     output_dict['stdout_file'] = output.stdout_file['path']
-        # if output.stderr_file:
-        #     output_dict['stderr_file'] = output.stderr_file['path']
-
-        output_dict['returncode'] = result.returncode
-
-        exceptions = ['normal termination of xtb']
-        if result.stderr:
-            stderr_file = run_settings.stderr_file['path']
-            Path(stderr_file).write_text(result.stderr)
-            self.logger.debug('STDERR: %s', result.stderr) if any(
-                e in result.stderr for e in exceptions
-                ) else self.logger.error('STDERR: %s', result.stderr)
-            output_dict['stderr'] = result.stderr
-
-        if result.stdout:
-            stdout_file = run_settings.stdout_file.path
-            Path(stdout_file).write_text(result.stdout)
-            output_dict['stdout'] = stdout_file
-        return replace(output, **output_dict)
-
     def remove_comments_and_split_commands(self, s: str) -> list:
         """Remove comment lines and split the string into commands."""
         lines = s.split('\n')
         commands = []
         for line in lines:
-            line = line.split('#', 1)[0].strip()  # Remove comments and strip whitespace
+            # Remove comments and strip whitespace
+            line = line.split('#', 1)[0].strip()
             if line:  # Ignore empty lines
                 commands.append(line)
         return commands
-
-    # def split_by_delimiters(
-    #         self,
-    #         commands: List[str],
-    #         delimiters: List[str] = None
-    #         ) -> List[List[str]]:
-    #     """Split a list of commands by delimiters into different lists."""
-
-    #     result = []
-    #     current_list = []
-
-    #     for item in commands:
-    #         current_list.append(item)
-    #         if item in delimiters:
-    #             result.append(current_list)
-    #             current_list = []
-
-    #     if current_list:
-    #         result.append(current_list)
-
-    #     return result
-
-    # def prepare_subprocess_input(
-    #     self,
-    #     pre_cmd: Optional[List[str]] = None,
-    #     result_pre: Optional[subprocess.CompletedProcess] = None,
-    #     stdin_file: Optional[Union[str, File, Path]] = None,
-    # ) -> Optional[Union[bytes, str]]:
-    #     """Get the input for the subprocess based on pre_cmd and result_pre."""
-    #     if stdin_file is not None:
-    #         self.logger.debug(f'STDIN FILE: {stdin_file}')
-    #     if isinstance(stdin_file, File):
-    #         return FileManager().read_file_local(stdin_file)
-    #     elif isinstance(stdin_file, str):
-    #         return stdin_file
-    #     elif isinstance(stdin_file, Path):
-    #         return stdin_file.read_text()
-    #     if not pre_cmd:
-    #         return None
-    #     return result_pre.stdout if pre_cmd and pre_cmd[-1] == '|' else None
-
-    def _gen_output(self, inp: RunSettings, result: Any) -> Dict[str, Any]:
-        """Generate output."""
-        logger = inp.logger or LoggerDummy
-        output_dict: Dict[str, Any]
-        files_to_parse = inp.files_to_parse
-        for i, f in enumerate(files_to_parse):
-            if isinstance(f, File):
-                if hasattr(f, 'work_path_local'):
-                    files_to_parse[i] = f.work_path_local  # type: ignore
-        output_dict = {
-            'files_to_parse': files_to_parse,
-            'output_folder': (
-                inp.work_dir_local if inp.output_folder else None
-            ),
-        }
-        if inp.output_file:
-            if hasattr(inp.output_file, 'work_path_local'):
-                f = inp.output_file.work_path_local  # type: ignore
-            else:
-                f = inp.output_file
-            output_dict.update({'output_file': f})  # type: ignore
-        if result is None:
-            return output_dict
-        output_dict.update({'returncode': result.returncode})
-
-        if result.returncode < 0:
-            logger.warning(
-                f'{inp.program} run failed, '
-                + 'returncode: {result.returncode}'
-            )
-        if result.stderr:
-            # stderr_file = inp.stderr_file.work_path_local  # type: ignore
-            inp.stderr_file.content = result.stderr
-            FileManager.write_file_local(inp.stderr_file)
-            logger.debug('STDERR: %s', result.stderr)
-            output_dict['stderr'] = result.stderr
-        if result.stdout:
-            # stdout_file = inp.stdout_file.work_path_local  # type: ignore
-            # self.write_file_local(stdout_file, result.stdout)
-            inp.stdout_file.content = result.stdout
-            FileManager.write_file_local(inp.stdout_file)
-            output_dict['stdout'] = inp.stdout_file
-        return output_dict
 
     def submit(self, job=None, **kwargs):
         """Submit job."""
         cmds = self.remove_comments_and_split_commands(job.job_script.content)
         if len(cmds) != len(job.tasks):
             raise ValueError('Number of commands must match number of tasks')
-        results = []
-        returncode = 0
+        outputs = []
         for i, (t, cmd) in enumerate(zip(job.tasks, cmds)):
-            run_opt={'input': None, 'env': t.env or os.environ, 'capture_output': True,
-                     'text': True, 'cwd': str(t.work_dir_local),
-                     'shell': False, 'check': True}
-            run_opt.update(kwargs.get('run_opt', {}))
-            if t.stdin_file:
-                stdin = FileManager().read_file_local(t.stdin_file)
-                run_opt['input'] = stdin
-                self.logger.debug(f'STDIN INPUT: {stdin}')
-            cmd = join(cmd) if run_opt['shell'] else split(cmd)
+            self.logger.debug(f'RUNNING CMD #{i}: {cmd}\n')
+            result = self.run_cmd(task=t, cmd=cmd, **kwargs)
+            outputs.append(self.gen_output(result, t))
+        job.outputs = outputs
 
-            self.logger.debug(f'RUNNING #{i}: {cmd}\n')
-            self.logger.debug(f'WORKING DIRECTORY: {t.work_dir_local}\n')
-            result = subprocess.run(
-                cmd, **run_opt
-            )
-            returncode += result.returncode
-            self.logger.debug(f'RESULT: {result}\n')
-            results.append(self._gen_output(t, result))
-
-
-        if result.returncode == 0:
+        if sum(r.get('returncode', 0) for r in job.outputs) == 0:
             job.status = 'COMPLETED'
         else:
             job.status = 'FAILED'
-
-        job.outputs = results
+        self.logger.debug(f'JOB STATUS: {job.status}\n')
         return job
 
+    def quick_return(self,
+                     cmd: str,
+                     task: RunSettings
+                     ) -> Optional[subprocess.CompletedProcess]:
+        """Quick return."""
+        files_to_check: List[Union[str, Path]] = ['output_file',
+                                                  'stdout_file',
+                                                  'stderr_file']
+        files_to_check = [self.get_path(getattr(task, str(f)))
+                          for f in files_to_check]
+        if any(Path(p).exists() for p in files_to_check):
+            try:
+                stdout = FileManager().read_file_local(task.stdout_file)
+                stderr = FileManager().read_file_local(task.stderr_file)
+            except Exception:
+                stdout = None
+                stderr = None
+            return subprocess.CompletedProcess(args=cmd,
+                                               returncode=0,
+                                               stdout=stdout,
+                                               stderr=stderr)
+        else:
+            return None
 
+    def run_cmd(self,
+                task: Optional[RunSettings] = None,
+                cmd: Optional[Union[str, List[str]]] = None,
+                **kwargs) -> subprocess.CompletedProcess:
+        """Submit job."""
+        if not task.force_recompute:
+            result = self.quick_return(str(cmd), task)
+            if result:
+                self.logger.debug('Output file exists, skipping')
+                return result
 
-        return
+        run_opt = {'input': None,
+                   'env': task.env or os.environ,
+                   'capture_output': True,
+                   'text': True,
+                   'cwd': str(task.work_dir_local),
+                   'shell': False,
+                   'check': True}
+        run_opt.update(kwargs.get('run_opt', {}))
+        if task.stdin_file:
+            run_opt['input'] = FileManager().read_file_local(task.stdin_file)
+        self.logger.debug(f'SETTINGS: {run_opt}\n')
 
-        print(results)
-        okkokok
-        # rs = job.tasks[0]
-        # env = rs.env
-        # wdir = rs.work_dir_local
-
-        # results: List[subprocess.CompletedProcess] = []
-        # for i, cmd in enumerate(cmds):
-        #     prev_cmd = cmds[i - 1] if i > 0 else None
-
-        #     self.logger.debug(f'RUNNING #{i}: {cmd}\n')
-        #     input_subprocess = self.prepare_subprocess_input(
-        #         pre_cmd=prev_cmd, result_pre=results[-1] if i > 0 else None,
-        #         stdin_file=stdin_file if i == idx_final else None
-        #     )
-        #     if input_subprocess:
-        #         logger.debug('STDIN INPUT: \n %s', input_subprocess)
-        #     result = subprocess.run(
-        #         self.prepare_cmd(cmd, run_opts['shell']),
-        #         input=input_subprocess,
-        #         **run_opts,
-        #     )
-        #     logger.debug('RESULT: \n %s', result)
-        #     if result.returncode != 0:
-        #         logger.error(f'RUNNING CMD {cmd} FAILED WITH STDERR\n ' +
-        #                      f'{result.stderr}')
-        #         if cmd[-1] in ['|', '&&']:
-        #             raise ValueError('RUNNING CMD FAILED')
-        #     results.append(result)
-        #     if input_subprocess:
-        #         logger.debug('RESULT PIPED TO NEXT CMD\n')
-
-        # result = results[idx_final]vars
-
-        # job_script = job.job_script
-
-        # if len(job.tasks) > 1:
-        #     raise ValueError('Local scheduler only supports one task')
-        # rs = job.tasks[0]
-        # js = job.job_script['path']
-        # output = job.outputs[0]
-
-        # # maybe write the script to disk and run it with subprocess
-        # os.chmod(js, 0o755)
-
-        # # cmd = Path(js).read_text().split(' ')
-        # self.logger.info('Running command: %s\n',
-        #                  Path(js).read_text().split('\n'))
-        # self.logger.info('Working directory: %s\n', rs.work_dir_local)
-        # run_opts = {'capture_output': True,
-        #             'text': True,
-        #             'cwd': str(rs.work_dir_local),
-        #             'env': rs.env,
-        #             'shell': False}
-        # # if ';' in cmd or '&&' in cmd:
-        # #     run_opts['shell'] = True
-        # #     cmd = ' '.join(cmd)
-        # result = subprocess.run(str(js), **run_opts)
-        # self.logger.debug('Result: %s\n', result)
-        # output = self.update_output(result=result,
-        #                             run_settings=rs,
-        #                             output=output)
-        # job.outputs = [output]
-        # if result.returncode == 0:
-        #     job.status = 'COMPLETED'
-        # else:
-        #     job.status = 'FAILED'
-        # job.finished = True
-        # return job
+        cmd = join(cmd) if run_opt['shell'] else split(cmd)  # type: ignore
+        result = subprocess.run(cmd, **run_opt)  # type: ignore
+        if result.returncode != 0:
+            self.logger.error(f'RUNNING CMD {cmd} FAILED WITH STDERR\n ' +
+                              f'{result.stderr}')
+            if cmd[-1] in ['|', '&&']:
+                raise ValueError('RUNNING CMD FAILED')
+        return result
 
     def is_finished(self, job, *args, **kwargs) -> bool:
         """Check if job is finished."""
-        success = ['COMPLETED']
-        failed = ['FAILED']
-        if job.status in failed:
-            self.logger.error(f'Job {job.id} with id {job.db_id} in ' +
-                              f'database {job.database} failed with status ' +
-                              f'{job.status}')
-        return job.status in success + failed
+        return job.status in ['COMPLETED', 'FAILED']
 
     def get_status(self, job=None, **kwargs) -> str:
         """Get status."""
-        return job
+        return job.status
 
     def cancel(self):
         """Cancel job."""
         self.logger.error('Cancel not implemented for local scheduler\n')
 
-    def quick_return(self):
-        """Quick return."""
-        pass
-
     def fetch_results(self, jobs, *args, **kwargs):
         """Fetch results."""
-        if isinstance(jobs, list):
-            return [self.fetch_results(j) for j in jobs]
-        return jobs
+        pass
 
     # def check_finished(self, run_settings) -> bool:
     #     """Check if output file exists and return True if it does."""
