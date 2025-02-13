@@ -18,14 +18,13 @@ ssh_kws = ['host', 'user', 'port', 'config', 'gateway', 'forward_agent',
 class SlurmScheduler(Scheduler):
     """Slurm scheduler."""
 
-    def __init__(self, **kwargs):
+    def __init__(self,  connection=None, **kwargs):
         """Initialize."""
         self.logger = kwargs.get('logger', LoggerDummy())
         self.logger.debug('Slurm scheduler initialized')
         self.name = 'slurm'
         self.default_data_path = 'data_path_remote'
-        self.connection = kwargs.get('connection',
-                                     self.get_connection(**kwargs))
+        self.connection = connection
 
     def teardown(self) -> dict:
         """Teardown."""
@@ -117,9 +116,9 @@ class SlurmScheduler(Scheduler):
 
         return replace(job, status=status, metadata=metadata)
 
-    def get_connection(self, **kwargs):
-        """Get connection."""
-        return {k: v for k, v in kwargs.items() if k in ssh_kws}
+    # def get_connection(self, **kwargs):
+    #     """Get connection."""
+    #     return {k: v for k, v in kwargs.items() if k in ssh_kws}
 
     def check_job_params(self, job):
         """Check job params."""
@@ -138,14 +137,44 @@ class SlurmScheduler(Scheduler):
                 if getattr(t, k) != ref:
                     raise ValueError(f'All slurm tasks must have the same {k}')
         return job
+    
+    def get_status(self, job=None, **kwargs):
+        """Get status."""
+        result = self.connection.execute(f'sacct -j {job.scheduler_id} --json')
+        print(result)
+        try:
+            status_dict = json.loads(result.stdout.strip())
+        except (json.JSONDecodeError) as e:
+            print('error', e)
+            status = 'UNKNOWN'
+        else:
+            print(status_dict)
+            # status = status_dict.get('state', {}).get('current', ['UNKNOWN'])[0]
+            # pfing
+            # return replace(job, status='UNKNOWN')
+        
+        print('kiiik', status)
 
     def submit(self,
-               job=None,
+               job= None,
                **kwargs):
         """Submit job."""
+        submit_dir_remote = job.tasks[0].submit_dir_remote
+        job_script_path_remote = Path(submit_dir_remote) / job.job_script.name
+        result = self.connection.execute(f'sbatch {job_script_path_remote}')
+        job.scheduler_id = int(result.stdout.strip().split()[-1])
+
+
+
+
+
+        print(f'job submitted with id {job.scheduler_id}')
+        print(self.connection.execute('squeue -u tilmann'))
+        self.get_status(job=job)
+        lkmklm
         job_script_name = Path(job.job_script.get('path')).name  # type: ignore
-        self.logger.debug(f'submitting job with job script {job_script_name}')
-        cmd = f'sbatch ./{job_script_name}'
+        self.logger.debug(f'submitting job with job script {job_script.name}')
+        cmd = f'sbatch ./{job_script.name}'
         # if connection is None:
         #     with connect_to_remote(self.connection) as connection:
         # return self._submit_in_ctx(job, connection, remote_folder, cmd)
