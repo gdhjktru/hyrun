@@ -47,13 +47,15 @@ def run(*args, **kwargs):
             if conn.connection_type == 'local':
                 logger.warning('Running jobs *locally*.')
             for i, job in enumerate(job_group):
+                wait = JobPrep().get_attr_from_tasks(job, 'wait', is_bool=True)
                 job.scheduler = JobPrep().get_scheduler(job,
-                                                        logger=logger, 
+                                                        logger=logger,
                                                         connection=conn)
                 logger.info(f'submitting job {i} to {host} using ' +
                             f'{job.scheduler}')
                 job.scheduler.submit(job, **kwargs)
                 print(job.status)
+                logger.debug(f'waiting for job to finish: {wait}')
                 job.scheduler = job.scheduler.teardown()
 
     # print(files_remote)

@@ -14,11 +14,14 @@ from .job_script import gen_job_script as gjs
 ssh_kws = ['host', 'user', 'port', 'config', 'gateway', 'forward_agent',
            'connect_timeout', 'connect_kwargs', 'inline_ssh_env']
 
+cmd_map = {'get_status': 'sacct -j {job_scheduler_id} --json',
+           'submit': 'sbatch {path_to_job_script}', }
+
 
 class SlurmScheduler(Scheduler):
     """Slurm scheduler."""
 
-    def __init__(self,  connection=None, **kwargs):
+    def __init__(self, connection=None, **kwargs):
         """Initialize."""
         self.logger = kwargs.get('logger', LoggerDummy())
         self.logger.debug('Slurm scheduler initialized')
@@ -74,12 +77,12 @@ class SlurmScheduler(Scheduler):
     #     files_to_transfer[remote].append(local)
     #     return files_to_transfer
 
-    def get_status(self, job=None, connection=None, **kwargs):
-        """Get status."""
-        if connection:
-            return self._get_state_in_ctx(job, connection)
-        with connect_to_remote(self.connection) as connection:
-            return self._get_state_in_ctx(job, connection)
+    # def get_status(self, job=None, connection=None, **kwargs):
+    #     """Get status."""
+    #     if connection:
+    #         return self._get_state_in_ctx(job, connection)
+    #     with connect_to_remote(self.connection) as connection:
+    #         return self._get_state_in_ctx(job, connection)
 
     def _get_state_in_ctx(self, job, connection):
         if job.id == -1:
@@ -137,51 +140,46 @@ class SlurmScheduler(Scheduler):
                 if getattr(t, k) != ref:
                     raise ValueError(f'All slurm tasks must have the same {k}')
         return job
-    
+
     def get_status(self, job=None, **kwargs):
         """Get status."""
+        cmd = f'sacct -j {job.scheduler_id} --json'
         result = self.connection.execute(f'sacct -j {job.scheduler_id} --json')
-        print(result)
         try:
             status_dict = json.loads(result.stdout.strip())
-        except (json.JSONDecodeError) as e:
-            print('error', e)
+        except (json.JSONDecodeError, AttributeError) as e:
+            self.logger.error(f'Error {e} getting status for job ' +
+                              f'{job.scheduler_id}')
             status = 'UNKNOWN'
         else:
             print(status_dict)
             # status = status_dict.get('state', {}).get('current', ['UNKNOWN'])[0]
             # pfing
             # return replace(job, status='UNKNOWN')
-        
+
         print('kiiik', status)
 
     def submit(self,
-               job= None,
+               job=None,
                **kwargs):
         """Submit job."""
-        submit_dir_remote = job.tasks[0].submit_dir_remote
-        job_script_path_remote = Path(submit_dir_remote) / job.job_script.name
+
+        cmd = cmd_map['submit'].format(
+            path_to_job_script=Path(job.tasks[0].submit_dir_remote) / job.job_script.name)
+        print(cmd)
+        koko
+        Path(job.tasks[0].submit_dir_remote) / job.job_script.name
+
         result = self.connection.execute(f'sbatch {job_script_path_remote}')
-        job.scheduler_id = int(result.stdout.strip().split()[-1])
-
-
-
-
-
-        print(f'job submitted with id {job.scheduler_id}')
-        print(self.connection.execute('squeue -u tilmann'))
-        self.get_status(job=job)
-        lkmklm
-        job_script_name = Path(job.job_script.get('path')).name  # type: ignore
-        self.logger.debug(f'submitting job with job script {job_script.name}')
-        cmd = f'sbatch ./{job_script.name}'
-        # if connection is None:
-        #     with connect_to_remote(self.connection) as connection:
-        # return self._submit_in_ctx(job, connection, remote_folder, cmd)
-        return self._submit_in_ctx(job=job,
-                                   connection=kwargs.get('connection'),
-                                   remote_folder=kwargs.get('remote_folder'),
-                                   cmd=cmd)
+        try:
+            job.scheduler_id = int(result.stdout.strip().split()[-1])
+        except Exception as e:
+            self.logger.error(f'Error {e} submitting job {job.db_id} to slurm')
+            job.status = 'FAILED'
+        else:
+            job.status = 'SUBMITTED'
+            self.logger.info(f'Job submitted with id {job.scheduler_id}')
+        return job
 
     def _submit_in_ctx(self,
                        job=None,

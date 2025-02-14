@@ -15,17 +15,18 @@ from hyrun.scheduler.abc import Scheduler
 from .output import Output
 
 STATUS_MAP = {'UNKNOWN': 0,
-              'PENDING': 10,
-              'RUNNING': 20,
-              'FAILED': 30,
-              'CANCELLED': 30,
-              'TIMEOUT': 30,
-              'DEADLINE': 30,
-              'PREEMPTED': 30,
-              'NODE_FAIL': 30,
-              'OUT_OF_MEMORY': 30,
-              'BOOT_FAIL': 30,
-              'COMPLETED': 40}
+              'SUBMITTED': 10,
+              'PENDING': 20,
+              'RUNNING': 30,
+              'FAILED': 40,
+              'CANCELLED': 40,
+              'TIMEOUT': 40,
+              'DEADLINE': 40,
+              'PREEMPTED': 40,
+              'NODE_FAIL': 40,
+              'OUT_OF_MEMORY': 40,
+              'BOOT_FAIL': 40,
+              'COMPLETED': 50}
 
 
 @dataclass
