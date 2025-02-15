@@ -3,6 +3,8 @@ from hyrun.job import ArrayJob
 from .prepare_job import (JobPrep, prepare_connection, prepare_jobs,
                           prepare_transfer, send_files)
 
+# from .wait import Wait
+
 
 def scheduler_exec(connection, scheduler_func, *args, **kwargs):
     """Execute scheduler function."""
@@ -22,13 +24,46 @@ def _get_logger(*args, print_level='ERROR', **kwargs):
     if 'logger' in kwargs:
         return kwargs['logger']
 
+def get_status(jobs, connection=None):
+    """Get status."""
+    if not isinstance(jobs, list):
+        jobs = [jobs]
+    schedulers = [job.scheduler for job in jobs]
+    print(schedulers)
+
+
+# def wait(jobs, timeout=None) -> dict:
+#     """Wait for job to finish."""
+#     waiter = Wait()
+#     timeout = (timeout or waiter._get_timeout(jobs))
+#     incrementer = self._increment_and_sleep(1)
+#     self.logger.info(f'Waiting for jobs to finish. Timeout: {timeout} ' +
+#                         'seconds.')
+#     for t in incrementer:
+#         jobs = self.get_status_run(jobs, connection=connection)
+#         if t >= timeout or self.is_finished(jobs):
+#             break
+#     return jobs
+
+
 
 def run(*args, **kwargs):
     """Run hsp job."""
     # # return Runner(*args, **kwargs).run(*args, **kwargs)
     logger = _get_logger(*args, print_level='DEBUG', **kwargs)
+
     aj = ArrayJob(*args, logger=logger, **kwargs)
     aj = prepare_jobs(aj, logger=logger)
+
+    for job in aj.jobs:
+        for task in job.tasks:
+            print(task.wait)
+    okopkpokpok
+    # wait = kwargs.get('wait', all(JobPrep().get_attr_from_tasks(job,
+    #                                                             'wait') is
+    #                                                             for job in aj.jobs))
+
+
     if kwargs.get('dryrun', False):
         logger.info('Dryrun')
         return aj
@@ -47,16 +82,25 @@ def run(*args, **kwargs):
             if conn.connection_type == 'local':
                 logger.warning('Running jobs *locally*.')
             for i, job in enumerate(job_group):
-                wait = JobPrep().get_attr_from_tasks(job, 'wait', is_bool=True)
+
                 job.scheduler = JobPrep().get_scheduler(job,
                                                         logger=logger,
                                                         connection=conn)
                 logger.info(f'submitting job {i} to {host} using ' +
                             f'{job.scheduler}')
                 job.scheduler.submit(job, **kwargs)
-                print(job.status)
-                logger.debug(f'waiting for job to finish: {wait}')
-                job.scheduler = job.scheduler.teardown()
+                print('save to database')
+                if not wait:
+                    logger.debug('not waiting for job to finish')
+                    job.scheduler = job.scheduler.teardown()
+
+    if not wait:
+        return aj
+
+    # for job_group in aj.jobs_grouped:
+    #     timeout =
+
+
 
     # print(files_remote)
 #     for job_group in aj.jobs_grouped:

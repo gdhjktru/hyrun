@@ -60,6 +60,7 @@ async def acompute(method: Callable, obj: Any, *args, **kwargs
     run_settings: RunSettings = method.setup(obj,  # type: ignore
                                              *args, **kwargs)
     output_type = getattr(run_settings, 'output_type', None)
+
     result: ComputeResult
     result = await method.compute_settings.arun(run_settings)  # type: ignore
     try:

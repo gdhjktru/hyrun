@@ -14,7 +14,7 @@ from .job_script import gen_job_script as gjs
 ssh_kws = ['host', 'user', 'port', 'config', 'gateway', 'forward_agent',
            'connect_timeout', 'connect_kwargs', 'inline_ssh_env']
 
-cmd_map = {'get_status': 'sacct -j {job_scheduler_id} --json',
+cmd_map = {'get_status': 'sacct -j {job_scheduler_id} --json=list',
            'submit': 'sbatch {path_to_job_script}', }
 
 
@@ -143,21 +143,25 @@ class SlurmScheduler(Scheduler):
 
     def get_status(self, job=None, **kwargs):
         """Get status."""
-        cmd = f'sacct -j {job.scheduler_id} --json'
-        result = self.connection.execute(f'sacct -j {job.scheduler_id} --json')
+        if not isinstance(job, list):
+            job = [job]
+        job_scheduler_id = ','.join([str(j.scheduler_id) for j in job])
+        cmd = cmd_map['submit'].format(job_scheduler_id=job_scheduler_id)
+        result = self.connection.execute(cmd)
         try:
             status_dict = json.loads(result.stdout.strip())
         except (json.JSONDecodeError, AttributeError) as e:
-            self.logger.error(f'Error {e} getting status for job ' +
-                              f'{job.scheduler_id}')
+            self.logger.error(f'Error {e} getting status for job(s) ' +
+                              f'{job_scheduler_id}')
             status = 'UNKNOWN'
         else:
-            print(status_dict)
+            print('klmmmmkkkkkk', status_dict)
             # status = status_dict.get('state', {}).get('current', ['UNKNOWN'])[0]
             # pfing
             # return replace(job, status='UNKNOWN')
 
         print('kiiik', status)
+        kikikik
 
     def submit(self,
                job=None,
@@ -166,19 +170,18 @@ class SlurmScheduler(Scheduler):
 
         cmd = cmd_map['submit'].format(
             path_to_job_script=Path(job.tasks[0].submit_dir_remote) / job.job_script.name)
-        print(cmd)
-        koko
-        Path(job.tasks[0].submit_dir_remote) / job.job_script.name
 
-        result = self.connection.execute(f'sbatch {job_script_path_remote}')
+        result = self.connection.execute(f'{cmd}')
         try:
             job.scheduler_id = int(result.stdout.strip().split()[-1])
         except Exception as e:
-            self.logger.error(f'Error {e} submitting job {job.db_id} to slurm')
+            self.logger.error(f'Error {e} submitting job {job.job_hash} ' +
+                              'to slurm')
             job.status = 'FAILED'
         else:
             job.status = 'SUBMITTED'
-            self.logger.info(f'Job submitted with id {job.scheduler_id}')
+            self.logger.info(f'Job {job.job_hash} submitted with id ' +
+                             f'{job.scheduler_id}')
         return job
 
     def _submit_in_ctx(self,

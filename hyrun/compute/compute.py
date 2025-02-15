@@ -65,8 +65,16 @@ def compute(method: Callable, obj: Any, *args, **kwargs
     result_kwargs['units_to'] = getattr(method, 'units', None)
     result_kwargs['units_from'] = getattr(method, 'units_default', None)
 
+    # print('WARNING RUNSETTINGS COULD BE A LIST OR LIST OF LISTS')
+    # if getattr(run_settings, 'post_process', False):
+    #     post_process: RunSettings = getattr(method, 'setup_post_process', None)(run_settings)
+    #     run_settings = [run_settings, post_process] # only for 1 calculation, els include in every second element
+    # print('for acompute, run_Settings and post_process cannot run in parallel')
+
     result: ComputeResult
     result = method.compute_settings.run(run_settings)  # type: ignore
+
+
     try:
         yield get_result(method.parse(result),  # type: ignore
                          **result_kwargs)

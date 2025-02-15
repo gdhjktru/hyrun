@@ -142,7 +142,7 @@ class JobPrep:
         if is_bool:
             return any([getattr(job.tasks[i], attr)
                         for i in range(len(job.tasks))])
-        return job.tasks[0].get(attr, None)
+        return getattr(job.tasks[0], attr, None)
 
     def get_files_to_transfer(self, job: Job):
         """Get files to transfer."""
