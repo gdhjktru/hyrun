@@ -3,6 +3,7 @@ import json
 from dataclasses import replace
 from pathlib import Path
 from typing import Optional, Union
+from time import sleep
 
 from hytools.logger import LoggerDummy
 
@@ -14,8 +15,8 @@ from .job_script import gen_job_script as gjs
 ssh_kws = ['host', 'user', 'port', 'config', 'gateway', 'forward_agent',
            'connect_timeout', 'connect_kwargs', 'inline_ssh_env']
 
-cmd_map = {'get_status': 'sacct -j {job_scheduler_id} --json=list',
-           'submit': 'sbatch {path_to_job_script}', }
+cmd_map = {'get_status': 'sacct -j {job_scheduler_id} --json',
+           'submit': 'sbatch --acctg-freq=task=1 {path_to_job_script}', }
 
 
 class SlurmScheduler(Scheduler):
@@ -55,6 +56,83 @@ class SlurmScheduler(Scheduler):
         p = (Path(file.folder) / file.name if file.folder is not None
              else getattr(file, parent, None))
         return str(p)
+    
+
+
+
+    def get_status(self, job, connection=None):
+        # if job.scheduler_id == -1:
+        #     return replace(job, status='UNKNOWN')
+        # cmd = f'squeue -j {job.job_id}'
+        # c = connection.run(cmd, warn=True)
+        # if c.ok:
+        # sacct -j 11758903 --format Timelimit,NCPUS,WorkDir,JobID,Start,
+        # State,Submit,End
+        #     return 'running'
+        # cmd = f'sacct -j {job.job_id}.0 --format=state --noheader'
+        # cmd = f'sacct -j {job.id} --json'
+        cmd  = cmd_map['get_status'].format(job_scheduler_id=job.scheduler_id)
+
+        status = {}
+        for i in range(5):
+            result = self.connection.execute(cmd)
+            try:
+                status = json.loads(result.stdout)
+            except (json.JSONDecodeError) as e:
+                self.logger.debug(f'Error {e} getting status for job ' +
+                                f'{job.scheduler_id}')
+                return replace(job, status='UNKNOWN')
+            if status.get('jobs'):
+                break
+            self.logger.debug(f'Job {job.scheduler_id} not found, retrying...')
+            sleep(3)
+        if not status.get('jobs'):
+            self.logger.error(f'Job {job.scheduler_id} not found')
+            return replace(job, status='UNKNOWN')
+
+            
+        print('ijijij', status)
+        øokokokko
+            
+            
+        
+
+        print('ijijiij', status.get('time'))
+        for k,v in status.items():
+            print('k', k, ':', v)
+        print(status.keys())
+        popokokoko
+        metadata = job.metadata or {}
+        for key in ['start', 'end', 'submission']:
+            val = status.get('time', {}).get(key, None)
+            if val is not None:
+                if int(val) > 1735689600:
+                    time = datetime.datetime.fromtimestamp(int(val))
+                    metadata[f'time_{key}'] = time.isoformat()
+        metadata['time_elapsed'] = datetime.timedelta(**(status.get('time', {}).get('total', {})))
+        
+        print('piojioj', metadata)
+
+        # metadata_keys = ['account', 'cluster', 'job_id', 'name', 'user',
+        #                  'working_directory', 'time']
+        # metadata = {k: status.get(k, None) for k in metadata_keys}
+        # metadata['time'] = {k: v for k, v in metadata['time'].items()
+        #                     if isinstance(v, int)}
+
+        # time = 
+
+        # for k, v in metadata['time'].items():
+        #     if v == 0:
+        #         continue
+        #     metadata['time'][k] = (datetime.datetime.fromtimestamp(v)
+        #                            .isoformat())
+
+        
+            
+
+        status = status.get('state', {}).get('current', ['UNKNOWN'])[0]
+
+        return replace(job, status=status, metadata=metadata)
 
     # def resolve_files(self, job):
     #     """Resolve files."""
@@ -141,27 +219,27 @@ class SlurmScheduler(Scheduler):
                     raise ValueError(f'All slurm tasks must have the same {k}')
         return job
 
-    def get_status(self, job=None, **kwargs):
-        """Get status."""
-        if not isinstance(job, list):
-            job = [job]
-        job_scheduler_id = ','.join([str(j.scheduler_id) for j in job])
-        cmd = cmd_map['submit'].format(job_scheduler_id=job_scheduler_id)
-        result = self.connection.execute(cmd)
-        try:
-            status_dict = json.loads(result.stdout.strip())
-        except (json.JSONDecodeError, AttributeError) as e:
-            self.logger.error(f'Error {e} getting status for job(s) ' +
-                              f'{job_scheduler_id}')
-            status = 'UNKNOWN'
-        else:
-            print('klmmmmkkkkkk', status_dict)
-            # status = status_dict.get('state', {}).get('current', ['UNKNOWN'])[0]
-            # pfing
-            # return replace(job, status='UNKNOWN')
+    # def get_status(self, job=None, **kwargs):
+    #     """Get status."""
+    #     if not isinstance(job, list):
+    #         job = [job]
+    #     job_scheduler_id = ','.join([str(j.scheduler_id) for j in job])
+    #     cmd = cmd_map['submit'].format(job_scheduler_id=job_scheduler_id)
+    #     result = self.connection.execute(cmd)
+    #     try:
+    #         status_dict = json.loads(result.stdout.strip())
+    #     except (json.JSONDecodeError, AttributeError) as e:
+    #         self.logger.error(f'Error {e} getting status for job(s) ' +
+    #                           f'{job_scheduler_id}')
+    #         status = 'UNKNOWN'
+    #     else:
+    #         print('klmmmmkkkkkk', status_dict)
+    #         # status = status_dict.get('state', {}).get('current', ['UNKNOWN'])[0]
+    #         # pfing
+    #         # return replace(job, status='UNKNOWN')
 
-        print('kiiik', status)
-        kikikik
+    #     print('kiiik', status)
+    #     kikikik
 
     def submit(self,
                job=None,

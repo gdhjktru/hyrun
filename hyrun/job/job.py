@@ -52,7 +52,7 @@ class Job:
     def __post_init__(self):
         """Post init."""
         self.metadata = self.metadata or {}
-        self.metadata.setdefault('time', datetime.now().isoformat())
+        self.metadata.setdefault('time_init', datetime.now().isoformat())
 
     def teardown(self):
         """Teardown."""

@@ -4,6 +4,7 @@ from contextlib import nullcontext
 from pathlib import Path
 from shlex import join, split
 from typing import Any, List, Optional, Union
+from datetime import datetime, timedelta
 
 from hyset import RunSettings
 from hytools.file import File, FileManager
@@ -140,10 +141,19 @@ class LocalScheduler(Scheduler):
         if len(cmds) != len(job.tasks):
             raise ValueError('Number of commands must match number of tasks')
         outputs = []
+        start_time = datetime.now()
         for i, (t, cmd) in enumerate(zip(job.tasks, cmds)):
             self.logger.debug(f'RUNNING CMD #{i}: {cmd}\n')
             result = self.run_cmd(task=t, cmd=cmd, **kwargs)
             outputs.append(self.gen_output(result, t))
+        end_time = datetime.now()
+        job.metadata.update({'start_time': start_time.isoformat(),
+                    'end_time': end_time.isoformat(),
+                    'elapsed_time': timedelta(seconds=(end_time - start_time).total_seconds())})
+        print('METADATDA', job.metadata)
+        
+
+
         job.outputs = outputs
 
         if sum(r.get('returncode', 0) for r in job.outputs) == 0:

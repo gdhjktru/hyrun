@@ -68,6 +68,8 @@ class SlurmJobScript:
         job_script += f'#SBATCH --account={rs.slurm_account}\n'
         job_script += f'#SBATCH --output={s}/{job_name}.out\n'
         job_script += f'#SBATCH --error={s}/{job_name}.err\n'
+        print('CHANGEME')
+        job_script += f'#SBATCH --acctg-freq=1\n'
 
         if rs.qos_devel:
             job_script += '#SBATCH --qos=devel\n'

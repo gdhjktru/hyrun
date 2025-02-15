@@ -24,12 +24,12 @@ def _get_logger(*args, print_level='ERROR', **kwargs):
     if 'logger' in kwargs:
         return kwargs['logger']
 
-def get_status(jobs, connection=None):
-    """Get status."""
-    if not isinstance(jobs, list):
-        jobs = [jobs]
-    schedulers = [job.scheduler for job in jobs]
-    print(schedulers)
+# def get_status(jobs, connection=None):
+#     """Get status."""
+#     if not isinstance(jobs, list):
+#         jobs = [jobs]
+#     schedulers = [job.scheduler for job in jobs]
+#     print(schedulers)
 
 
 # def wait(jobs, timeout=None) -> dict:
@@ -54,11 +54,15 @@ def run(*args, **kwargs):
 
     aj = ArrayJob(*args, logger=logger, **kwargs)
     aj = prepare_jobs(aj, logger=logger)
-
+ 
+    timeout = 0
     for job in aj.jobs:
         for task in job.tasks:
-            print(task.wait)
-    okopkpokpok
+            max(timeout, task.wait.total_seconds())
+            # print(task.wait)
+    print('TIMPOUT', timeout)
+
+    # okopkpokpok
     # wait = kwargs.get('wait', all(JobPrep().get_attr_from_tasks(job,
     #                                                             'wait') is
     #                                                             for job in aj.jobs))
@@ -90,11 +94,15 @@ def run(*args, **kwargs):
                             f'{job.scheduler}')
                 job.scheduler.submit(job, **kwargs)
                 print('save to database')
-                if not wait:
+
+                status = job.scheduler.get_status(job)
+                print('STATUTSS§,', status)
+
+                if timeout <= 0:
                     logger.debug('not waiting for job to finish')
                     job.scheduler = job.scheduler.teardown()
 
-    if not wait:
+    if timeout <= 0:
         return aj
 
     # for job_group in aj.jobs_grouped:
