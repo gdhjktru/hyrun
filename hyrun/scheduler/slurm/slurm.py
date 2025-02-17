@@ -2,9 +2,8 @@ import datetime
 import json
 from dataclasses import replace
 from pathlib import Path
-from typing import Optional, Union
 from time import sleep
-from .status import get_status as gs
+from typing import Optional, Union
 
 from hytools.logger import LoggerDummy
 
@@ -12,6 +11,7 @@ from hyrun.remote import connect_to_remote, rsync
 
 from ..abc import Scheduler
 from .job_script import gen_job_script as gjs
+from .status import get_status as gs
 
 ssh_kws = ['host', 'user', 'port', 'config', 'gateway', 'forward_agent',
            'connect_timeout', 'connect_kwargs', 'inline_ssh_env']
@@ -57,12 +57,12 @@ class SlurmScheduler(Scheduler):
         p = (Path(file.folder) / file.name if file.folder is not None
              else getattr(file, parent, None))
         return str(p)
-    
+
 
 
     def get_status(self,
                    job,
-                   **kwargs):   
+                   **kwargs):
         """Get status."""
         return gs(job,
                   connection=self.connection,
@@ -70,7 +70,7 @@ class SlurmScheduler(Scheduler):
                   **kwargs)
         # max_attempts = kwargs.get('max_attempts', 5)
         # sleep_seconds = kwargs.get('sleep_seconds', 3)
-        
+
         # # cmd = cmd_map['get_status'].format(job_scheduler_id=job.scheduler_id)
         # cmd = cmd_map['get_status'].format(job_scheduler_id=14001263)
         # attempts = 0
@@ -113,7 +113,7 @@ class SlurmScheduler(Scheduler):
             #     status = output.stdout
             #     break
 
-        
+
 
 
 
@@ -132,34 +132,34 @@ class SlurmScheduler(Scheduler):
         #     except json.JSONDecodeError:
         #         self.logger.error(f'Error {result.stderr} getting status for' +
         #                           f' job {job.scheduler_id}')
-        #         return replace(job, status='UNKNOWN')   
-            
+        #         return replace(job, status='UNKNOWN')
+
         #     self.logger.debug(f'Job {job.scheduler_id} not found, retrying' +
         #                       f'... {attempts + 1}/{max_attempts}')
         #     sleep(sleep_seconds)
         #     attempts += 1
-        
+
         # if not status.get('jobs'):
         #     self.logger.error(f'Job {job.scheduler_id} not found')
         #     return replace(job, status='UNKNOWN')
-        
+
         # print(status.keys())
         # for i, job in enumerate(status['jobs']):
         #     for k, v in job.items():
         #         print(f'job {i}', k, ':', v)
         # pkokkokokoko
-        
+
         # status = status['jobs'][0]
         # metadata = self.get_job_metadata(status)
 
-            
+
         # print('ijijij', status)
 
 
         # øokokokko
-            
-            
-        
+
+
+
 
         # print('ijijiij', status.get('time'))
         # for k,v in status.items():
@@ -174,7 +174,7 @@ class SlurmScheduler(Scheduler):
         #             time = datetime.datetime.fromtimestamp(int(val))
         #             metadata[f'time_{key}'] = time.isoformat()
         # metadata['time_elapsed'] = datetime.timedelta(**(status.get('time', {}).get('total', {})))
-        
+
         # print('piojioj', metadata)
 
         # metadata_keys = ['account', 'cluster', 'job_id', 'name', 'user',
@@ -183,7 +183,7 @@ class SlurmScheduler(Scheduler):
         # metadata['time'] = {k: v for k, v in metadata['time'].items()
         #                     if isinstance(v, int)}
 
-        # time = 
+        # time =
 
         # for k, v in metadata['time'].items():
         #     if v == 0:
@@ -191,8 +191,8 @@ class SlurmScheduler(Scheduler):
         #     metadata['time'][k] = (datetime.datetime.fromtimestamp(v)
         #                            .isoformat())
 
-        
-            
+
+
 
         # status = status.get('state', {}).get('current', ['UNKNOWN'])[0]
 

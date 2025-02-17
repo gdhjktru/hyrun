@@ -1,16 +1,17 @@
 import os
 import subprocess
 from contextlib import nullcontext
+from datetime import datetime, timedelta
 from pathlib import Path
 from shlex import join, split
 from typing import Any, List, Optional, Union
-from datetime import datetime, timedelta
 
 from hyset import RunSettings
 from hytools.file import File, FileManager
 from hytools.logger import LoggerDummy
 
-from hyrun.job import JobMetadata
+from hyrun.job import Job, JobMetaData
+
 from ..abc import Scheduler
 from .job_script import JobScript
 
@@ -152,17 +153,17 @@ class LocalScheduler(Scheduler):
                              'end': end_time.isoformat(),
                              'submit': start_time.isoformat(),
                              'elapsed': timedelta(seconds=(end_time - start_time).total_seconds())}
-            step_data.append(JobMetadata(**step_metadata))
+            step_data.append(JobMetaData(**step_metadata))
             outputs.append(self.gen_output(result, t))
         job.metadata = step_data
-        
 
-       
+
+
         # job.metadata.update({'start_time': start_time.isoformat(),
         #             'end_time': end_time.isoformat(),
         #             'elapsed_time': timedelta(seconds=(end_time - start_time).total_seconds())})
         print('METADATDA', job.metadata)
-        
+
 
 
         job.outputs = outputs
@@ -234,9 +235,10 @@ class LocalScheduler(Scheduler):
         """Check if job is finished."""
         return job.status in ['COMPLETED', 'FAILED']
 
-    def get_status(self, job=None, **kwargs) -> str:
+    def get_status(self, job=None, **kwargs) -> Job:
         """Get status."""
-        return job.status
+        self.logger.debug(f'JOB STATUS: {job.status}\n')
+        return job
 
     def cancel(self):
         """Cancel job."""

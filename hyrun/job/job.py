@@ -9,10 +9,10 @@ from hydb import Database
 from hyset import RunSettings
 from hytools.connection import Connection
 from hytools.file import File
-from .metadata import JobMetadata
 
 from hyrun.scheduler.abc import Scheduler
 
+from .metadata import JobMetaData
 from .output import Output
 
 STATUS_MAP = {'UNKNOWN': 0,
@@ -37,12 +37,12 @@ class Job:
     # general information
     scheduler_id: Optional[int] = None
     database_id: Optional[int] = None
-    name : Optional[str] = None 
+    name : Optional[str] = None
     # not part of hash
     status: Optional[str] = None
     job_hash: Optional[str] = None
-    metadata: Optional[List[JobMetadata]] = None
     # actual job stuff
+    metadata: Optional[List[JobMetaData]] = None
     tasks: Optional[List[RunSettings]] = None
     outputs: Optional[List[Output]] = None
     job_script: Optional[Union[str, Path, File]] = None

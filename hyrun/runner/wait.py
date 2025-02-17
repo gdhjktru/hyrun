@@ -44,6 +44,3 @@ class Wait:
                         if isinstance(t.job_time, timedelta)
                         else t.job_time for t in j['job'].tasks])
                    for j in jobs.values())
-
-
-

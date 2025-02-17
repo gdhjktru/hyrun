@@ -1,13 +1,13 @@
 from dataclasses import dataclass
-from typing import List, Optional, Union
 from datetime import timedelta
-from hytools.time import get_time, get_timedelta
-from hytools.memory import get_memory
+from typing import List, Optional, Union
 
+from hytools.memory import get_memory
+from hytools.time import get_time, get_timedelta
 
 
 @dataclass
-class JobMetadata:
+class JobMetaData:
     """Dataclass containing meta information about a job see https://slurm.schedmd.com/sacct.html."""
 
     submit: Optional[str] = None

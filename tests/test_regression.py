@@ -37,7 +37,7 @@ compute_settings = {
     # 'conda': ccs('conda', conda_env='base', **default_cs),
     'saga': ccs('saga', modules=['xtb/6.4.1-intel-2021a'],
                 user=os.getlogin(),
-                memory_per_cpu=2000, progress_bar=False, **default_cs)
+                memory_per_cpu=2000, progress_bar=True, **default_cs)
     }
 molecules = {'water': Molecule('O')}
 
@@ -73,7 +73,7 @@ def test():
         for mol in mols:
             setup = x.setup(mol)
             setup_list.append(setup)
-    output = run(setup_list)
+    output = run(setup_list, wait=300)
     print(output)
 
 # @pytest.mark.parametrize('mol',

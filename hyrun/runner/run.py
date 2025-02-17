@@ -1,7 +1,10 @@
+from hytools.time import get_timedelta
+
 from hyrun.job import ArrayJob
 
 from .prepare_job import (JobPrep, prepare_connection, prepare_jobs,
                           prepare_transfer, send_files)
+from .progress_bar import ProgressBar
 
 # from .wait import Wait
 
@@ -51,16 +54,29 @@ def run(*args, **kwargs):
     """Run hsp job."""
     # # return Runner(*args, **kwargs).run(*args, **kwargs)
     logger = _get_logger(*args, print_level='DEBUG', **kwargs)
+    wait = kwargs.pop('wait', None)
+
 
     aj = ArrayJob(*args, logger=logger, **kwargs)
     aj = prepare_jobs(aj, logger=logger)
- 
-    timeout = 0
+
+    if not wait:
+        timeout = 0
+        for job in aj.jobs:
+            for task in job.tasks:
+                max(timeout, task.wait.total_seconds())
+                # print(task.wait)
+    else:
+        timeout = get_timedelta(wait).total_seconds()
+
+    progress_bars = []
     for job in aj.jobs:
-        for task in job.tasks:
-            max(timeout, task.wait.total_seconds())
-            # print(task.wait)
-    print('TIMPOUT', timeout)
+        show_progress = any(task.progress_bar for task in job.tasks)
+        if not show_progress:
+            continue
+        progress_bar = ProgressBar(msg=f'Job {job.job_hash}',
+                                   job_time=timeout)
+        progress_bars.append(progress_bar)
 
     # okopkpokpok
     # wait = kwargs.get('wait', all(JobPrep().get_attr_from_tasks(job,
@@ -77,6 +93,7 @@ def run(*args, **kwargs):
                                                         logger=logger)
         with prepare_connection(job_group) as conn:
             logger.debug(f'Connection established: {conn}')
+            for p in progress_bars: p.update(msg='Transfer', percentage=0)
             send_files(files_remote=files_remote,
                        folders_remote=folders_remote,
                        **{**conn.__dict__,
@@ -86,7 +103,7 @@ def run(*args, **kwargs):
             if conn.connection_type == 'local':
                 logger.warning('Running jobs *locally*.')
             for i, job in enumerate(job_group):
-
+                for p in progress_bars: p.update(msg='Submission', percentage=0)
                 job.scheduler = JobPrep().get_scheduler(job,
                                                         logger=logger,
                                                         connection=conn)
@@ -97,6 +114,8 @@ def run(*args, **kwargs):
 
                 status = job.scheduler.get_status(job)
                 print('STATUTSS§,', status)
+                for p in progress_bars: p.update(msg='Running', percentage=0)
+
 
                 if timeout <= 0:
                     logger.debug('not waiting for job to finish')
