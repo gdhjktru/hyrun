@@ -4,6 +4,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Optional, Union
 from time import sleep
+from .status import get_status as gs
 
 from hytools.logger import LoggerDummy
 
@@ -15,8 +16,8 @@ from .job_script import gen_job_script as gjs
 ssh_kws = ['host', 'user', 'port', 'config', 'gateway', 'forward_agent',
            'connect_timeout', 'connect_kwargs', 'inline_ssh_env']
 
-cmd_map = {'get_status': 'sacct -j {job_scheduler_id} --json',
-           'submit': 'sbatch --acctg-freq=task=1 {path_to_job_script}', }
+cmd_map = {'get_status': 'sacct -n -j {job_scheduler_id} --units=M -p -o JobId,State%20,Submit,Start,End,Elapsed,MaxRSS,TotalCPU,Timelimit,AveCPU,AllocCPUS,ReqMem,MaxVMSize,MaxDiskRead,MaxDiskWrite,ExitCode,ReqCPUS,ReqNodes,ReqTRES,AllocTRES',
+           'submit': 'sbatch {path_to_job_script}', }
 
 
 class SlurmScheduler(Scheduler):
@@ -59,59 +60,122 @@ class SlurmScheduler(Scheduler):
     
 
 
+    def get_status(self,
+                   job,
+                   **kwargs):   
+        """Get status."""
+        return gs(job,
+                  connection=self.connection,
+                  logger=self.logger,
+                  **kwargs)
+        # max_attempts = kwargs.get('max_attempts', 5)
+        # sleep_seconds = kwargs.get('sleep_seconds', 3)
+        
+        # # cmd = cmd_map['get_status'].format(job_scheduler_id=job.scheduler_id)
+        # cmd = cmd_map['get_status'].format(job_scheduler_id=14001263)
+        # attempts = 0
+        # while attempts < max_attempts:
+        #     output = self.connection.execute(cmd)
+        #     if f'{job.scheduler_id}.ba' in output.stdout:
+        #         break
+        #     self.logger.debug(f'Job {job.scheduler_id} not found, retrying' +
+        #                       f'... {attempts + 1}/{max_attempts}')
+        #     sleep(sleep_seconds)
+        #     attempts += 1
+        # output = output.stdout.split('\n')
+        # task_data = {}
+        # for i in range(len(job.tasks)):
+        #     for line in output:
+        #         if f'{job.scheduler_id}.{i}' in line:
+        #             data = line.split('|')
+        #             task_data[i] = {'job_id': data[0],
+        #                             'state': data[1],
+        #                             'submit': data[2],
+        #                             'start': data[3],
+        #                             'end': data[4],
+        #                             'elapsed': data[5],
+        #                             'max_rss': data[6],
+        #                             'total_cpu': data[7]}
+        #             break
 
-    def get_status(self, job, connection=None):
-        # if job.scheduler_id == -1:
+
+
+            # parse cmd_map = {'get_status': 'sacct -l -j {job_scheduler_id} --format JobId,State,Submit,Start,End,Elapsed,MaxRSS,TotalCPU',
+            # fOUTPUT:
+
+# 14001263      COMPLETED 2025-02-17T00:25:05 2025-02-17T00:25:34 2025-02-17T00:25:39   00:00:05             00:02.704
+# 14001263.ba+  COMPLETED 2025-02-17T00:25:34 2025-02-17T00:25:34 2025-02-17T00:25:39   00:00:05       480K  00:02.487
+# 14001263.ex+  COMPLETED 2025-02-17T00:25:34 2025-02-17T00:25:34 2025-02-17T00:25:39   00:00:05          0  00:00.001
+# 14001263.0    COMPLETED 2025-02-17T00:25:37 2025-02-17T00:25:37 2025-02-17T00:25:38   00:00:01     44576K  00:00.108
+# 14001263.1    COMPLETED 2025-02-17T00:25:38 2025-02-17T00:25:38 2025-02-17T00:25:39   00:00:01     44568K  00:00.106
+# get columns with job.scheduler_id.<int>
+            # try:
+            #     status = output.stdout
+            #     break
+
+        
+
+
+
+
+
+
+
+
+        # attempts = 0
+        # while attempts < max_attempts:
+        #     result = self.connection.execute(cmd)
+        #     try:
+        #         status = json.loads(result.stdout)
+        #         if status.get('jobs'):
+        #             break
+        #     except json.JSONDecodeError:
+        #         self.logger.error(f'Error {result.stderr} getting status for' +
+        #                           f' job {job.scheduler_id}')
+        #         return replace(job, status='UNKNOWN')   
+            
+        #     self.logger.debug(f'Job {job.scheduler_id} not found, retrying' +
+        #                       f'... {attempts + 1}/{max_attempts}')
+        #     sleep(sleep_seconds)
+        #     attempts += 1
+        
+        # if not status.get('jobs'):
+        #     self.logger.error(f'Job {job.scheduler_id} not found')
         #     return replace(job, status='UNKNOWN')
-        # cmd = f'squeue -j {job.job_id}'
-        # c = connection.run(cmd, warn=True)
-        # if c.ok:
-        # sacct -j 11758903 --format Timelimit,NCPUS,WorkDir,JobID,Start,
-        # State,Submit,End
-        #     return 'running'
-        # cmd = f'sacct -j {job.job_id}.0 --format=state --noheader'
-        # cmd = f'sacct -j {job.id} --json'
-        cmd  = cmd_map['get_status'].format(job_scheduler_id=job.scheduler_id)
-
-        status = {}
-        for i in range(5):
-            result = self.connection.execute(cmd)
-            try:
-                status = json.loads(result.stdout)
-            except (json.JSONDecodeError) as e:
-                self.logger.debug(f'Error {e} getting status for job ' +
-                                f'{job.scheduler_id}')
-                return replace(job, status='UNKNOWN')
-            if status.get('jobs'):
-                break
-            self.logger.debug(f'Job {job.scheduler_id} not found, retrying...')
-            sleep(3)
-        if not status.get('jobs'):
-            self.logger.error(f'Job {job.scheduler_id} not found')
-            return replace(job, status='UNKNOWN')
+        
+        # print(status.keys())
+        # for i, job in enumerate(status['jobs']):
+        #     for k, v in job.items():
+        #         print(f'job {i}', k, ':', v)
+        # pkokkokokoko
+        
+        # status = status['jobs'][0]
+        # metadata = self.get_job_metadata(status)
 
             
-        print('ijijij', status)
-        øokokokko
+        # print('ijijij', status)
+
+
+        # øokokokko
             
             
         
 
-        print('ijijiij', status.get('time'))
-        for k,v in status.items():
-            print('k', k, ':', v)
-        print(status.keys())
-        popokokoko
-        metadata = job.metadata or {}
-        for key in ['start', 'end', 'submission']:
-            val = status.get('time', {}).get(key, None)
-            if val is not None:
-                if int(val) > 1735689600:
-                    time = datetime.datetime.fromtimestamp(int(val))
-                    metadata[f'time_{key}'] = time.isoformat()
-        metadata['time_elapsed'] = datetime.timedelta(**(status.get('time', {}).get('total', {})))
+        # print('ijijiij', status.get('time'))
+        # for k,v in status.items():
+        #     print('k', k, ':', v)
+        # print(status.keys())
+        # popokokoko
+        # metadata = job.metadata or {}
+        # for key in ['start', 'end', 'submission']:
+        #     val = status.get('time', {}).get(key, None)
+        #     if val is not None:
+        #         if int(val) > 1735689600:
+        #             time = datetime.datetime.fromtimestamp(int(val))
+        #             metadata[f'time_{key}'] = time.isoformat()
+        # metadata['time_elapsed'] = datetime.timedelta(**(status.get('time', {}).get('total', {})))
         
-        print('piojioj', metadata)
+        # print('piojioj', metadata)
 
         # metadata_keys = ['account', 'cluster', 'job_id', 'name', 'user',
         #                  'working_directory', 'time']
@@ -130,9 +194,9 @@ class SlurmScheduler(Scheduler):
         
             
 
-        status = status.get('state', {}).get('current', ['UNKNOWN'])[0]
+        # status = status.get('state', {}).get('current', ['UNKNOWN'])[0]
 
-        return replace(job, status=status, metadata=metadata)
+        # return replace(job, status=status, metadata=metadata)
 
     # def resolve_files(self, job):
     #     """Resolve files."""

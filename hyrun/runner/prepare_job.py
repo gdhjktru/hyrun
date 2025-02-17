@@ -97,7 +97,7 @@ def prepare_jobs(aj: ArrayJob,
     logger.debug(f'Opened databases: {list(databases.values())}\n')
     # init jobs
     for i, job in enumerate(aj.jobs):
-        job_name = job.metadata.get('name', '')
+        job_name = job.name or ''
         logger.debug(f'-- Preparing job #{i} {job_name} --')
         # generating job_script and hash
         init_job_script = prepper.get_scheduler(job).gen_job_script(job_name,

@@ -9,6 +9,7 @@ from hydb import Database
 from hyset import RunSettings
 from hytools.connection import Connection
 from hytools.file import File
+from .metadata import JobMetadata
 
 from hyrun.scheduler.abc import Scheduler
 
@@ -36,10 +37,11 @@ class Job:
     # general information
     scheduler_id: Optional[int] = None
     database_id: Optional[int] = None
+    name : Optional[str] = None 
     # not part of hash
     status: Optional[str] = None
     job_hash: Optional[str] = None
-    metadata: Optional[dict] = None
+    metadata: Optional[List[JobMetadata]] = None
     # actual job stuff
     tasks: Optional[List[RunSettings]] = None
     outputs: Optional[List[Output]] = None
@@ -48,11 +50,6 @@ class Job:
     database: Optional[Union[str, Path, dict, Database]] = 'dummy'
     scheduler: Optional[Union[str, dict, Scheduler]] = None
     connection: Optional[Union[str, dict, Connection]] = ''
-
-    def __post_init__(self):
-        """Post init."""
-        self.metadata = self.metadata or {}
-        self.metadata.setdefault('time_init', datetime.now().isoformat())
 
     def teardown(self):
         """Teardown."""

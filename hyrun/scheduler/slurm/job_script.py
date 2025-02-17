@@ -2,7 +2,7 @@
 from datetime import timedelta
 from pathlib import Path
 
-from .timedelta import timedelta_to_slurmtime
+from hytools.time import timedelta_to_slurmtime
 
 
 def gen_job_script(*args, **kwargs):
@@ -68,8 +68,6 @@ class SlurmJobScript:
         job_script += f'#SBATCH --account={rs.slurm_account}\n'
         job_script += f'#SBATCH --output={s}/{job_name}.out\n'
         job_script += f'#SBATCH --error={s}/{job_name}.err\n'
-        print('CHANGEME')
-        job_script += f'#SBATCH --acctg-freq=1\n'
 
         if rs.qos_devel:
             job_script += '#SBATCH --qos=devel\n'
@@ -152,9 +150,9 @@ class SlurmJobScript:
             job_script += f'{run_settings.launcher} {run_settings.program} '
             job_script += f'{" ".join(run_settings.args)} '
             if run_settings.stdin_file:
-                job_script += f'< {run_settings.stdin_file.path} '
-            job_script += f'>> {run_settings.stdout_file.path} '
-            job_script += f'2>> {run_settings.stderr_file.path}\n'
+                job_script += f'< {run_settings.stdin_file.name} '
+            job_script += f'>> {run_settings.stdout_file.name} '
+            job_script += f'2>> {run_settings.stderr_file.name}\n'
 
             for symlink in symlinks_created:
                 job_script += (f'rm {symlink}\n')

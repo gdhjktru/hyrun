@@ -10,6 +10,7 @@ from hyset import RunSettings
 from hytools.file import File, FileManager
 from hytools.logger import LoggerDummy
 
+from hyrun.job import JobMetadata
 from ..abc import Scheduler
 from .job_script import JobScript
 
@@ -141,15 +142,25 @@ class LocalScheduler(Scheduler):
         if len(cmds) != len(job.tasks):
             raise ValueError('Number of commands must match number of tasks')
         outputs = []
-        start_time = datetime.now()
+        step_data = []
         for i, (t, cmd) in enumerate(zip(job.tasks, cmds)):
             self.logger.debug(f'RUNNING CMD #{i}: {cmd}\n')
+            start_time = datetime.now()
             result = self.run_cmd(task=t, cmd=cmd, **kwargs)
+            end_time = datetime.now()
+            step_metadata = {'start': start_time.isoformat(),
+                             'end': end_time.isoformat(),
+                             'submit': start_time.isoformat(),
+                             'elapsed': timedelta(seconds=(end_time - start_time).total_seconds())}
+            step_data.append(JobMetadata(**step_metadata))
             outputs.append(self.gen_output(result, t))
-        end_time = datetime.now()
-        job.metadata.update({'start_time': start_time.isoformat(),
-                    'end_time': end_time.isoformat(),
-                    'elapsed_time': timedelta(seconds=(end_time - start_time).total_seconds())})
+        job.metadata = step_data
+        
+
+       
+        # job.metadata.update({'start_time': start_time.isoformat(),
+        #             'end_time': end_time.isoformat(),
+        #             'elapsed_time': timedelta(seconds=(end_time - start_time).total_seconds())})
         print('METADATDA', job.metadata)
         
 
