@@ -62,10 +62,11 @@ class SlurmScheduler(Scheduler):
 
     def get_status(self,
                    job,
+                   connection=None,
                    **kwargs):
         """Get status."""
         return gs(job,
-                  connection=self.connection,
+                  connection=connection or self.connection,
                   logger=self.logger,
                   **kwargs)
         # max_attempts = kwargs.get('max_attempts', 5)

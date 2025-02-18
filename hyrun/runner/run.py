@@ -5,6 +5,7 @@ from hyrun.job import ArrayJob
 from .prepare_job import (JobPrep, prepare_connection, prepare_jobs,
                           prepare_transfer, send_files)
 from .progress_bar import ProgressBar
+from .wait import get_progress_bars, get_timeout, wait_for_jobs
 
 # from .wait import Wait
 
@@ -60,33 +61,17 @@ def run(*args, **kwargs):
     aj = ArrayJob(*args, logger=logger, **kwargs)
     aj = prepare_jobs(aj, logger=logger)
 
-    if not wait:
-        timeout = 0
-        for job in aj.jobs:
-            for task in job.tasks:
-                max(timeout, task.wait.total_seconds())
-                # print(task.wait)
-    else:
-        timeout = get_timedelta(wait).total_seconds()
 
-    progress_bars = []
-    for job in aj.jobs:
-        show_progress = any(task.progress_bar for task in job.tasks)
-        if not show_progress:
-            continue
-        progress_bar = ProgressBar(msg=f'Job {job.job_hash}',
-                                   job_time=timeout)
-        progress_bars.append(progress_bar)
-
-    # okopkpokpok
-    # wait = kwargs.get('wait', all(JobPrep().get_attr_from_tasks(job,
-    #                                                             'wait') is
-    #                                                             for job in aj.jobs))
-
+    # get timeout -> move to wait.py
+    timeout = get_timeout(aj.jobs, wait=wait)
+    progress_bars = get_progress_bars(aj.jobs, timeout)
 
     if kwargs.get('dryrun', False):
         logger.info('Dryrun')
+        for p in progress_bars:
+            p.close()
         return aj
+
     for job_group, host in zip(aj.jobs_grouped, aj.job_group_keys):
         files_remote, folders_remote = prepare_transfer(job_group,
                                                         host=host,
@@ -123,6 +108,17 @@ def run(*args, **kwargs):
 
     if timeout <= 0:
         return aj
+    
+    for job_group, host in zip(aj.jobs_grouped, aj.job_group_keys):
+        with prepare_connection(job_group) as conn:
+            logger.debug(f'Connection established: {conn}')
+            wait_for_jobs(job_group,
+                          connection=conn,
+                          timeout=timeout,
+                          progress_bars=progress_bars)
+            
+            
+    for p in progress_bars: p.close()
 
     # for job_group in aj.jobs_grouped:
     #     timeout =

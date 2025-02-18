@@ -20,13 +20,13 @@ class ProgressBar:
     """
 
     def __init__(self,
-                 job_time: Union[str, int, float, timedelta],
-                 msg: Optional[str] = 'Job') -> None:
+                 length: Optional[int] = 20,
+                 msg: Optional[str] = '') -> None:
         """Initialize progress bar."""
-        job_time = get_timedelta(job_time)
-        self.total_job_time: int = job_time.total_seconds()
+        self.msg = msg
+        self.length = length
         self.progress_bar = tqdm.tqdm(
-            total=self.total_job_time,
+            total=self.length,
             ncols=120,
             ascii=True,
             bar_format=(f'{{l_bar:30}}{{bar}}|'),
@@ -35,7 +35,7 @@ class ProgressBar:
             )
         self.progress_bar.n = 0  # type: ignore
         self.progress_bar.n_last_print = 0  # type: ignore
-        self.progress_bar.desc = f'{"":<10}{msg:>20}'  # type: ignore # noqa: E501
+        self.progress_bar.desc = f'{"":<2}{msg:>20}'  # type: ignore # noqa: E501
         self.progress_bar.refresh()  # type: ignore
 
     def close(self) -> None:
@@ -52,16 +52,16 @@ class ProgressBar:
 
         """
         if percentage:
-                self.progress_bar.n = self.total_job_time * percentage
+                self.progress_bar.n = self.length * percentage
                 self.progress_bar.last_print_n = self.progress_bar.n
         if msg in steps:
             if not percentage:
-                self.progress_bar.n = self.total_job_time * steps.index(msg) // len(steps)
+                self.progress_bar.n = self.length * steps.index(msg) // len(steps)
                 self.progress_bar.last_print_n = self.progress_bar.n
-            self.progress_bar.desc = f'{"":<10}{msg[:20]:>20}'
+            self.progress_bar.desc = f'{"":<2}{msg[:20]:>20}'
             self.progress_bar.refresh()
         else:
-            self.progress_bar.desc = f'{"":<10}{msg[:20]:>20}'
+            self.progress_bar.desc = f'{"":<2}{msg[:20]:>20}'
             self.progress_bar.refresh()
 
     # def _tqdm_update_to_slurm_stat(self,
