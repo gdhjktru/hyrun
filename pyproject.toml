@@ -9,13 +9,11 @@ description = "running calculations using the hylleraas software platform"
 readme = "README.md"
 requires-python = ">=3.9"
 dynamic = ["dependencies"]
+license = {file = "LICENSE"}
 
 [project.optional-dependencies]
 core = []
 full = ["core"]
-
-[project.license]
-text = "LICENSE"
 
 [project.scripts]
 executable-name = "package.module:function"
