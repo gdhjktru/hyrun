@@ -7,6 +7,7 @@ from hytools.time import get_timedelta
 steps = ['Initialization', 'Transfer', 'Submission', 'Running', 'Finalization']
 
 
+
 class ProgressBar:
     """Progress bar for hyrun jobs.
 
@@ -42,7 +43,7 @@ class ProgressBar:
         """Close the progress bar."""
         self.progress_bar.close()
 
-    def update(self, msg: str, percentage=None) -> None:
+    def update(self, msg: str, percentage: float=None) -> None:
         """Update the description of a tqdm progress bar.
 
         Parameters

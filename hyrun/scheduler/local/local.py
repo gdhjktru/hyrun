@@ -11,7 +11,6 @@ from hytools.file import File, FileManager
 from hytools.logger import LoggerDummy
 
 from hyrun.job import Job, JobMetaData
-
 from ..abc import Scheduler
 from .job_script import JobScript
 
@@ -156,15 +155,6 @@ class LocalScheduler(Scheduler):
             step_data.append(JobMetaData(**step_metadata))
             outputs.append(self.gen_output(result, t))
         job.metadata = step_data
-
-
-
-        # job.metadata.update({'start_time': start_time.isoformat(),
-        #             'end_time': end_time.isoformat(),
-        #             'elapsed_time': timedelta(seconds=(end_time - start_time).total_seconds())})
-        print('METADATDA', job.metadata)
-
-
 
         job.outputs = outputs
 

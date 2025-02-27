@@ -18,7 +18,7 @@ from hyrun.scheduler import Scheduler, get_scheduler
 
 def prepare_connection(jobs: list, logger=None, **kwargs):
     """Prepare connection."""
-    logger = kwargs.pop('logger', get_logger(print_level='DEBUG'))
+    logger = kwargs.pop('logger', get_logger(print_level='error'))
     connection = jobs[0].tasks[0].connection
     logger.debug(f'Connection options: {connection}')
     return get_connection(**connection)
@@ -58,7 +58,7 @@ def send_files(files_remote: Optional[list] = None,
 
 def prepare_transfer(jobs: list, host=None, logger=None, **kwargs):
     """Prepare transfer."""
-    logger = kwargs.pop('logger', get_logger(print_level='DEBUG'))
+    logger = kwargs.pop('logger', get_logger(print_level='Error'))
     logger.debug(f'-- Preparing transfer to {host}--')
     prepper = JobPrep(logger=logger, **kwargs)
     files_remote = []

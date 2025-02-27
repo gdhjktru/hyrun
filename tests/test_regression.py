@@ -28,7 +28,7 @@ def datadir(request) -> Path:
 default_tolerance = dict(atol=1e-6, rtol=1e-6)
 keys_to_extract = ['energy']
 
-default_cs = {'print_level': 'debug',
+default_cs = {'print_level': 'error',
               'force_recompute': True,
               'database': {'name': 'mydb'}}
 compute_settings = {

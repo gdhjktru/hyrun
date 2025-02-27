@@ -1,6 +1,5 @@
 
 from dataclasses import asdict, dataclass, replace
-from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
 from typing import List, Optional, Union
@@ -10,7 +9,8 @@ from hyset import RunSettings
 from hytools.connection import Connection
 from hytools.file import File
 
-from hyrun.scheduler.abc import Scheduler
+# from ..scheduler.abc import Scheduler
+
 
 from .metadata import JobMetaData
 from .output import Output
@@ -48,7 +48,7 @@ class Job:
     job_script: Optional[Union[str, Path, File]] = None
     # to be teared down
     database: Optional[Union[str, Path, dict, Database]] = 'dummy'
-    scheduler: Optional[Union[str, dict, Scheduler]] = None
+    scheduler: Optional[Union[str, dict]] = None
     connection: Optional[Union[str, dict, Connection]] = ''
 
     def teardown(self):
@@ -71,9 +71,11 @@ class Job:
             raise ValueError('job_hash is empty')
         return sha256(hash_str.encode()).hexdigest()
 
-    def get_level(self, d: Optional[dict] = {}) -> int:
+    def get_level(self,
+                  status: Optional[str] = None,
+                  d: Optional[dict] = None) -> int:
         """Get level."""
-        status = d.get('status', self.status)
+        status = status or (d or {}).get('status', self.status)
         return STATUS_MAP.get(str(status).upper(), 0)
 
     def update(self, d: Optional[dict] = None):

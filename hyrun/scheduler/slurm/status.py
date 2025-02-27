@@ -8,15 +8,6 @@ from hytools.time import slurmtime_to_timedelta
 
 from hyrun.job import Job, JobMetaData
 
-cmd_map = {
-    'get_status': (
-        'sacct -j {job_scheduler_id} --units=K -p -o '
-        'JobId%20,State%20,Submit,Start,End,Elapsed,TimeLimit,CPUTime,'
-        'MaxRSS,MaxVMSize,MaxDiskRead,MaxDiskWrite,ReqCPUS,AllocCPUS,'
-        'AllocNodes,ReqMem,NodeList'
-    )
-}
-
 
 def get_status(job: Job,
                connection: Optional[Connection] = None,
@@ -28,7 +19,7 @@ def get_status(job: Job,
     max_attempts = kwargs.get('max_attempts', 5)
     sleep_seconds = kwargs.get('sleep_seconds', 3)
 
-    cmd = cmd_map['get_status'].format(job_scheduler_id=job.scheduler_id)
+    cmd = SlurmStatusParser.get_cmd(job_id=job.scheduler_id)
     attempts = 0
     while attempts < max_attempts:
         result = connection.execute(cmd)  # type: ignore
@@ -38,17 +29,30 @@ def get_status(job: Job,
                      f'retrying... {attempts + 1}/{max_attempts}')
         sleep(sleep_seconds)
         attempts += 1
-    job_status, task_data = SlurmStatus.parse_output(result.stdout,
-                                                     logger=logger,
-                                                     nsteps=len(job.tasks),
-                                                     job_id=job.scheduler_id)
+    job_status, task_data = SlurmStatusParser.parse_output(
+        result.stdout,
+        logger=logger,
+        nsteps=len(job.tasks),
+        job_id=job.scheduler_id
+    )
     job.status = job_status
     job.metadata = task_data
     return job
 
 
-class SlurmStatus:
+class SlurmStatusParser:
     """Slurm status parser."""
+
+    @classmethod
+    def get_cmd(cls, job_id: int) -> str:
+        """Get command."""
+        cmd = (
+            'sacct -j {job_id} --units=K -p -o '
+            'JobId%20,State%20,Submit,Start,End,Elapsed,TimeLimit,CPUTime,'
+            'MaxRSS,MaxVMSize,MaxDiskRead,MaxDiskWrite,ReqCPUS,AllocCPUS,'
+            'AllocNodes,ReqMem,NodeList'
+            )
+        return cmd.format(job_id=job_id)
 
     @classmethod
     def parse_output(cls,
@@ -96,12 +100,12 @@ class SlurmStatus:
             'submit', 'start', 'end', 'elapsed', 'cpu_time',
             'max_rss', 'max_vm_size', 'max_disk_read', 'max_disk_write',
             'req_cpus', 'alloc_cpus', 'alloc_nodes', 'node_list'
-        ]
+            ]
         step_values = [
             data[2], data[3], data[4], slurmtime_to_timedelta(data[5]),
             slurmtime_to_timedelta(data[7]), get_memory(data[8]),
             get_memory(data[9]), get_memory(data[10]), get_memory(data[11]),
             data[12], data[13], data[14], data[16]
-        ]
+            ]
         step = dict(zip(step_fields, step_values))
         return JobMetaData(**step)

@@ -2,17 +2,10 @@ from hytools.time import get_timedelta
 
 from hyrun.job import ArrayJob
 
-from .prepare_job import (JobPrep, prepare_connection, prepare_jobs,
-                          prepare_transfer, send_files)
+from .prepare_job import JobPrep, prepare_connection, prepare_jobs
+from .transfer import prepare_transfer, send_files
 from .progress_bar import ProgressBar
-from .wait import get_progress_bars, get_timeout, wait_for_jobs
-
-# from .wait import Wait
-
-
-def scheduler_exec(connection, scheduler_func, *args, **kwargs):
-    """Execute scheduler function."""
-    return connection.execute(scheduler_func(*args, **kwargs))
+from .wait import get_progress_bars, get_timeout, wait_for_jobs, update_progress_bars
 
 
 def _get_logger(*args, print_level='ERROR', **kwargs):
@@ -28,49 +21,25 @@ def _get_logger(*args, print_level='ERROR', **kwargs):
     if 'logger' in kwargs:
         return kwargs['logger']
 
-# def get_status(jobs, connection=None):
-#     """Get status."""
-#     if not isinstance(jobs, list):
-#         jobs = [jobs]
-#     schedulers = [job.scheduler for job in jobs]
-#     print(schedulers)
-
-
-# def wait(jobs, timeout=None) -> dict:
-#     """Wait for job to finish."""
-#     waiter = Wait()
-#     timeout = (timeout or waiter._get_timeout(jobs))
-#     incrementer = self._increment_and_sleep(1)
-#     self.logger.info(f'Waiting for jobs to finish. Timeout: {timeout} ' +
-#                         'seconds.')
-#     for t in incrementer:
-#         jobs = self.get_status_run(jobs, connection=connection)
-#         if t >= timeout or self.is_finished(jobs):
-#             break
-#     return jobs
-
-
+def to_be_skipped(job) -> bool:
+    """Check if job should be skipped."""
+    return job.database_id and not any(task.force_recompute
+                                       for task in job.tasks)
 
 def run(*args, **kwargs):
     """Run hsp job."""
-    # # return Runner(*args, **kwargs).run(*args, **kwargs)
-    logger = _get_logger(*args, print_level='DEBUG', **kwargs)
+    logger = _get_logger(*args, print_level='error', **kwargs)
     wait = kwargs.pop('wait', None)
-
 
     aj = ArrayJob(*args, logger=logger, **kwargs)
     aj = prepare_jobs(aj, logger=logger)
 
-
-    # get timeout -> move to wait.py
-    timeout = get_timeout(aj.jobs, wait=wait)
-    progress_bars = get_progress_bars(aj.jobs, timeout)
-
     if kwargs.get('dryrun', False):
         logger.info('Dryrun')
-        for p in progress_bars:
-            p.close()
         return aj
+
+    timeout = get_timeout(aj.jobs, wait=wait)
+    progress_bars = get_progress_bars(aj.jobs, timeout)
 
     for job_group, host in zip(aj.jobs_grouped, aj.job_group_keys):
         files_remote, folders_remote = prepare_transfer(job_group,
@@ -88,6 +57,9 @@ def run(*args, **kwargs):
             if conn.connection_type == 'local':
                 logger.warning('Running jobs *locally*.')
             for i, job in enumerate(job_group):
+                if to_be_skipped(job):
+                    logger.info(f'Skipping job {i} with hash {job.job_hash}')
+                    continue
                 for p in progress_bars: p.update(msg='Submission', percentage=0)
                 job.scheduler = JobPrep().get_scheduler(job,
                                                         logger=logger,
@@ -95,20 +67,25 @@ def run(*args, **kwargs):
                 logger.info(f'submitting job {i} to {host} using ' +
                             f'{job.scheduler}')
                 job.scheduler.submit(job, **kwargs)
+                
+                print(job.database)
+                pojpjpjopjop
+
+
                 print('save to database')
 
-                status = job.scheduler.get_status(job)
-                print('STATUTSS§,', status)
-                for p in progress_bars: p.update(msg='Running', percentage=0)
-
+                
 
                 if timeout <= 0:
                     logger.debug('not waiting for job to finish')
-                    job.scheduler = job.scheduler.teardown()
+                    
+
+    statuses = [job.scheduler.get_status(job) for job in aj.jobs]
+    update_progress_bars(progress_bars, msg=statuses, percentage=0, logger=logger)
 
     if timeout <= 0:
         return aj
-    
+
     for job_group, host in zip(aj.jobs_grouped, aj.job_group_keys):
         with prepare_connection(job_group) as conn:
             logger.debug(f'Connection established: {conn}')
@@ -116,8 +93,8 @@ def run(*args, **kwargs):
                           connection=conn,
                           timeout=timeout,
                           progress_bars=progress_bars)
-            
-            
+
+
     for p in progress_bars: p.close()
 
     # for job_group in aj.jobs_grouped:
