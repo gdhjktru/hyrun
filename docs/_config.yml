@@ -1,0 +1,63 @@
+title: HSP/hyrun
+author: The Hylleraas Software Platform developers
+copyright: "2025"
+
+sphinx:
+  config:
+    templates_path:
+      - _templates
+    html_theme: "pydata_sphinx_theme"  # Ensure you're using a theme that supports your requirements
+    html_theme_options:
+      logo:
+        image_light: "hsp---logo.png" # "hylleraas-logo-light.png"
+        image_dark: "hsp---logo---neg.png" # "hylleraas-logo-dark.png"
+      navigation_depth: 4  # Adjust according to how deep your sections go; shows subsections in the sidebar
+      show_nav_level: 1
+      show_prev_next: true  # Ensure prev/next buttons are enabled; check documentation for updates
+      footer_start: ["copyright"]
+      footer_center: ["footer-mid"]
+      footer_end: ["theme-version"]
+      article_header_start: ["prev-top"]
+      article_header_end: ["next-top"]
+    html_static_path:
+      - _static
+    html_sidebars:
+      "src/setup/*": ["setup-sidebar", "sidebar-nav-bs"]
+      "src/submission/*": ["submission-sidebar", "sidebar-nav-bs"]
+      "src/results/*": ["results-sidebar", "sidebar-nav-bs"]
+    # intersphinx_mapping:
+    #   hygo:
+    #     - "https://geometryoptimizer.readthedocs.io/en/stable/"
+    #     - none
+  extra_extensions:
+    - sphinx_tabs.tabs
+    - sphinx.ext.autodoc
+    - sphinxcontrib.mermaid
+    # - sphinx.ext.autosummary
+    # - sphinx.ext.intersphinx
+    # - sphinx.ext.viewcode
+
+
+
+
+execute:
+  execute_notebooks: off
+
+latex:
+  latex_documents:
+    targetname: "book.tex"
+
+repository:
+  url: "https://github.com/executablebooks/jupyter-book"
+  path_to_book: "docs"
+  branch: "master"
+
+html:
+  favicon: "_static/hylleraas---logo---only.ico"
+  use_issues_button: true
+  use_repository_button: true
+  extra_javascript:
+    - "_static/custom.js"
+  home_page_in_navbar: true
+
+html_css_files: "_templates/sidebar-fontstyle.css"

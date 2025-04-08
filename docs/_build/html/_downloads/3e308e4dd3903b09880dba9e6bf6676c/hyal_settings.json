@@ -1,0 +1,36 @@
+{
+    "confref_opts": {
+        "opt_cell": false,
+        "opt_pos": true,
+        "delta_f": 0.1,
+        "delta_e": 0.01,
+        "f_pref": 1.0,
+        "e_pref": 0.0,
+        "f_reg": 0.01,
+        "num_iter": 10,
+        "num_grad": true
+    },
+    "al_opts": {
+        "max_num_samples": 1,
+        "max_num_calcs":1,
+        "num_initial": 2,
+	"initial_displacement":0.01,
+        "ml_filters": {
+            "force_dev_max": {
+                "key": "force_dev_max",
+                "upper": true,
+                "operation": "max",
+                "limit": 1.0,
+                "shape": [-1, 3]
+            },
+            "force_mag_max": {
+                "key": "force_mag_max",
+                "upper": true,
+                "operation": "max",
+                "limit": 5.0,
+                "shape": [-1, 3]
+            }
+        }
+    }
+}
+

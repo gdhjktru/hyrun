@@ -1,0 +1,33 @@
+variable	T equal 300
+variable	P equal 1.0
+variable	dt equal 0.00001
+variable	nsteps equal 10000
+variable	dump_freq equal 100
+variable	thermo_freq equal 1000
+units	metal
+boundary	p p p
+atom_style	atomic
+neighbor 2.0 nsq
+neigh_modify	every 25 delay 0 check no
+box tilt large
+read_data	{{hash}}.data
+pair_style	lj/cut 2.5
+pair_coeff	* * 1 1
+velocity	all create ${T} 19949 rot yes dist gaussian
+velocity	all zero linear
+velocity	all zero angular
+fix	1 all nve
+fix	2 all temp/csvr ${T} ${T} 0.100 123321
+
+timestep	${dt}
+thermo_style	custom step etotal pe ke enthalpy density lx ly lz vol pxx pyy pzz press
+thermo	${thermo_freq}
+thermo_modify	flush yes
+fix	thermo_print all print 1000 "$(step) $(time) $(temp) $(etotal) $(pe) $(ke) $(enthalpy) $(density) $(lx) $(ly) $(lz) $(vol) $(pxx) $(pyy) $(pzz) $(press)" append thermo.out screen no title "# step time temp etotal pe ke enthalpy density lx ly lz vol pxx pyy pzz press"
+dump	1 all atom ${dump_freq} {{hash}}.lammpstrj
+dump_modify	1 sort id append yes
+restart	10000 restart.1 restart.2
+run	${nsteps} upto
+write_restart	restart.1
+write_data	{{hash}}.datafile_final nocoeff
+

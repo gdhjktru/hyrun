@@ -1,0 +1,749 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Quick start guide &#8212; Hylleraas Software Platform</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'src/user_guide/quick_start';</script>
+    <link rel="icon" href="../../_static/hylleraas---logo---only.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/hsp---logo.png" class="logo__image only-light" alt="Hylleraas Software Platform - Home"/>
+    <script>document.write(`<img src="../../_static/hsp---logo---neg.png" class="logo__image only-dark" alt="Hylleraas Software Platform - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><div class="sidebar-header-item">
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+            <nav class="bd-docs-nav bd-links">
+                <ul class="nav bd-sidenav">
+                    <li class="toctree-l1">
+                        <a class="reference internal" href="user_guide.html">
+                            User Guide
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+<div class="prev-next-area">
+</div></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+<div class="prev-next-area">
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="quick-start-guide">
+<h1>Quick start guide<a class="headerlink" href="#quick-start-guide" title="Link to this heading">#</a></h1>
+<p>This quick start guide will give a (highly incomplete) overview of the <em>Hylleraas Software Platform</em> (HSP) and how to use it to perform simple calculations. As an example we will look at the single-point energy–gradient calculation of a caffeine molecule using the semi-empirical tight binding xTB method.</p>
+<p><a id='install_note'></a></p>
+<div class="admonition-note admonition">
+<p class="admonition-title">Note</p>
+<p>This guide requires the <em>Hylleraas Software Platform</em> to be installed. Please refer to <a class="reference internal" href="../installation/installation.html#installation"><span class="std std-ref">Installation</span></a> for information about how to install the HSP.</p>
+<p>This guide also requires the xTB software to be installed. Please refer to <a class="reference internal" href="../installation/quantum_chemistry_codes.html#quantum-chemistry-codes"><span class="std std-ref">Quantum chemistry codes</span></a> for information about how to install xTB.</p>
+<p>Normally, <strong>all</strong> necessary software for this tutorial may be installed by running the following commands in the terminal:</p>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>git+https://gitlab.com/hylleraasplatform/hylleraas.git
+
+conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>conda_xtb
+conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>-n<span class="w"> </span>conda_xtb<span class="w"> </span>xtb
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<section id="general-usage-workflow">
+<h2>General usage workflow<a class="headerlink" href="#general-usage-workflow" title="Link to this heading">#</a></h2>
+<p>Usage of the HSP typically follows the following workflow:</p>
+<ol class="arabic simple">
+<li><p><strong>Define the molecular system</strong>:<br />
+	 Build the molecular geometry of the system you want to study.</p></li>
+<li><p><strong>Establish the simulation method</strong>:<br />
+	 Choose one of the available software to perform the calculation with.</p>
+<ul class="simple">
+<li><p>2a. (<em>Optional</em>) <strong>Setup simulation options</strong>:<br />
+Choose <em>how</em> to run the simulation and which (and how many) resources to use.</p></li>
+</ul>
+</li>
+<li><p><strong>Run the simulation</strong>:<br />
+	 Submit the calculation with the HSP to a computing resource (the local machine, or a remote cluster).</p></li>
+<li><p><strong>Analyze the results</strong>:<br />
+	 Retrieve the results analyze them.</p></li>
+</ol>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">hylleraas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">hsp</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="defining-the-systemmolecule-objects">
+<h3>1. Defining the system—<code class="docutils literal notranslate"><span class="pre">Molecule</span></code> objects<a class="headerlink" href="#defining-the-systemmolecule-objects" title="Link to this heading">#</a></h3>
+<p>The first step of any chemical calculation is to define the molecular system you want to study. This is typically done by providing the molecular geometry of the system. In the HSP, this is done by providing a molecular topology and creating a <code class="docutils literal notranslate"><span class="pre">Molecule</span></code> object. A <code class="docutils literal notranslate"><span class="pre">Molecule</span></code> object is a representation of the molecular system that can be used to perform calculations. Note that the HSP <code class="docutils literal notranslate"><span class="pre">Molecule</span></code> object is not necessarily bound together in the normal chemical covalent sense, but rather a collection of atoms and their positions in space that may represent one or more <em>actual</em> chemical molecules.</p>
+<p>The topology of the molecule can be provided in a variety of ways, but here we will generate it from a <a class="reference external" href="https://en.wikipedia.org/wiki/Simplified_molecular-input_line-entry_system">SMILES string</a>. For an in-depth overview of the different ways to generate <code class="docutils literal notranslate"><span class="pre">Molecule</span></code> objects, see the <a class="reference internal" href="molecule.html"><span class="std std-doc">molecule user guide</span></a>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">caffeine</span> <span class="o">=</span> <span class="n">hsp</span><span class="o">.</span><span class="n">Molecule</span><span class="p">(</span><span class="s2">&quot;CN1C=NC2=C1C(=O)N(C(=O)N2C)C&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The molecule can be inspected after creation to verify that it was created correctly. The list of atoms and coordinates are available as <code class="docutils literal notranslate"><span class="pre">atoms</span></code> and <code class="docutils literal notranslate"><span class="pre">coordinates</span></code> attributes. and viewed in a 3D viewer to ensure that the geometry is correct.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">caffeine</span><span class="o">.</span><span class="n">atoms</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">caffeine</span><span class="o">.</span><span class="n">coordinates</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">caffeine</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[&#39;C&#39;, &#39;N&#39;, &#39;C&#39;, &#39;N&#39;, &#39;C&#39;, &#39;C&#39;, &#39;C&#39;, &#39;O&#39;, &#39;N&#39;, &#39;C&#39;, &#39;O&#39;, &#39;N&#39;, &#39;C&#39;, &#39;C&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;]
+[[ 3.248941e+00 -1.983300e-02 -1.814310e-01]
+ [ 1.991275e+00 -7.290750e-01 -1.200000e-05]
+ [ 1.901331e+00 -2.052956e+00  2.161750e-01]
+ [ 5.878090e-01 -2.312110e+00  3.288030e-01]
+ [-1.249870e-01 -1.179226e+00  1.866490e-01]
+ [ 7.816680e-01 -1.545080e-01 -2.609800e-02]
+ [ 3.814430e-01  1.153945e+00 -2.132200e-01]
+ [ 1.234012e+00  2.059833e+00 -4.040730e-01]
+ [-9.361010e-01  1.419828e+00 -1.841670e-01]
+ [-1.843850e+00  4.255600e-01  2.378200e-02]
+ [-3.058476e+00  7.536670e-01  3.731900e-02]
+ [-1.426824e+00 -8.451250e-01  2.039630e-01]
+ [-2.414133e+00 -1.887063e+00  4.238160e-01]
+ [-1.356099e+00  2.781776e+00 -3.787700e-01]
+ [ 3.192151e+00  9.862720e-01  2.864110e-01]
+ [ 4.058980e+00 -5.556260e-01  3.959420e-01]
+ [ 3.554363e+00  3.750000e-04 -1.238756e+00]
+ [ 2.730861e+00 -2.773587e+00  2.861950e-01]
+ [-3.309331e+00 -1.744555e+00 -2.176430e-01]
+ [-2.796307e+00 -1.873058e+00  1.486249e+00]
+ [-1.988135e+00 -2.869331e+00  1.805370e-01]
+ [-8.080920e-01  3.261013e+00 -1.215732e+00]
+ [-1.132872e+00  3.352243e+00  5.453260e-01]
+ [-2.467629e+00  2.801540e+00 -5.412640e-01]]
+Units({&#39;style&#39;: &#39;angstrom&#39;, &#39;length&#39;: Quantity(unit=&#39;angstrom&#39;, value=0.529177210903, symbol=&#39;angstrom&#39;)})
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">hsp</span><span class="o">.</span><span class="n">view_molecule</span><span class="p">(</span><span class="n">caffeine</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div id="3dmolviewer_1709037080315856"  style="position: relative; width: 640px; height: 400px;">
+        <p id="3dmolwarning_1709037080315856" style="background-color:#ffcccc;color:black">You appear to be running in JupyterLab (or JavaScript failed to load for some other reason).  You need to install the 3dmol extension: <br>
+        <tt>jupyter labextension install jupyterlab_3dmol</tt></p>
+        </div>
+<script>
+
+var loadScriptAsync = function(uri){
+  return new Promise((resolve, reject) => {
+    //this is to ignore the existence of requirejs amd
+    var savedexports, savedmodule;
+    if (typeof exports !== 'undefined') savedexports = exports;
+    else exports = {}
+    if (typeof module !== 'undefined') savedmodule = module;
+    else module = {}
+
+    var tag = document.createElement('script');
+    tag.src = uri;
+    tag.async = true;
+    tag.onload = () => {
+        exports = savedexports;
+        module = savedmodule;
+        resolve();
+    };
+  var firstScriptTag = document.getElementsByTagName('script')[0];
+  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+});
+};
+
+if(typeof $3Dmolpromise === 'undefined') {
+$3Dmolpromise = null;
+  $3Dmolpromise = loadScriptAsync('https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.4/3Dmol-min.js');
+}
+
+var viewer_1709037080315856 = null;
+var warn = document.getElementById("3dmolwarning_1709037080315856");
+if(warn) {
+    warn.parentNode.removeChild(warn);
+}
+$3Dmolpromise.then(function() {
+viewer_1709037080315856 = $3Dmol.createViewer(document.getElementById("3dmolviewer_1709037080315856"),{backgroundColor:"white"});
+viewer_1709037080315856.zoomTo();
+	viewer_1709037080315856.clear();
+	viewer_1709037080315856.addModel("24\n\nC 3.288063000000 -0.060723000000 0.203562000000\nN 2.053908000000 0.695622000000 0.016991000000\nC 1.880095000000 2.021190000000 -0.090368000000\nN 0.576551000000 2.313047000000 -0.253722000000\nC -0.133170000000 1.145380000000 -0.254427000000\nC 0.819772000000 0.162421000000 -0.083823000000\nC 0.343395000000 -1.139192000000 -0.049863000000\nO 1.188260000000 -2.055308000000 0.104360000000\nN -0.971119000000 -1.378284000000 -0.179116000000\nC -1.869441000000 -0.403033000000 -0.343174000000\nO -3.114878000000 -0.659380000000 -0.463642000000\nN -1.443179000000 0.870192000000 -0.380782000000\nC -2.383488000000 1.965070000000 -0.557433000000\nC -1.412949000000 -2.757684000000 -0.136165000000\nH 3.397565000000 -0.419386000000 1.245418000000\nH 4.148646000000 0.583627000000 -0.010108000000\nH 3.264613000000 -0.977914000000 -0.436326000000\nH 2.702099000000 2.736153000000 -0.047164000000\nH -3.403707000000 1.562920000000 -0.555096000000\nH -2.196759000000 2.780696000000 0.144802000000\nH -2.201621000000 2.343722000000 -1.607167000000\nH -1.259461000000 -3.101389000000 0.912554000000\nH -2.483437000000 -2.842797000000 -0.438719000000\nH -0.789757000000 -3.384948000000 -0.809456000000\n","xyz");
+		viewer_1709037080315856.getModel().setStyle({"stick": {"radius": 0.1}, "sphere": {"scale": 0.25}});
+	viewer_1709037080315856.setBackgroundColor("#17d9ff");
+	viewer_1709037080315856.zoomTo();
+viewer_1709037080315856.render();
+});
+</script></div><div class="output text_html"><script>
+            $3Dmolpromise.then(function() { //wrap in promise for non-interactive functionality
+                
+                viewer_1709037080315856.render();
+            });
+            </script></div></div>
+</div>
+</section>
+<section id="establishing-the-simulation-methodmethod-objects">
+<h3>2. Establishing the simulation method—<code class="docutils literal notranslate"><span class="pre">Method</span></code> objects<a class="headerlink" href="#establishing-the-simulation-methodmethod-objects" title="Link to this heading">#</a></h3>
+<p>The next step is to establish the simulation method that will be used to perform the calculation. The HSP provides a variety of <em>interfaces</em> to different software packages, and the method object is used to define the software and simulation method that will be used to perform the calculation.</p>
+<p>Method objects are created by providing the name of the software package and the method that will be used. In this case, we will use the semi-empirical tight binding xTB method, which is available through the <code class="docutils literal notranslate"><span class="pre">Xtb</span></code> interface.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">xtb_method</span> <span class="o">=</span> <span class="n">hsp</span><span class="o">.</span><span class="n">Xtb</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">,</span> <span class="s2">&quot;gradient&quot;</span><span class="p">],</span>  <span class="c1"># calculate energy and gradients</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING uxtbpy: Failed to retrieve number of atoms. Check input file.
+</pre></div>
+</div>
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">hsp.Xtb</span></code> method interface is called with a dictionary containing options for the simulation. Here we only provide the <code class="docutils literal notranslate"><span class="pre">properties</span></code> key with <code class="docutils literal notranslate"><span class="pre">&quot;energy&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;gradient&quot;</span></code>, meaning we will calculate energies and gradients with default xTB settings.</p>
+</section>
+<section id="a-setup-simulation-optionscompute-settings-objects">
+<h3>2a. Setup simulation options—<code class="docutils literal notranslate"><span class="pre">compute_settings</span></code> objects<a class="headerlink" href="#a-setup-simulation-optionscompute-settings-objects" title="Link to this heading">#</a></h3>
+<p>Better control over <em>where</em> and <em>how</em> the simulation is run can be achieved by providing a <code class="docutils literal notranslate"><span class="pre">compute_settings</span></code> object. This object is used to define the resources that will be used to perform the calculation, and how the technicalities of how the calculation will be performed.</p>
+<p>The compute settings object is created by providing a dictionary with the settings that will be used.</p>
+<div class="admonition-note admonition">
+<p class="admonition-title">Note</p>
+<p>If you used the suggested install directives in <span class="xref std std-ref">install_note</span>, you will need to link the conda environment <code class="code docutils literal notranslate"><span class="pre">conda_xtb</span></code> to the HSP. This is done by creating a <code class="code docutils literal notranslate"><span class="pre">&quot;conda&quot;</span></code> compute settings object and providing the name of the conda environment, as is done in the following.</p>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">compute_settings</span></code> settings object can link to executables in different conda environments, to executables in the normal system path, or to executables on a remote server such as a SLURM supercomputer cluster. For more information about the different options, see the <a class="reference internal" href="compute_settings.html"><span class="std std-doc">compute settings user guide</span></a>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">settings_conda_xtb</span> <span class="o">=</span> <span class="n">hsp</span><span class="o">.</span><span class="n">create_compute_settings</span><span class="p">(</span>
+    <span class="s2">&quot;conda&quot;</span><span class="p">,</span>
+    <span class="n">conda_env</span><span class="o">=</span><span class="s2">&quot;conda_xtb&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Using the specific <code class="docutils literal notranslate"><span class="pre">compute_settings</span></code> object with a method object is achieved by providing the <code class="docutils literal notranslate"><span class="pre">compute_settings</span></code> object when creating the method.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">xtb_conda_method</span> <span class="o">=</span> <span class="n">hsp</span><span class="o">.</span><span class="n">Xtb</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;energy&quot;</span><span class="p">,</span> <span class="s2">&quot;gradient&quot;</span><span class="p">],</span>  <span class="c1"># calculate energy and gradients</span>
+    <span class="p">},</span>
+    <span class="n">compute_settings</span><span class="o">=</span><span class="n">settings_conda_xtb</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DEBUG: creating directory /Users/mortenledum/Documents/hsp_devdoc/hylleraas/docs/src/user_guide
+DEBUG: removing file /Users/mortenledum/Documents/hsp_devdoc/hylleraas/docs/src/user_guide/xtbrestart
+DEBUG: removing file /Users/mortenledum/Documents/hsp_devdoc/hylleraas/docs/src/user_guide/hessian
+DEBUG: removing file /Users/mortenledum/Documents/hsp_devdoc/hylleraas/docs/src/user_guide/g98.out
+DEBUG: RUNNING conda run -n conda_xtb xtb --version
+DEBUG: IN FOLDER /Users/mortenledum/Documents/hsp_devdoc/hylleraas/docs/src/user_guide
+DEBUG: RESULTS: LocalResult(files_to_parse=[], output_file=None, add_to_results=None, stdout=&quot;      -----------------------------------------------------------      \n     |                   =====================                   |     \n     |                           x T B                           |     \n     |                   =====================                   |     \n     |                         S. Grimme                         |     \n     |          Mulliken Center for Theoretical Chemistry        |     \n     |                    University of Bonn                     |     \n      -----------------------------------------------------------      \n\n   * xtb version 6.6.1 (8d0f1dd) compiled by &#39;runner@Mac-1690902400584.local&#39; on 2023-08-01\n\n\n&quot;, stderr=&#39;normal termination of xtb\n\n&#39;, returncode=0, error=None)
+WARNING uxtbpy: Failed to retrieve number of atoms. Check input file.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/Users/mortenledum/Documents/hsp_devdoc/hyset/build/__editable__.hyset-0.1-py3-none-any/hyset/local/runner.py:255: UserWarning: normal termination of xtb
+
+
+  warnings.warn(result.stderr)
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="running-the-simulation">
+<h3>3. Running the simulation<a class="headerlink" href="#running-the-simulation" title="Link to this heading">#</a></h3>
+<p>The simulation is run by providing the <code class="docutils literal notranslate"><span class="pre">Molecule</span></code> object and calling the <code class="docutils literal notranslate"><span class="pre">.run()</span></code> method of the <code class="docutils literal notranslate"><span class="pre">Method</span></code> object. The <code class="docutils literal notranslate"><span class="pre">.run()</span></code> method will submit the calculation to the computing resource defined in the <code class="docutils literal notranslate"><span class="pre">compute_settings</span></code> object, and return a <code class="docutils literal notranslate"><span class="pre">Result</span></code> object.</p>
+<p>All HSP calculations are evaluated <a class="reference external" href="https://en.wikipedia.org/wiki/Lazy_evaluation">lazily</a>, meaning only the necessary simulation will be ran and once ran, it will not be re-ran if subsequent calls to <code class="docutils literal notranslate"><span class="pre">.run()</span></code> are made (unless explicitly requested via the <code class="docutils literal notranslate"><span class="pre">force_recompute</span></code> flag).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">caffeine_xtb_result</span> <span class="o">=</span> <span class="n">xtb_conda_method</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">caffeine</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Instead of (or in addition to) the <code class="docutils literal notranslate"><span class="pre">.run(molecule)</span></code> method, you may query directly a desired quantity such as the energy. This is done by the <code class="docutils literal notranslate"><span class="pre">.get_energy(molecule)</span></code> method. Note carefully that the simulation will now <strong>not</strong> be re-done, as this result is already cached.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">energy</span> <span class="o">=</span> <span class="n">xtb_conda_method</span><span class="o">.</span><span class="n">get_energy</span><span class="p">(</span><span class="n">caffeine</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>-42.121970452276
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="analyzing-the-results">
+<h3>4. Analyzing the results<a class="headerlink" href="#analyzing-the-results" title="Link to this heading">#</a></h3>
+<p>The results of the simulation are stored in a <code class="docutils literal notranslate"><span class="pre">Result</span></code> object. The <code class="docutils literal notranslate"><span class="pre">Result</span></code> object contains any and all available properties resulting from the simulation ran. These properties may be accessed and inspected by querying the <code class="docutils literal notranslate"><span class="pre">Result</span></code> object like a normal dictionary.</p>
+<p>An easy way to list of all available properties in the result object is to call the <code class="docutils literal notranslate"><span class="pre">.keys()</span></code> method of the <code class="docutils literal notranslate"><span class="pre">Result</span></code> object.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">caffeine_xtb_result</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>version
+homo_energy
+lumo_energy
+polarisability
+wiberg_index_matrix
+dipole_moment
+energy
+homo_lumo_gap
+gradient
+</pre></div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+</section>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./src/user_guide"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> 
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#general-usage-workflow">General usage workflow</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#defining-the-systemmolecule-objects">1. Defining the system—<code class="docutils literal notranslate"><span class="pre">Molecule</span></code> objects</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#establishing-the-simulation-methodmethod-objects">2. Establishing the simulation method—<code class="docutils literal notranslate"><span class="pre">Method</span></code> objects</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#a-setup-simulation-optionscompute-settings-objects">2a. Setup simulation options—<code class="docutils literal notranslate"><span class="pre">compute_settings</span></code> objects</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-simulation">3. Running the simulation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analyzing-the-results">4. Analyzing the results</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../../_sources/src/user_guide/quick_start.ipynb">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item"><p align="left">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" height="20px"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path fill="currentColor" d="M72 88a56 56 0 1 1 112 0A56 56 0 1 1 72 88zM64 245.7C54 256.9 48 271.8 48 288s6 31.1 16 42.3V245.7zm144.4-49.3C178.7 222.7 160 261.2 160 304c0 34.3 12 65.8 32 90.5V416c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V389.2C26.2 371.2 0 332.7 0 288c0-61.9 50.1-112 112-112h32c24 0 46.2 7.5 64.4 20.3zM448 416V394.5c20-24.7 32-56.2 32-90.5c0-42.8-18.7-81.3-48.4-107.7C449.8 183.5 472 176 496 176h32c61.9 0 112 50.1 112 112c0 44.7-26.2 83.2-64 101.2V416c0 17.7-14.3 32-32 32H480c-17.7 0-32-14.3-32-32zm8-328a56 56 0 1 1 112 0A56 56 0 1 1 456 88zM576 245.7v84.7c10-11.3 16-26.1 16-42.3s-6-31.1-16-42.3zM320 32a64 64 0 1 1 0 128 64 64 0 1 1 0-128zM240 304c0 16.2 6 31 16 42.3V261.7c-10 11.3-16 26.1-16 42.3zm144-42.3v84.7c10-11.3 16-26.1 16-42.3s-6-31.1-16-42.3zM448 304c0 44.7-26.2 83.2-64 101.2V448c0 17.7-14.3 32-32 32H288c-17.7 0-32-14.3-32-32V405.2c-37.8-18-64-56.5-64-101.2c0-61.9 50.1-112 112-112h32c61.9 0 112 50.1 112 112z"/></svg>
+    <a href="../footer/about_us.html">About us</a>
+</p>
+<p align="left">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 203" height="20px"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path fill="currentColor" d="M212.55,102.07c0,28.44-10.74,49.54-27.89,49.54s-37.27-22.68-37.27-49.54,20.13-49.54,37.27-49.54,27.89,21.1,27.89,49.54 M19.06,102.07c0-50.49,19.07-87.95,49.5-87.95s66.17,40.26,66.17,87.95-35.73,87.95-66.17,87.95-49.5-37.46-49.5-87.95"/></svg>
+    <a href="https://www.mn.uio.no/hylleraas/english/")>The Hylleraas Centre</a>
+</p>
+<p align="left">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" height="20px"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path fill="currentColor" d="M448 296c0 66.3-53.7 120-120 120h-8c-17.7 0-32-14.3-32-32s14.3-32 32-32h8c30.9 0 56-25.1 56-56v-8H320c-35.3 0-64-28.7-64-64V160c0-35.3 28.7-64 64-64h64c35.3 0 64 28.7 64 64v32 32 72zm-256 0c0 66.3-53.7 120-120 120H64c-17.7 0-32-14.3-32-32s14.3-32 32-32h8c30.9 0 56-25.1 56-56v-8H64c-35.3 0-64-28.7-64-64V160c0-35.3 28.7-64 64-64h64c35.3 0 64 28.7 64 64v32 32 72z"/></svg>
+    <a href="../footer/citing.html">Citing the Hylleraas Software Platform</a>
+</p></div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

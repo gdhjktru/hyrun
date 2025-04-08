@@ -198,6 +198,25 @@ class SlurmScheduler(Scheduler):
     def gen_job_script(self, job):
         """Generate job script."""
         return gjs(job)
+    
+    def get_job_summary(self, job):
+        """Get job summary."""
+        summary = getattr(job,'metadata', {})
+        cmd = f'seff {job.id}'
+        # execute command
+
+
+        # update job.metdadata
+#         Job ID: 14005811
+# Cluster: saga
+# User/Group: tilmann/tilmann
+# State: COMPLETED (exit code 0)
+# Cores: 1
+# CPU Utilized: 00:00:02
+# CPU Efficiency: 50.00% of 00:00:04 core-walltime
+# Job Wall-clock time: 00:00:04
+# Memory Utilized: 43.54 MB
+# Memory Efficiency: 2.18% of 1.95 GB
 
     def transfer_files(self,
                        files_to_transfer: Optional[list] = None,

@@ -1,0 +1,1020 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Developers Guide &#8212; Hylleraas Software Platform</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/togglebutton.css?v=13237357" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-thebe.css?v=4fa983c6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="../../_static/togglebutton.js?v=4a39c7ea"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script async="async" src="../../_static/sphinx-thebe.js?v=c100c467"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'src/developers_guide/developers_guide';</script>
+    <link rel="icon" href="../../_static/hylleraas---logo---only.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/hsp---logo.png" class="logo__image only-light" alt="Hylleraas Software Platform - Home"/>
+    <script>document.write(`<img src="../../_static/hsp---logo---neg.png" class="logo__image only-dark" alt="Hylleraas Software Platform - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><div class="sidebar-header-item">
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+            <nav class="bd-docs-nav bd-links">
+                <ul class="nav bd-sidenav">
+                    <li class="toctree-l1">
+                        <a class="reference internal" href="developers_guide.html">
+                            Developers Guide
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+<div class="prev-next-area">
+</div></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+<div class="prev-next-area">
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="developers-guide">
+<h1>Developers Guide<a class="headerlink" href="#developers-guide" title="Link to this heading">#</a></h1>
+<p>Hylleraas Software Platform (HSP) consists of a core module and several independent modules/repositories. In particular, interfaces to external sofware, special tools and independent modules are separated from the core.</p>
+<!--![Structure of the HSP](hsp_schematics.png)-->
+<p>In general, HSP consists of a main package including meta-functionality (consisting of the core, tools and interfaces) and a set of standalone packages (modules) combining the functionality needed at the Hylleraas Centre. For more information on the individual parts of HSP, see below.</p>
+<p>Since the HSP should be able to work with dozens of codes, it is imperative to design a new application as independent as possible while minimizing redundancies.</p>
+<blockquote>
+<div><p>For example, <a class="reference external" href="https://doi.org/10.1063/1.1673621">hygo</a> is a standalone module for performing geometry optimizations, installed automatically when installing HSP. As molecule input, hygo takes simple arrays. It thus does not have modules for, e.g. reading ad converting <code class="docutils literal notranslate"><span class="pre">.xyz</span></code> or <code class="docutils literal notranslate"><span class="pre">.pdb</span></code> files to these arrays. However, this functionality is on the main platform and thus can (but not has to) be used by hygo. This way, this (meta-)functionality is available for all packages developed under the HSP while the package itself might be use independent of HSP.</p>
+</div></blockquote>
+<p>In general:</p>
+<ul class="simple">
+<li><p>create easy to maintain <em>and</em> user friendly software</p></li>
+<li><p>follow SOLID principle</p></li>
+<li><p>refactor as much as possible and create unit tests</p></li>
+</ul>
+<section id="style-guidelines">
+<h2>Style guidelines<a class="headerlink" href="#style-guidelines" title="Link to this heading">#</a></h2>
+<p>All developers that are contributing to the Hylleraas Software Platform should use <a class="reference external" href="https://pre-commit.com">pre-commit</a> to check there code <em>before</em> committing (see also <a class="reference external" href="https://daltonproject.readthedocs.io/en/latest/installation.html#developers">here</a>). To this end, the devs should make sure that they have the current version of <code class="docutils literal notranslate"><span class="pre">.pre-commit-config.yaml</span></code> in the repository. The code can then conviently be checked by calling</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$&gt;<span class="w"> </span>pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
+</pre></div>
+</div>
+<p>In general, the output of this command will help to fix the problems found. When all hooks are passed, the code is ready for git commit (and push).</p>
+<section id="handling-exceptions">
+<h3>Handling exceptions<a class="headerlink" href="#handling-exceptions" title="Link to this heading">#</a></h3>
+<!--In general, it is advised to use [built-in python exceptions](<https://docs.python.org/3/library/exceptions.html>). As starting point, see this [blog article](<https://eli.thegreenplace.net/2008/08/21/robust-exception-handling/>) and this [tutorial](<https://www.tutorialsteacher.com/python/error-types-in-python>).-->
+<!--A major point of error handling is carbage connection.
+
+The two major points for error handling on the HSP are
+
+1. description
+2. garbage connection
+-->
+<p>In HSP, we try to catch errors at low levels using custom error types in order to not confuse the user with program-specific errors. In this way, e.g., input errors can be uncovered more easily. Exceptions, i.e.,  events that occur rarely, should be handeled with <code class="docutils literal notranslate"><span class="pre">try...except...else..finally</span></code> clauses to ensure readability and garbage collection. Otherwise, <code class="docutils literal notranslate"><span class="pre">if...elif...else</span></code> constructions can be used together with raised exceptions or in a monadic manner where the methods in a program process and return objects indicating the success of the tasks.</p>
+</section>
+<section id="python-style-guide-checklist">
+<h3>Python style guide checklist<a class="headerlink" href="#python-style-guide-checklist" title="Link to this heading">#</a></h3>
+<ol class="arabic simple">
+<li><p>follow SOLID principle</p></li>
+<li><p>use descriptive variable names</p></li>
+<li><p>catch errors at low levels with descriptive error messages</p></li>
+<li><p>use appropriate data classes</p></li>
+</ol>
+</section>
+</section>
+<section id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Link to this heading">#</a></h2>
+<p>All functionalities added to HSP should be tested. All tests should be located in a <code class="docutils literal notranslate"><span class="pre">tests</span></code> directory having the following structure:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>tests
+├── __init__.py
+├── conftest.py
+├── data
+│   ├── dummy.txt
+│   └── water.xyz
+├── requirements.txt
+└── test_molecule.py
+</pre></div>
+</div>
+<p>Tests of different modules are placed in seperated files with prefix <code class="docutils literal notranslate"><span class="pre">test_</span></code>.
+<a class="reference external" href="https://docs.pytest.org/en/stable/explanation/fixtures.html#about-fixtures">Fixtures</a> used by several tests should be striped down as far as possible and placed into <code class="docutils literal notranslate"><span class="pre">conftest.py</span></code>, external data needed can be placed in side the <code class="docutils literal notranslate"><span class="pre">data</span></code>folder. The (empty) file <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> is used by gitlab-CI to compute coverage correctly. The developers should make sure that the requirements.txt file is up to date with the version of the main repository.</p>
+<p>The test suite can then invoked by</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$&gt;<span class="w"> </span>pytest<span class="w"> </span>-sv<span class="w"> </span>--cov-report<span class="w"> </span>term-missing<span class="w"> </span>--cov<span class="o">=</span>SOURCEDIR<span class="w">  </span>tests/
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">SOURCEDIR</span></code> is the location of the source code. The output will also display the coverage of tests together with the line numbers of missing statements. We aim for a <a class="reference external" href="https://martinfowler.com/bliki/TestCoverage.html">relatively high</a> coverage.</p>
+<blockquote>
+<div><p>Note: it is generally positive if the test has much more line than the actual code.</p>
+</div></blockquote>
+<blockquote>
+<div><p>Note: In general high coverage, fast testing, small datasets are preferred.</p>
+</div></blockquote>
+<section id="local-testing-of-gitlab-ci">
+<h3>Local testing of gitlab-CI<a class="headerlink" href="#local-testing-of-gitlab-ci" title="Link to this heading">#</a></h3>
+<p>Follow the install instructions on <a class="reference external" href="https://gitlab.com/hylleraasplatform/hylleraas/-/settings/ci_cd">gitlab-CI</a> (remember to copy the token). If you want to use a docker image, remember to register it during the installing process. After install, go to the hylleraas directory and run <code class="docutils literal notranslate"><span class="pre">gitlab-runner</span> <span class="pre">exec</span> <span class="pre">shell</span> <span class="pre">test</span></code> for running the test stage of the gitlab-CI locally, very useful for debugging.</p>
+</section>
+</section>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">#</a></h2>
+<p>All parts of the HSP should be documented. Currently, <a class="reference external" href="https://www.sphinx-doc.org/en/master/">sphinx</a> is used for generating the html files including API reference. A typical documentation folder looks like this</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>docs
+├── Makefile
+├── requirements.txt
+└── source
+    ├── conf.py
+    ├── index.rst
+    ├── installation.rst
+    ├── tutorials
+    │   ├── ex1.rst
+    │   ├── ex2.rst
+    │   ├── ex3.rst
+    │   └── troubleshooting.rst
+    └── tutorials.rst
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">Makefile</span></code>, <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> and <code class="docutils literal notranslate"><span class="pre">source/conf.py</span></code> should be sunchronized with the HSP main documentation. The file <code class="docutils literal notranslate"><span class="pre">source/index.rst</span></code> file should always be present (if not otherwise indicated in <code class="docutils literal notranslate"><span class="pre">source/conf.py</span></code>) and in <a class="reference external" href="https://docutils.sourceforge.io/rst.html">reStructuredText</a> format. All other files can be written in a simpler <a class="reference external" href="https://daringfireball.net/projects/markdown/">Markdown</a> language or directly in html.</p>
+<p>The generation of the documentation will be checked through the gitlab-CI. A local version can be build inside the <code class="docutils literal notranslate"><span class="pre">docs</span></code> directory using</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$&gt;<span class="w"> </span>make<span class="w"> </span>html
+</pre></div>
+</div>
+<p>and then inspected by opening <code class="docutils literal notranslate"><span class="pre">docs/build/html/index.html</span></code> in a browser of choice.</p>
+<section id="api-documentation">
+<h3>API documentation<a class="headerlink" href="#api-documentation" title="Link to this heading">#</a></h3>
+<p>Developers are expected to add in-code docstrings follwing the <a class="reference external" href="https://peps.python.org/pep-0257/">PEP 257</a> guidlines in <a class="reference external" href="https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html">numpy-style</a>. This will be enforced during the <code class="docutils literal notranslate"><span class="pre">lint</span></code> check as part of the gitlab-CI/CD using <a class="reference external" href="http://www.pydocstyle.org/en/stable/">pydocstyle</a>. A simple example is:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">gen_molecule</span><span class="p">(</span><span class="n">molecule_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate molecule object for LONDON.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    molecule_str : str</span>
+<span class="sd">        string containing coordinates (in bohr) of molecule of .xyz-type.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list</span>
+<span class="sd">        atoms</span>
+<span class="sd">    np.array</span>
+<span class="sd">        coordinates (in angstrom)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="package-management-dependencies">
+<h2>Package management / Dependencies<a class="headerlink" href="#package-management-dependencies" title="Link to this heading">#</a></h2>
+<p>Naturally, python applications will require to use functionalities from other packages.
+However, in view of the diversity of applications present in HSP, it is advisable to minimise the number of packages to-be installed with the hylleraas packages.
+To achieve this, we will work with different flavours of packages.
+In the beginning there will be only two, ‘core’ and ‘full’.</p>
+<section id="find-all-dependencies">
+<h3>Find all dependencies<a class="headerlink" href="#find-all-dependencies" title="Link to this heading">#</a></h3>
+<p>Create a fresh virtual environment, e.g. using conda: <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">create</span> <span class="pre">-n</span> <span class="pre">python3.8</span> <span class="pre">python=3.8</span></code>.
+Since for this package python &gt;= 3.8 should be supported (as of September 2023), this version was chosen as reference.
+Install and try to import the package in the environment to find packages that are not installed (obsolete packages should be found by <code class="docutils literal notranslate"><span class="pre">pre-commit</span></code>), e.g.
+<code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">python3.8</span></code> and
+<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">.</span> <span class="pre">;</span> <span class="pre">python</span> <span class="pre">-c</span> <span class="pre">'import</span> <span class="pre">hyset'</span></code>.</p>
+<p>Use, e.g. [pipdeptree] (<a class="github reference external" href="https://github.com/tox-dev/pipdeptree">tox-dev/pipdeptree</a>) to identify the packages that have been installed in this environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>python3.8<span class="o">)</span><span class="w"> </span>foobar@machine<span class="w"> </span>hyset%<span class="w"> </span>pipdeptree<span class="w"> </span>--python<span class="w"> </span><span class="k">$(</span>which<span class="w"> </span>python<span class="k">)</span>
+<span class="nv">hyset</span><span class="o">==</span><span class="m">0</span>.1
+├──<span class="w"> </span>fabric<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>Any,<span class="w"> </span>installed:<span class="w"> </span><span class="m">3</span>.2.2<span class="o">]</span>
+│<span class="w">   </span>├──<span class="w"> </span>decorator<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">5</span>,<span class="w"> </span>installed:<span class="w"> </span><span class="m">5</span>.1.1<span class="o">]</span>
+│<span class="w">   </span>├──<span class="w"> </span>Deprecated<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">1</span>.2,<span class="w"> </span>installed:<span class="w"> </span><span class="m">1</span>.2.14<span class="o">]</span>
+│<span class="w">   </span>│<span class="w">   </span>└──<span class="w"> </span>wrapt<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">1</span>.10,&lt;<span class="m">2</span>,<span class="w"> </span>installed:<span class="w"> </span><span class="m">1</span>.15.0<span class="o">]</span>
+│<span class="w">   </span>├──<span class="w"> </span>invoke<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">2</span>.0,<span class="w"> </span>installed:<span class="w"> </span><span class="m">2</span>.2.0<span class="o">]</span>
+│<span class="w">   </span>└──<span class="w"> </span>paramiko<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">2</span>.4,<span class="w"> </span>installed:<span class="w"> </span><span class="m">3</span>.3.1<span class="o">]</span>
+│<span class="w">       </span>├──<span class="w"> </span>bcrypt<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">3</span>.2,<span class="w"> </span>installed:<span class="w"> </span><span class="m">4</span>.0.1<span class="o">]</span>
+│<span class="w">       </span>├──<span class="w"> </span>cryptography<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">3</span>.3,<span class="w"> </span>installed:<span class="w"> </span><span class="m">41</span>.0.3<span class="o">]</span>
+│<span class="w">       </span>│<span class="w">   </span>└──<span class="w"> </span>cffi<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">1</span>.12,<span class="w"> </span>installed:<span class="w"> </span><span class="m">1</span>.15.1<span class="o">]</span>
+│<span class="w">       </span>│<span class="w">       </span>└──<span class="w"> </span>pycparser<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>Any,<span class="w"> </span>installed:<span class="w"> </span><span class="m">2</span>.21<span class="o">]</span>
+│<span class="w">       </span>└──<span class="w"> </span>PyNaCl<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">1</span>.5,<span class="w"> </span>installed:<span class="w"> </span><span class="m">1</span>.5.0<span class="o">]</span>
+│<span class="w">           </span>└──<span class="w"> </span>cffi<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">1</span>.4.1,<span class="w"> </span>installed:<span class="w"> </span><span class="m">1</span>.15.1<span class="o">]</span>
+│<span class="w">               </span>└──<span class="w"> </span>pycparser<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>Any,<span class="w"> </span>installed:<span class="w"> </span><span class="m">2</span>.21<span class="o">]</span>
+├──<span class="w"> </span>nest-asyncio<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>Any,<span class="w"> </span>installed:<span class="w"> </span><span class="m">1</span>.5.8<span class="o">]</span>
+├──<span class="w"> </span>paramiko<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>Any,<span class="w"> </span>installed:<span class="w"> </span><span class="m">3</span>.3.1<span class="o">]</span>
+│<span class="w">   </span>├──<span class="w"> </span>bcrypt<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">3</span>.2,<span class="w"> </span>installed:<span class="w"> </span><span class="m">4</span>.0.1<span class="o">]</span>
+│<span class="w">   </span>├──<span class="w"> </span>cryptography<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">3</span>.3,<span class="w"> </span>installed:<span class="w"> </span><span class="m">41</span>.0.3<span class="o">]</span>
+│<span class="w">   </span>│<span class="w">   </span>└──<span class="w"> </span>cffi<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">1</span>.12,<span class="w"> </span>installed:<span class="w"> </span><span class="m">1</span>.15.1<span class="o">]</span>
+│<span class="w">   </span>│<span class="w">       </span>└──<span class="w"> </span>pycparser<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>Any,<span class="w"> </span>installed:<span class="w"> </span><span class="m">2</span>.21<span class="o">]</span>
+│<span class="w">   </span>└──<span class="w"> </span>PyNaCl<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">1</span>.5,<span class="w"> </span>installed:<span class="w"> </span><span class="m">1</span>.5.0<span class="o">]</span>
+│<span class="w">       </span>└──<span class="w"> </span>cffi<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">1</span>.4.1,<span class="w"> </span>installed:<span class="w"> </span><span class="m">1</span>.15.1<span class="o">]</span>
+│<span class="w">           </span>└──<span class="w"> </span>pycparser<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>Any,<span class="w"> </span>installed:<span class="w"> </span><span class="m">2</span>.21<span class="o">]</span>
+├──<span class="w"> </span>scp<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>Any,<span class="w"> </span>installed:<span class="w"> </span><span class="m">0</span>.14.5<span class="o">]</span>
+│<span class="w">   </span>└──<span class="w"> </span>paramiko<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>Any,<span class="w"> </span>installed:<span class="w"> </span><span class="m">3</span>.3.1<span class="o">]</span>
+│<span class="w">       </span>├──<span class="w"> </span>bcrypt<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">3</span>.2,<span class="w"> </span>installed:<span class="w"> </span><span class="m">4</span>.0.1<span class="o">]</span>
+│<span class="w">       </span>├──<span class="w"> </span>cryptography<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">3</span>.3,<span class="w"> </span>installed:<span class="w"> </span><span class="m">41</span>.0.3<span class="o">]</span>
+│<span class="w">       </span>│<span class="w">   </span>└──<span class="w"> </span>cffi<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">1</span>.12,<span class="w"> </span>installed:<span class="w"> </span><span class="m">1</span>.15.1<span class="o">]</span>
+│<span class="w">       </span>│<span class="w">       </span>└──<span class="w"> </span>pycparser<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>Any,<span class="w"> </span>installed:<span class="w"> </span><span class="m">2</span>.21<span class="o">]</span>
+│<span class="w">       </span>└──<span class="w"> </span>PyNaCl<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">1</span>.5,<span class="w"> </span>installed:<span class="w"> </span><span class="m">1</span>.5.0<span class="o">]</span>
+│<span class="w">           </span>└──<span class="w"> </span>cffi<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>&gt;<span class="o">=</span><span class="m">1</span>.4.1,<span class="w"> </span>installed:<span class="w"> </span><span class="m">1</span>.15.1<span class="o">]</span>
+│<span class="w">               </span>└──<span class="w"> </span>pycparser<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>Any,<span class="w"> </span>installed:<span class="w"> </span><span class="m">2</span>.21<span class="o">]</span>
+└──<span class="w"> </span>tqdm<span class="w"> </span><span class="o">[</span>required:<span class="w"> </span>Any,<span class="w"> </span>installed:<span class="w"> </span><span class="m">4</span>.66.1<span class="o">]</span>
+<span class="nv">pip</span><span class="o">==</span><span class="m">23</span>.2.1
+<span class="nv">setuptools</span><span class="o">==</span><span class="m">68</span>.0.0
+<span class="nv">wheel</span><span class="o">==</span><span class="m">0</span>.38.4
+</pre></div>
+</div>
+<p>As we can see, both <code class="docutils literal notranslate"><span class="pre">fabric</span></code> and  <code class="docutils literal notranslate"><span class="pre">scp</span></code> depend on compatible versions of <code class="docutils literal notranslate"><span class="pre">paramiko</span></code> (<code class="docutils literal notranslate"><span class="pre">Any</span></code> and <code class="docutils literal notranslate"><span class="pre">&gt;=2.4</span></code>), so we could in principle remove this dependency from the installation.
+Even more comfortable is to use <a class="reference external" href="https://github.com/bndr/pipreqs">pipreqs</a> to get a list of dependencies:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>python3.8<span class="o">)</span><span class="w"> </span>foobar@machine<span class="w"> </span>hyset%<span class="w"> </span>pipreqs<span class="w"> </span>.<span class="w"> </span>--use-local<span class="w"> </span>--ignore<span class="w"> </span>tests/,build/<span class="w"> </span>--print<span class="w"> </span>--mode<span class="w"> </span>gt
+Please,<span class="w"> </span>verify<span class="w"> </span>manually<span class="w"> </span>the<span class="w"> </span>final<span class="w"> </span>list<span class="w"> </span>of<span class="w"> </span>requirements.txt<span class="w"> </span>to<span class="w"> </span>avoid<span class="w"> </span>possible<span class="w"> </span>dependency<span class="w"> </span>confusions.
+Fabric&gt;<span class="o">=</span><span class="m">3</span>.2.2
+nest_asyncio&gt;<span class="o">=</span><span class="m">1</span>.5.5
+scp&gt;<span class="o">=</span><span class="m">0</span>.14.5
+tqdm&gt;<span class="o">=</span><span class="m">4</span>.62.2
+INFO:<span class="w"> </span>Successfully<span class="w"> </span>output<span class="w"> </span>requirements
+</pre></div>
+</div>
+</section>
+<section id="identifying-core-dependencies">
+<h3>Identifying core dependencies<a class="headerlink" href="#identifying-core-dependencies" title="Link to this heading">#</a></h3>
+<p>Dependencies that are not required in <code class="docutils literal notranslate"><span class="pre">core</span></code> maybe removed usind a <code class="docutils literal notranslate"><span class="pre">try...except</span></code> construct, e.g.:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">nest_asyncio</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">nest_asyncio</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="o">...</span>
+            <span class="k">if</span> <span class="n">nest_asyncio</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;nest_asyncio must be installed to run &#39;</span> <span class="o">+</span>
+                                  <span class="s1">&#39;concurrently in an event loop&#39;</span><span class="p">)</span>
+            <span class="n">nest_asyncio</span><span class="o">.</span><span class="n">apply</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="cross-checking-core-dependencies">
+<h3>Cross-checking core dependencies<a class="headerlink" href="#cross-checking-core-dependencies" title="Link to this heading">#</a></h3>
+<p>Packages like <code class="docutils literal notranslate"><span class="pre">numpy</span></code> are used by several packages. In order to find the minimal required version, one could use the reverse search of [pipdeptree] (<a class="github reference external" href="https://github.com/tox-dev/pipdeptree">tox-dev/pipdeptree</a>):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>python3.8<span class="o">)</span><span class="w"> </span>foobar@machine<span class="w"> </span>hyset<span class="w"> </span>%<span class="w"> </span>pipdeptree<span class="w"> </span>--reverse<span class="w"> </span>--packages<span class="w"> </span>numpy
+<span class="nv">numpy</span><span class="o">==</span><span class="m">1</span>.23.5
+├──<span class="w"> </span><span class="nv">ase</span><span class="o">==</span><span class="m">3</span>.22.1<span class="w"> </span><span class="o">[</span>requires:<span class="w"> </span>numpy&gt;<span class="o">=</span><span class="m">1</span>.15.0<span class="o">]</span>
+│<span class="w">   </span>└──<span class="w"> </span><span class="nv">pycp2k</span><span class="o">==</span><span class="m">0</span>.2.2<span class="w"> </span><span class="o">[</span>requires:<span class="w"> </span>ase<span class="o">]</span>
+│<span class="w">       </span>└──<span class="w"> </span><span class="nv">hyif</span><span class="o">==</span><span class="m">0</span>.1<span class="w"> </span><span class="o">[</span>requires:<span class="w"> </span>pycp2k<span class="o">]</span>
+│<span class="w">           </span>└──<span class="w"> </span><span class="nv">hylleraas</span><span class="o">==</span><span class="m">0</span>.0.1<span class="w"> </span><span class="o">[</span>requires:<span class="w"> </span>hyif<span class="o">]</span>
+├──<span class="w"> </span><span class="nv">autograd</span><span class="o">==</span><span class="m">1</span>.4<span class="w"> </span><span class="o">[</span>requires:<span class="w"> </span>numpy&gt;<span class="o">=</span><span class="m">1</span>.12<span class="o">]</span>
+│<span class="w">   </span>└──<span class="w"> </span><span class="nv">hylleraas</span><span class="o">==</span><span class="m">0</span>.0.1<span class="w"> </span><span class="o">[</span>requires:<span class="w"> </span>autograd<span class="o">]</span>
+├──<span class="w"> </span><span class="nv">daltonproject</span><span class="o">==</span><span class="m">0</span>.1a0<span class="w"> </span><span class="o">[</span>requires:<span class="w"> </span>numpy&gt;<span class="o">=</span><span class="m">1</span><span class="o">]</span>
+│<span class="w">   </span>└──<span class="w"> </span><span class="nv">hylleraas</span><span class="o">==</span><span class="m">0</span>.0.1<span class="w"> </span><span class="o">[</span>requires:<span class="w"> </span>daltonproject<span class="o">]</span>
+├──<span class="w"> </span>deepmd-kit<span class="o">==</span><span class="m">2</span>.2.1<span class="w"> </span><span class="o">[</span>requires:<span class="w"> </span>numpy<span class="o">]</span>
+├──<span class="w"> </span><span class="nv">dpdata</span><span class="o">==</span><span class="m">0</span>.2.13<span class="w"> </span><span class="o">[</span>requires:<span class="w"> </span>numpy&gt;<span class="o">=</span><span class="m">1</span>.14.3<span class="o">]</span>
+├──<span class="w"> </span><span class="nv">geometric</span><span class="o">==</span><span class="m">0</span>.9.7.2<span class="w"> </span><span class="o">[</span>requires:<span class="w"> </span>numpy&gt;<span class="o">=</span><span class="m">1</span>.11<span class="o">]</span>
+...
+</pre></div>
+</div>
+<p>This leaves us with <code class="docutils literal notranslate"><span class="pre">numpy&gt;=1.15.0</span></code> as minimal requirement.
+<strong>Note:</strong> be aware of conflicting dependencies, e.g. <code class="docutils literal notranslate"><span class="pre">[required:</span> <span class="pre">&gt;=0.2.6,&lt;2.0.0,</span> <span class="pre">installed:</span> <span class="pre">2.0.1]</span></code> and consider refactoring.</p>
+</section>
+<section id="migration-to-pyproject-toml">
+<h3>Migration to <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code><a class="headerlink" href="#migration-to-pyproject-toml" title="Link to this heading">#</a></h3>
+<p>An easy starting point to migrate from the old <code class="docutils literal notranslate"><span class="pre">setup.py</span></code>/<code class="docutils literal notranslate"><span class="pre">setup.cfg</span></code> structure to
+using <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> is provided by <a class="reference external" href="https://ini2toml.readthedocs.io/en/latest/readme.html">ini2toml</a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ini2toml.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Translator</span>
+<span class="n">profile_name</span> <span class="o">=</span> <span class="s2">&quot;setup.cfg&quot;</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">profile_name</span><span class="p">,</span> <span class="s1">&#39;rt&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span> <span class="p">:</span>
+    <span class="n">original_contents_str</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">toml_str</span> <span class="o">=</span> <span class="n">Translator</span><span class="p">()</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">original_contents_str</span><span class="p">,</span> <span class="n">profile_name</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">toml_str</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="integrate-flavours-in-pyproject-toml">
+<h3>Integrate flavours in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code><a class="headerlink" href="#integrate-flavours-in-pyproject-toml" title="Link to this heading">#</a></h3>
+<p>Assume we want to create the three flavours <code class="docutils literal notranslate"><span class="pre">core</span></code>, <code class="docutils literal notranslate"><span class="pre">async</span></code> and <code class="docutils literal notranslate"><span class="pre">full</span></code> for <code class="docutils literal notranslate"><span class="pre">hyset</span></code>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">core</span></code> should be the default installation wich packages installed via <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">async</span></code> should be <code class="docutils literal notranslate"><span class="pre">core</span></code> plus <code class="docutils literal notranslate"><span class="pre">nest_asyncio&gt;=1.5.5</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">full</span></code> should be <code class="docutils literal notranslate"><span class="pre">core</span></code> plus <code class="docutils literal notranslate"><span class="pre">async</span></code></p></li>
+</ul>
+<p>The following files implement this behaviour:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="n">python3</span><span class="mf">.9</span><span class="p">)</span> <span class="n">foobar</span><span class="nd">@machine</span> <span class="n">hyset</span> <span class="o">%</span> <span class="n">cat</span> <span class="n">pyproject</span><span class="o">.</span><span class="n">toml</span>
+<span class="p">[</span><span class="n">build</span><span class="o">-</span><span class="n">system</span><span class="p">]</span>
+<span class="n">requires</span> <span class="o">=</span> <span class="p">[</span> <span class="s2">&quot;setuptools&gt;=61.2&quot;</span><span class="p">,]</span>
+<span class="n">build</span><span class="o">-</span><span class="n">backend</span> <span class="o">=</span> <span class="s2">&quot;setuptools.build_meta&quot;</span>
+
+<span class="p">[</span><span class="n">project</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;hyset&quot;</span>
+<span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;computational settings for hylleraas software platform&quot;</span>
+<span class="n">readme</span> <span class="o">=</span> <span class="s2">&quot;README.md&quot;</span>
+<span class="n">requires</span><span class="o">-</span><span class="n">python</span> <span class="o">=</span> <span class="s2">&quot;&gt;=3.8&quot;</span>
+<span class="n">dynamic</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;dependencies&quot;</span><span class="p">]</span>
+
+<span class="p">[</span><span class="n">project</span><span class="o">.</span><span class="n">optional</span><span class="o">-</span><span class="n">dependencies</span><span class="p">]</span>
+<span class="n">core</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">async</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;nest_asyncio&gt;=1.5.5&quot;</span><span class="p">]</span>
+<span class="n">full</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;hyset[core, async]&quot;</span><span class="p">]</span>
+
+<span class="p">[</span><span class="n">project</span><span class="o">.</span><span class="n">license</span><span class="p">]</span>
+<span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;LICENSE&quot;</span>
+
+<span class="p">[</span><span class="n">project</span><span class="o">.</span><span class="n">scripts</span><span class="p">]</span>
+<span class="n">executable</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;package.module:function&quot;</span>
+
+<span class="p">[</span><span class="n">tool</span><span class="o">.</span><span class="n">setuptools</span><span class="p">]</span>
+<span class="nb">zip</span><span class="o">-</span><span class="n">safe</span> <span class="o">=</span> <span class="n">true</span>
+<span class="n">include</span><span class="o">-</span><span class="n">package</span><span class="o">-</span><span class="n">data</span> <span class="o">=</span> <span class="n">true</span>
+
+<span class="p">[</span><span class="n">tool</span><span class="o">.</span><span class="n">setuptools</span><span class="o">.</span><span class="n">dynamic</span><span class="p">]</span>
+<span class="n">dependencies</span> <span class="o">=</span> <span class="p">{</span> <span class="n">file</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;requirements.txt&quot;</span><span class="p">]</span> <span class="p">}</span>
+
+<span class="p">[</span><span class="n">tool</span><span class="o">.</span><span class="n">settings</span><span class="p">]</span>
+<span class="n">known_third_party</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;fabric&quot;</span><span class="p">,</span> <span class="s2">&quot;hyobj&quot;</span><span class="p">,</span> <span class="s2">&quot;numpy&quot;</span><span class="p">,</span> <span class="s2">&quot;paramiko&quot;</span><span class="p">,</span> <span class="s2">&quot;scp&quot;</span><span class="p">,</span> <span class="s2">&quot;tqdm&quot;</span><span class="p">]</span>
+
+<span class="p">[</span><span class="n">tool</span><span class="o">.</span><span class="n">setuptools</span><span class="o">.</span><span class="n">package</span><span class="o">-</span><span class="n">data</span><span class="p">]</span>
+<span class="s2">&quot;*&quot;</span> <span class="o">=</span> <span class="p">[</span> <span class="s2">&quot;*.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;*.rst&quot;</span><span class="p">,]</span>
+<span class="n">hello</span> <span class="o">=</span> <span class="p">[</span> <span class="s2">&quot;*.msg&quot;</span><span class="p">,]</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>python3.9<span class="o">)</span><span class="w"> </span>foobar@machine<span class="w"> </span>hyset<span class="w"> </span>%<span class="w"> </span>cat<span class="w"> </span>requirements.txt
+Fabric&gt;<span class="o">=</span><span class="m">3</span>.2.2
+scp&gt;<span class="o">=</span><span class="m">0</span>.14.5
+tqdm&gt;<span class="o">=</span><span class="m">4</span>.62.2
+</pre></div>
+</div>
+</section>
+<section id="double-check-installation">
+<h3>Double-check installation<a class="headerlink" href="#double-check-installation" title="Link to this heading">#</a></h3>
+<p>In a fresh environment (see <a class="reference internal" href="#find-all-dependencies"><span class="xref myst">here</span></a>) try yo install the flavours:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>.
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>freeze<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>uninstall<span class="w"> </span>-y
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;.[core]&#39;</span>
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>freeze<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>uninstall<span class="w"> </span>-y
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;.[async]&#39;</span>
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>freeze<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>uninstall<span class="w"> </span>-y
+python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;.[full]&#39;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="interfaces">
+<h2>Interfaces<a class="headerlink" href="#interfaces" title="Link to this heading">#</a></h2>
+<p>Interfaces connect external sofware to the core objects of HSP, e.g., <code class="docutils literal notranslate"><span class="pre">Molecule</span></code> and <code class="docutils literal notranslate"><span class="pre">Method</span></code>. They provide access to basic methods associated with <code class="docutils literal notranslate"><span class="pre">Method</span></code>, like computation of energy of molecule or train a dataset.</p>
+<p><code class="docutils literal notranslate"><span class="pre">MethodLike</span></code> objects consist of a collection of information about the computation in json-style dictionary format as well as the methods that are defined in the interface. That is, all methods defined in the interface will be bound to a <code class="docutils literal notranslate"><span class="pre">Method</span></code> instance. Note, that some Modules, e.g. the geometry optimizer hygo expect specific methods (in this particular case, <code class="docutils literal notranslate"><span class="pre">get_energy()</span></code> and <code class="docutils literal notranslate"><span class="pre">get_gradient()</span></code>.
+During instantiation, <code class="docutils literal notranslate"><span class="pre">Method</span></code> will pass a <code class="docutils literal notranslate"><span class="pre">ComputationSettings</span></code> object to the interface which should be used throughout.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">Interface</span></code> class provides two kinds of methods.</p>
+<ol class="arabic">
+<li><p>Methods (functions) bound to the class <strong>object</strong>, i.e. these methods will be called <em>before</em> a class instance is initiated. Examples are <code class="docutils literal notranslate"><span class="pre">get_input_molecule()</span></code> and <code class="docutils literal notranslate"><span class="pre">get_input_method()</span></code>. These routines are used by the core objects <code class="docutils literal notranslate"><span class="pre">Molecule</span></code> and <code class="docutils literal notranslate"><span class="pre">Method</span></code>, respectively to read the input (mostly of legacy code) from the corresponding input file(s). In case of <code class="docutils literal notranslate"><span class="pre">get_input_molecule()</span></code>, the <code class="docutils literal notranslate"><span class="pre">Molecule</span></code> class needs this to instantiate a Molecule. For <code class="docutils literal notranslate"><span class="pre">get_input_method()</span></code>, the input is read and processes and <em>then</em>, an <code class="docutils literal notranslate"><span class="pre">Interface</span></code> class instance is created and the corresponding methods are bound to the <code class="docutils literal notranslate"><span class="pre">Method</span></code> class instance. Since these methods are needed before instantiation of the <code class="docutils literal notranslate"><span class="pre">Interface</span></code> class, thus independent on class variables but belonging to the class, these are decorated with <code class="docutils literal notranslate"><span class="pre">&#64;classmethod</span></code>.</p>
+<blockquote>
+<div><p>Note: <code class="docutils literal notranslate"><span class="pre">get_input_molecule()</span></code> and <code class="docutils literal notranslate"><span class="pre">get_input_method()</span></code> represent the interfaces between the program input and the python kernel. Therefore, they are mostly needed for legacy (i/o driven) code and obsolete for programs providing a python interface.</p>
+</div></blockquote>
+</li>
+<li><p>Methods (functions) bound to the class <strong>instance</strong>, e.g. <code class="docutils literal notranslate"><span class="pre">get_energy()</span></code>. These methods could make use of instance variables, e.g. a <code class="docutils literal notranslate"><span class="pre">self.molecule</span></code> provided by <code class="docutils literal notranslate"><span class="pre">__init__()</span></code>. However, in most cases, it makes sense to separate the method from the Molecule, i.e. one should be able to call <code class="docutils literal notranslate"><span class="pre">my_method.get_energy()</span> </code>with <em>different</em> molecules without creating a new <code class="docutils literal notranslate"><span class="pre">my_method</span></code> <code class="docutils literal notranslate"><span class="pre">Method</span></code> class instance. This means that for most applications, the <code class="docutils literal notranslate"><span class="pre">Interface</span></code> class would <em>not</em> need a molecule as input (this might be different for other applications where the method explicitly depends on the computable object, e.g. for a super-interface (or meta-interface) which redirects to a particular interface depending on the kind of computable object).</p>
+<blockquote>
+<div><p>Note: this construction is also particularly important for mixing different Method class instance methods.</p>
+</div></blockquote>
+</li>
+</ol>
+<section id="must-haves">
+<h3>Must-haves<a class="headerlink" href="#must-haves" title="Link to this heading">#</a></h3>
+<p>All interfaces must implement the following routines.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">__init__()</span></code>: initialize interface with <code class="docutils literal notranslate"><span class="pre">ComputeSettings</span></code>etc.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">setup()</span></code>: set up a calculation, must return a <code class="docutils literal notranslate"><span class="pre">RunSettings</span></code> object</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">parser()</span></code>: parse results, takes a <code class="docutils literal notranslate"><span class="pre">ComputeResult</span></code> object and returns a <code class="docutils literal notranslate"><span class="pre">dict</span></code>.</p></li>
+</ul>
+<p>`</p>
+</section>
+<section id="interface-checklist">
+<h3>Interface checklist<a class="headerlink" href="#interface-checklist" title="Link to this heading">#</a></h3>
+<ul class="contains-task-list simple">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> use Runner from <code class="docutils literal notranslate"><span class="pre">compute_settings</span></code> for kernel and userland interactions</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> work with absolute paths using the <code class="docutils literal notranslate"><span class="pre">pathlib</span></code> package</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> provide (and test) parsers for in- and output</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> make use of abstract base classes</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> provide complete docstrings</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> take care of units</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> provide a version check</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> provide proper error handling</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> provide a testing environment, e.g. dockerfile if necessary</p></li>
+</ul>
+<!-- **For most quantum chemical codes, one can summarize:**
+
+* if the program is i/o driven, provide the ``classmethods``  ``get_input_method()`` and, if applicable, ``get_input_molecule()``.
+* if the method is not explicitly dependent on the molecule, don’t use it for instantiation, instead use something like following:
+
+  ```python
+  class MyInterface:
+      def __init__(self, method):
+          ...
+
+      @classmethod
+      def gen_molecule(cls, atoms, coordinates):
+          ...
+          return
+
+      def get_energy(self, molecule):
+          mymol = MyInterface.gen_molecule(molecule.atoms, molecule.coordinates)
+          ...
+          return energy
+  ```
+
+  In this example, the function ``get_energy()`` will take a molecule object with attributes ``atoms`` and ``coordinates`` (this is standard) and calls ``gen_molecule()`` to generate the molecule ``mymol`` as needed by the external program: this might be a special object, a string for an input file, etc. With this molecule, an input is created, the energy is computed and finally returned.
+
+  > Note: ``gen_molecule()`` is *not* the same as ``gen_input_molecule()``: The latter *reads* a molecular input, while the first *creates* or *updates* a representation of the molecule using input atoms and coordinates -->
+<!--An example interface to the program 'myprog', stored in `./hylleraas/intefaces/myprogram.py` could look like this (remember though to inclue [docstrings](#api-documentation)):
+
+	class MyProgram:
+
+		def __init__(self):
+			...
+			self.molecule = ...
+			...
+
+		@classmethod
+		def get_input_molecule(cls, *args):
+			atoms = ...
+			coordinates = ...
+			return atoms, coordinates
+
+		@classmethod
+		def get_input_method(cls, *args):
+			dict = ...
+			return dict
+
+		def restart(self, *args, **kwargs):
+			...
+
+		def get_energy(self, *args):
+			...
+			return energy
+
+		def update_coordinates(self, coordinates):
+			"""Update coordiantes on interface side."""
+			self.molecule.coordinates = coordinates.ravel().reshape(-1,3)
+			...
+-->
+<!-- * to test a newly, generated interface, one can explicitely use it by ``Method(..., interface=MyInterface)``
+* in order to make your interface available for HSP, add the corresponding mapping in ``./hylleraas/interfaces/__init__.py``:
+  ```python
+  from .myinterface import MyInterface
+  PROGRAMS.update({'myprog': 'MyInterface'})
+  ```
+
+> Note: Even though there is a very rudamentray generic restart function in the major Interface class, it is highly advised to create a custom one in the interface. -->
+</section>
+<section id="example">
+<h3>Example<a class="headerlink" href="#example" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">....manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">NewRun</span>  <span class="c1"># implements self.run() and self.arun()</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">....utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">unique_filename</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">HylleraasQMInterface</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.output_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">Parser</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyIf</span><span class="p">(</span><span class="n">HylleraasQMInterface</span><span class="p">,</span> <span class="n">NewRun</span><span class="p">)</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">method</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+                 <span class="n">compute_settings</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ComputeSettings</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+
+        <span class="c1"># set default ComputeSettings to &#39;local&#39;</span>
+        <span class="k">if</span> <span class="n">compute_settings</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compute_settings</span> <span class="o">=</span> <span class="n">create_compute_settings</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compute_settings</span> <span class="o">=</span> <span class="n">compute_settings</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">check_version</span><span class="p">()</span> <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span>
+            <span class="s1">&#39;check_version&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">OutputParser</span> <span class="o">=</span> <span class="n">Parser</span>
+
+    <span class="c1"># process lists</span>
+    <span class="nd">@run_sequentially</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">molecule</span><span class="p">:</span> <span class="n">MoleculeLike</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunSettings</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up the calculation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        molecule : MoleculeLike</span>
+<span class="sd">            Molecule to be used in Calculation.</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Additional keyword arguments.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        RunSettings</span>
+<span class="sd">            RunSettings object.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">run_settings</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_settings</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;run_opt&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">run_settings</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">run_settings</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;run_opt&#39;</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">molecule</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="n">run_settings</span><span class="p">,</span> <span class="o">**</span><span class="n">setup_dict</span><span class="p">)</span>
+
+
+        <span class="n">setup_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;program&#39;</span><span class="p">:</span> <span class="s1">&#39;myprog&#39;</span><span class="p">}</span>
+
+        <span class="n">input_str</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;program_opt&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="n">mol_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_system_str_from_molecule</span><span class="p">(</span><span class="n">molecule</span><span class="p">)</span>
+        <span class="n">mol_filename</span> <span class="o">=</span> <span class="n">unique_filename</span><span class="p">(</span><span class="n">mol_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;.xyz&#39;</span>
+
+        <span class="c1"># Note: File handling will be simplified soon:</span>
+        <span class="c1">#</span>
+        <span class="c1"># file_handler = FileHandler(run_settings)</span>
+        <span class="c1"># mol_file = file_handler.file(name=mol_filename, content=mol_str)</span>
+        <span class="c1"># files_to_write = [mol_file]</span>
+
+        <span class="n">mol_file</span> <span class="o">=</span> <span class="n">run_settings</span><span class="o">.</span><span class="n">abs_path</span><span class="p">(</span><span class="n">mol_filename</span><span class="p">)</span>
+        <span class="n">files_to_write</span> <span class="o">=</span> <span class="p">[(</span><span class="n">mol_file</span><span class="p">,</span> <span class="n">mol_str</span><span class="p">)]</span>
+
+        <span class="n">input_file</span> <span class="o">=</span> <span class="n">unique_filename</span><span class="p">(</span><span class="n">input_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;.inp&#39;</span>
+        <span class="n">input_file</span> <span class="o">=</span> <span class="n">run_settings</span><span class="o">.</span><span class="n">abs_path</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+        <span class="n">output_file</span> <span class="o">=</span> <span class="n">input_file</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s1">&#39;.out&#39;</span><span class="p">)</span>
+
+        <span class="n">files_to_write</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">input_file</span><span class="p">,</span> <span class="n">input_str</span><span class="p">))</span>
+
+        <span class="n">setup_dict</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+            <span class="s1">&#39;program&#39;</span><span class="p">:</span> <span class="n">program</span><span class="p">,</span>
+            <span class="s1">&#39;files_to_write&#39;</span><span class="p">:</span> <span class="n">files_to_write</span><span class="p">,</span>
+            <span class="s1">&#39;output_file&#39;</span><span class="p">:</span> <span class="n">output_file</span><span class="p">,</span>
+            <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;-i&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">input_file</span><span class="p">)],</span>
+        <span class="p">})</span>
+
+        <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="n">run_settings</span><span class="p">,</span> <span class="o">**</span><span class="n">setup_dict</span><span class="p">)</span>
+
+    <span class="nd">@run_sequentially</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="n">ComputeResult</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse MyIf output.</span>
+
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        output: `:obj:ComputeResult`</span>
+<span class="sd">            result of the computation</span>
+<span class="sd">        kwargs: dict</span>
+<span class="sd">            additional keyword arguments</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            parsed results</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">results</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">output_file</span><span class="p">:</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OutputParser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">output_file</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">stdout</span><span class="p">:</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OutputParser</span><span class="o">.</span><span class="n">parse_stdout</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">stdout</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">stderr</span><span class="p">:</span>
+            <span class="c1"># raise RuntimeError(output.stderr)</span>
+            <span class="c1"># warnings.warn(output.stderr)</span>
+            <span class="n">results</span><span class="p">[</span><span class="s1">&#39;stderr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">stderr</span>
+
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="nd">@run_sequentially</span>
+    <span class="nd">@convert_units</span><span class="p">(</span><span class="s1">&#39;energy&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">molecule</span><span class="p">:</span> <span class="n">MoleculeLike</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute energy.&quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">molecule</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;energy&#39;</span><span class="p">]</span>
+
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./src/developers_guide"
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> 
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#style-guidelines">Style guidelines</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#handling-exceptions">Handling exceptions</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#python-style-guide-checklist">Python style guide checklist</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#testing">Testing</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#local-testing-of-gitlab-ci">Local testing of gitlab-CI</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#documentation">Documentation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#api-documentation">API documentation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#package-management-dependencies">Package management / Dependencies</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#find-all-dependencies">Find all dependencies</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#identifying-core-dependencies">Identifying core dependencies</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cross-checking-core-dependencies">Cross-checking core dependencies</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#migration-to-pyproject-toml">Migration to <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#integrate-flavours-in-pyproject-toml">Integrate flavours in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#double-check-installation">Double-check installation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interfaces">Interfaces</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#must-haves">Must-haves</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#interface-checklist">Interface checklist</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example">Example</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../../_sources/src/developers_guide/developers_guide.md">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item"><p align="left">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" height="20px"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path fill="currentColor" d="M72 88a56 56 0 1 1 112 0A56 56 0 1 1 72 88zM64 245.7C54 256.9 48 271.8 48 288s6 31.1 16 42.3V245.7zm144.4-49.3C178.7 222.7 160 261.2 160 304c0 34.3 12 65.8 32 90.5V416c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V389.2C26.2 371.2 0 332.7 0 288c0-61.9 50.1-112 112-112h32c24 0 46.2 7.5 64.4 20.3zM448 416V394.5c20-24.7 32-56.2 32-90.5c0-42.8-18.7-81.3-48.4-107.7C449.8 183.5 472 176 496 176h32c61.9 0 112 50.1 112 112c0 44.7-26.2 83.2-64 101.2V416c0 17.7-14.3 32-32 32H480c-17.7 0-32-14.3-32-32zm8-328a56 56 0 1 1 112 0A56 56 0 1 1 456 88zM576 245.7v84.7c10-11.3 16-26.1 16-42.3s-6-31.1-16-42.3zM320 32a64 64 0 1 1 0 128 64 64 0 1 1 0-128zM240 304c0 16.2 6 31 16 42.3V261.7c-10 11.3-16 26.1-16 42.3zm144-42.3v84.7c10-11.3 16-26.1 16-42.3s-6-31.1-16-42.3zM448 304c0 44.7-26.2 83.2-64 101.2V448c0 17.7-14.3 32-32 32H288c-17.7 0-32-14.3-32-32V405.2c-37.8-18-64-56.5-64-101.2c0-61.9 50.1-112 112-112h32c61.9 0 112 50.1 112 112z"/></svg>
+    <a href="../footer/about_us.html">About us</a>
+</p>
+<p align="left">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 203" height="20px"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path fill="currentColor" d="M212.55,102.07c0,28.44-10.74,49.54-27.89,49.54s-37.27-22.68-37.27-49.54,20.13-49.54,37.27-49.54,27.89,21.1,27.89,49.54 M19.06,102.07c0-50.49,19.07-87.95,49.5-87.95s66.17,40.26,66.17,87.95-35.73,87.95-66.17,87.95-49.5-37.46-49.5-87.95"/></svg>
+    <a href="https://www.mn.uio.no/hylleraas/english/")>The Hylleraas Centre</a>
+</p>
+<p align="left">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" height="20px"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path fill="currentColor" d="M448 296c0 66.3-53.7 120-120 120h-8c-17.7 0-32-14.3-32-32s14.3-32 32-32h8c30.9 0 56-25.1 56-56v-8H320c-35.3 0-64-28.7-64-64V160c0-35.3 28.7-64 64-64h64c35.3 0 64 28.7 64 64v32 32 72zm-256 0c0 66.3-53.7 120-120 120H64c-17.7 0-32-14.3-32-32s14.3-32 32-32h8c30.9 0 56-25.1 56-56v-8H64c-35.3 0-64-28.7-64-64V160c0-35.3 28.7-64 64-64h64c35.3 0 64 28.7 64 64v32 32 72z"/></svg>
+    <a href="../footer/citing.html">Citing the Hylleraas Software Platform</a>
+</p></div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

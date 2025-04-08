@@ -1,0 +1,18 @@
+format: jb-book
+root: src/index.rst
+parts:
+  # ---------------------------- Part Setup ----------------------------
+  - caption: Setup
+    chapters:
+    - file: src/setup/setup
+      title: Setup
+      sections:
+        - file: src/setup/settings
+          title: Settings
+        - file: src/setup/jobs
+          title: Jobs
+
+
+  # ----------------------------- Part Submission ---------------------------
+
+  # --------------------------- Part Results --------------------------

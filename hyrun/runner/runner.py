@@ -184,6 +184,7 @@ class Runner(FileTransferManager, JobDatabaseManager, JobPrep):
         self.logger.info(f'Jobs to fetch: {len(jobs_to_fetch)}')
         jobs_to_fetch = self.get_status_run(jobs_to_fetch,
                                             connection=connection)
+        # TODO: get jobs also if they failed!!!
         jobs_to_do_fetch = {i: j for i, j in jobs_to_fetch.items()
                             if j['job'].status in ['COMPLETED']}
         jobs_to_not_fetch = {i: j for i, j in jobs_to_fetch.items()

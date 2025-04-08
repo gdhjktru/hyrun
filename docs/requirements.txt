@@ -1,0 +1,4 @@
+jupyter-book
+sphinx-tabs
+sphinxcontrib-mermaid
+myst-parser
