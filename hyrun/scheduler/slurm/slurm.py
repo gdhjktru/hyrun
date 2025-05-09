@@ -198,7 +198,7 @@ class SlurmScheduler(Scheduler):
     def gen_job_script(self, job):
         """Generate job script."""
         return gjs(job)
-    
+
     def get_job_summary(self, job):
         """Get job summary."""
         summary = getattr(job,'metadata', {})

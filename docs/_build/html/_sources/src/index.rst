@@ -12,7 +12,7 @@ hyrun
 
 This is the documentation for **hyrun**, a module for running computations using
  **Hylleraas Software Platform**
-(HSP) project. 
+(HSP) project.
 
 .. grid:: 3
     :gutter: 3
@@ -67,4 +67,3 @@ This is the documentation for **hyrun**, a module for running computations using
     ..     The API reference contains a detailed description of
     ..     the HSP modules, classes, and functions, as well as their
     ..     parameters and returned objects.
-
