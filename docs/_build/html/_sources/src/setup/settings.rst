@@ -72,9 +72,9 @@ The `RunSettings` instance is the input for running the calculation.
 .. three steps setup, run and parsing.
 
 
-********
+******************
 ComputeSettings
-********
+******************
 
 **Date**: |today|
 
@@ -145,7 +145,7 @@ As of today, this is the following class diagram for the
 This structure is necessary because in hyset, `LocalArch` and `RemoteArch`
 have their respective runners which are getting replaced by `hyrun.run()`.
 However, the `ComputeSettings` class can be refactored to give
-(currently referring to branch `use_rsync_multiple`):
+(currently status in branch `use_rsync_multiple`):
 
 .. mermaid::
 
@@ -266,9 +266,9 @@ However, the `ComputeSettings` class can be refactored to give
 
 
 
-********
+*****************
 ComputeSettings2
-********
+*****************
 
 
 Simplifying the `ComputeSettings` class by condensing options gives `ComputeSettings2` as to be used by `hyrun.run()`:
@@ -433,7 +433,7 @@ The former has the advantage for the user that
 
 
 create_compute_settings()
-------------------------
+----------------------------
 
 
 `ComputeSettings` is a dataclass which can instantiated using the kwargs, e.g.

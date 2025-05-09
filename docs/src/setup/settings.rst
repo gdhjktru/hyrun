@@ -72,9 +72,9 @@ The `RunSettings` instance is the input for running the calculation.
 .. three steps setup, run and parsing.
 
 
-********
+******************
 ComputeSettings
-********
+******************
 
 **Date**: |today|
 
@@ -143,8 +143,9 @@ As of today, this is the following class diagram for the
 
 
 This structure is necessary because in hyset, `LocalArch` and `RemoteArch`
-have their respective runners which are getting replaced by `hyrun.run()` here,
-leading to only one composite `ComputeSettings2` class, which refactores like this:
+have their respective runners which are getting replaced by `hyrun.run()`.
+However, the `ComputeSettings` class can be refactored to give
+(currently status in branch `use_rsync_multiple`):
 
 .. mermaid::
 
@@ -164,20 +165,20 @@ leading to only one composite `ComputeSettings2` class, which refactores like th
 
     classDiagram
 
-        ComputeSettings2 <|-- ComputeSettingsGeneral
-        ComputeSettings2 <|-- ComputeSettingsResources
-        ComputeSettings2 <|-- ComputeSettingsEnvironment
-        ComputeSettings2 <|-- ComputeSettingsLogger
-        ComputeSettings2 <|-- ComputeSettingsDirectories
-        ComputeSettings2 <|-- ComputeSettingsDatabase
-        ComputeSettings2 <|-- ComputeSettingsScheduler
-        ComputeSettings2 <|-- ComputeSettingsConnection
-        ComputeSettings2 <|-- ComputeSettingsConda
-        ComputeSettings2 <|-- ComputeSettingsContainer
-        ComputeSettings2 <|-- ComputeSettingsProgram
-        ComputeSettings2 <|-- ComputeSettingsFiles
+        ComputeSettings <|-- ComputeSettingsGeneral
+        ComputeSettings <|-- ComputeSettingsResources
+        ComputeSettings <|-- ComputeSettingsEnvironment
+        ComputeSettings <|-- ComputeSettingsLogger
+        ComputeSettings <|-- ComputeSettingsDirectories
+        ComputeSettings <|-- ComputeSettingsDatabase
+        ComputeSettings <|-- ComputeSettingsScheduler
+        ComputeSettings <|-- ComputeSettingsConnection
+        ComputeSettings <|-- ComputeSettingsConda
+        ComputeSettings <|-- ComputeSettingsContainer
+        ComputeSettings <|-- ComputeSettingsProgram
+        ComputeSettings <|-- ComputeSettingsFiles
 
-        class ComputeSettings2{
+        class ComputeSettings{
         }
         class ComputeSettingsGeneral{
           +str arch_type
@@ -263,8 +264,14 @@ leading to only one composite `ComputeSettings2` class, which refactores like th
           set_files()
         }
 
-As one can see, there is the possibility to simplify the `ComputeSettings` class
-by condensing options like:
+
+
+*****************
+ComputeSettings2
+*****************
+
+
+Simplifying the `ComputeSettings` class by condensing options gives `ComputeSettings2` as to be used by `hyrun.run()`:
 
 .. mermaid::
 
@@ -426,7 +433,7 @@ The former has the advantage for the user that
 
 
 create_compute_settings()
-------------------------
+----------------------------
 
 
 `ComputeSettings` is a dataclass which can instantiated using the kwargs, e.g.
