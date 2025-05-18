@@ -1,6 +1,6 @@
 import networkx as nx
 from pathlib import Path
-from typing import List, Optional, Union, Callable
+from typing import Any, List, Optional, Union, Callable
 from hytools.logger import LoggerDummy
 
 
@@ -164,6 +164,19 @@ class JobGraph:
     
     def __str__(self) -> str:
         return '\n'.join(nx.generate_network_text(self.graph))
+    
+    def get_dependencies(self, node):
+        """Get all dependencies of a node."""
+        return list(nx.ancestors(self.graph, node))
+    
+    def get_dependents(self, node):
+        """Get all dependents of a node."""
+        return list(nx.descendants(self.graph, node))
+    
+    @property
+    def nodes(self):
+        """Get all nodes in graph."""
+        return list(self.graph.nodes)
 
 if __name__ == '__main__':
     from dataclasses import dataclass
@@ -186,19 +199,30 @@ if __name__ == '__main__':
     g.update_nodes(jobs)
     print(g.graph.nodes)
 
+
+
     print(g)
     print(g.dump())
 
-    print(g.graph.nodes['qq10fg'])
-    s = g.get_running()
-    print(s)
-    jobs[6].status = 'running'
-    g.update_nodes(jobs)
-    s = g.get_running()
-    print(s)
-    import matplotlib.pyplot as plt
-    plt.tight_layout()
-    nx.draw_networkx(g.graph, arrows=True)
-    plt.axis('off')
-    plt.show()
-    plt.savefig("g2.png", format="PNG")
+    print(list(g.graph.nodes))
+    for j in g:
+        print(j)
+
+    dep = [g.get_dependencies(j) for j in g]
+    print(dep)
+    root_jobs = [j for j in g if not g.get_dependencies(j)]
+    print('ROOT JOBS without dependencies:', root_jobs)
+
+    # print(g.graph.nodes['qq10fg'])
+    # s = g.get_running()
+    # print(s)
+    # jobs[6].status = 'running'
+    # g.update_nodes(jobs)
+    # s = g.get_running()
+    # print(s)
+    # import matplotlib.pyplot as plt
+    # plt.tight_layout()
+    # nx.draw_networkx(g.graph, arrows=True)
+    # plt.axis('off')
+    # plt.show()
+    # plt.savefig("g2.png", format="PNG")
