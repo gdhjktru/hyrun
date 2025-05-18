@@ -444,3 +444,11 @@ presets and is either a dictionary, a filename (json or yaml) or
 a keyword in the provided presets, e.g. `saga`, `lumi`, `local` or `docker`.
 The presets then get overwritten by the kwargs. The function returns a
 `ComputeSettings` instance.
+
+
+setting environment variables
+--------------------------------
+
+Probably one of the most complicated things in the `ComputeSettings` class is
+the handling of environment variables. The user can set them in the
+`ComputeSettings` class using the `env_vars` attribute. This can be a

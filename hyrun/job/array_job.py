@@ -20,6 +20,7 @@ def update_arrayjob(func):
         return arrayjob
     return wrapper
 
+# modify to a function that creates a simple list
 
 @dataclass
 class ArrayJob:

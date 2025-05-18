@@ -22,6 +22,8 @@ class JobInfo:
     status: Optional[str] = None
     job_hash: Optional[str] = None
     metadata: Optional[dict] = field(default_factory=dict)
+    # dependencies
+    # lifetime (dont run after... date)
 
 
 @dataclass

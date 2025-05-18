@@ -5,10 +5,11 @@ from hyrun.job import ArrayJob
 from .runner import Runner
 
 
-def run(*args, **kwargs):
+def run(*args, dependencies=None, **kwargs):
     """Run hsp job."""
     # # return Runner(*args, **kwargs).run(*args, **kwargs)
     aj = ArrayJob(*args, logger=get_logger(print_level='DEBUG'), **kwargs)
+    dependency_graph  = kwargs...
     #     # check if jobs has an id in database
     # jobs = self.check_finished_jobs(jobs)
 
@@ -17,6 +18,7 @@ def run(*args, **kwargs):
         # init all classes
         # check if job is in database
         print('checking if job is in database')
+        print('checking if all dependencies are met, use networkx.all_simple_paths#')
         # check if job is finished
         print('checking if job is finished')
         # generate job scripts
