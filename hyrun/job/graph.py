@@ -177,6 +177,36 @@ class JobGraph:
     def nodes(self):
         """Get all nodes in graph."""
         return list(self.graph.nodes)
+    
+    @property
+    def topological(self):
+        """Get topological order of graph."""
+        return list(nx.topological_sort(self.graph))
+    
+    @property
+    def topological_map(self):
+        """Get topological order of graph."""
+        #maps original node order to topological order
+        # get index of node in jobs
+        # and map to topological order
+        node_to_index = {job.hash: i for i, job in enumerate(jobs)}
+        return {node_to_index[node]: i for i, node in enumerate(self.topological)}
+
+    
+    def show_topological(self):
+        """Show graph in topological order."""
+        import matplotlib.pyplot as plt
+        for layer, nodes in enumerate(nx.topological_generations(self.graph)):
+            for node in nodes:
+                self.graph.nodes[node]["layer"] = layer
+
+        pos = nx.multipartite_layout(self.graph, subset_key="layer")
+
+        fig, ax = plt.subplots()
+        nx.draw_networkx(self.graph, pos=pos, ax=ax)
+        # ax.set_title("DAG layout in topological order")
+        fig.tight_layout()
+        plt.show()
 
 if __name__ == '__main__':
     from dataclasses import dataclass
@@ -220,9 +250,17 @@ if __name__ == '__main__':
     # g.update_nodes(jobs)
     # s = g.get_running()
     # print(s)
-    # import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt
     # plt.tight_layout()
     # nx.draw_networkx(g.graph, arrows=True)
     # plt.axis('off')
     # plt.show()
     # plt.savefig("g2.png", format="PNG")
+
+
+    
+    print(g.topological)
+    print(g.topological_map)
+    # plot topological graph
+
+    g.show_topological()
