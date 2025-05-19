@@ -55,6 +55,15 @@ class JobGraph:
         for job in jobs:
             self.graph.nodes[job.hash][key] = getattr(job, key, None)
 
+    def update_edges(self, dependencies=None, weights=None):
+        """Update edges."""
+        dependencies = self.convert_dependencies(dependencies)
+        weights = self.convert_weights(weights)
+        if dependencies:
+            self.graph.add_edges_from(dependencies)
+        if weights:
+            self.graph.add_weighted_edges_from(weights)
+
 
     def num_to_hash(self, n: Union[str, int]) -> str:
         """Convert number to hash."""
@@ -208,6 +217,19 @@ class JobGraph:
         fig.tight_layout()
         plt.show()
 
+    def remove_branch_by_weight(self, weight=0.0):
+        """Remove branch of graph with weight < weight."""
+        edges_to_remove = []
+        nodes_to_remove = []
+        for (u, v, wt) in self.graph.edges(data=True):
+            if wt['weight'] < weight:
+                edges_to_remove.append((u, v))
+                nodes_to_remove.extend(self.get_dependents(u))
+        self.graph.remove_edges_from(edges_to_remove)
+        self.graph.remove_nodes_from(list(set(nodes_to_remove)))
+
+
+
 if __name__ == '__main__':
     from dataclasses import dataclass
     from hytools.logger import get_logger
@@ -219,7 +241,7 @@ if __name__ == '__main__':
     jobs = [Job(hash=f'qq{i}fg') for i in range(5, 12)]
 
     dependencies = [(0, 1), (1, 2), (1, 3), (2, 4)]
-    weights = [(0, 1, 1), (1, 2, 2), (1, 3, 3), (2, 4, 4)]
+    weights = [(0, 1, 1), (1, 2, .6), (1, 3, .77), (2, 4, .2)]
     g = JobGraph(jobs, dependencies=dependencies,
                     weights=weights,
                  logger=get_logger(print_level='DEBUG'))
@@ -263,4 +285,20 @@ if __name__ == '__main__':
     print(g.topological_map)
     # plot topological graph
 
-    g.show_topological()
+
+    # removes branch of graph with weight < 0.5
+    edges_to_remove= []
+    nodes_to_remove= []
+    for (u, v, wt ) in g.graph.edges(data=True):
+        if wt['weight'] < 0.5:
+            print('removing edge', u, v, wt)
+            print('descendants of',v,  g.get_dependents(v))
+            edges_to_remove.append((u, v))
+            nodes_to_remove.extend(g.get_dependents(u))
+    # remove edges with weight > 0.5d
+    # dependent_nodes= [j for j in g if g.get_dependencies(j)]
+    g.graph.remove_edges_from(edges_to_remove)
+    g.graph.remove_nodes_from(list(set(nodes_to_remove)))
+    print(g)
+
+    # g.show_topologicall()
