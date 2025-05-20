@@ -2,33 +2,9 @@ import networkx as nx
 from pathlib import Path
 from typing import Any, List, Optional, Union, Callable
 from hytools.logger import LoggerDummy
+import json
 
-
-# def get_graph(jobs=None,
-#               weights=None,
-#               dependencies=None,
-#               **kwargs):
-
-#     DG = nx.DiGraph()
-#     # DG.add_node('root', hash=0)
-#     DG.add_nodes_from([tuple([i, {"hash": j.hash}])
-#                        for i, j in enumerate(jobs)])
-#     # DG.add_edges_from([('root', i) for i in range(len(jobs))])
-#     if dependencies:
-#         DG.add_edges_from(dependencies)
-       
-#     # if weights provided, rename adeds
-#     if weights:
-#         for i, j in enumerate(weights):
-#             DG[i][j]['weight'] = weights[i][j]
-
-
-
-    
-
-#     return DG
-
-
+ 
 class JobGraph:
     """Class to create a job graph."""
 
@@ -42,18 +18,19 @@ class JobGraph:
         self.graph = nx.DiGraph()
         self.jobs = jobs or []
         self.graph.add_nodes_from([job.hash for job in self.jobs])
-        self.update_nodes(self.jobs)
+        self.update_nodes(self.jobs, keys=['status', 'database'])
         self.dependencies = self.convert_dependencies(dependencies)
         self.graph.add_edges_from(self.dependencies)
         self.weights = self.convert_weights(weights)
         if self.weights:
             self.graph.add_weighted_edges_from(self.weights)
 
-    def update_nodes(self, jobs=None, key='status'):
+    def update_nodes(self, jobs=None, keys=['status']):
         """Add status to nodes."""
         jobs = jobs or self.jobs
         for job in jobs:
-            self.graph.nodes[job.hash][key] = getattr(job, key, None)
+            for key in keys:
+                self.graph.nodes[job.hash][key] = getattr(job, key, None)
 
     def update_edges(self, dependencies=None, weights=None):
         """Update edges."""
@@ -109,23 +86,20 @@ class JobGraph:
     
     def get_running(self):
         """Show running jobs."""
-        return self.subgraph(filter_node = (
-            lambda n1: self.graph.nodes[n1].get('status', '') == 'running'))
+        return self.subgraph_from_jobattrs(attr='status', value='running')
     
-    def get_finished(self):
+    def __add__(self, other):
+        """Add two graphs."""
+        if not isinstance(other, JobGraph):
+            raise ValueError("Can only add JobGraph objects.")
+        new_graph = JobGraph()
+        new_graph.graph = nx.compose(self.graph, other.graph)
+        return new_graph
+    
+    def subgraph_from_jobattrs(self, attr: str, value: Any):
         """Show finished jobs."""
         return self.subgraph(filter_node = (
-            lambda n1: self.graph.nodes[n1].get('status', '') == 'finished'))
-    
-    def get_failed(self):
-        """Show failed jobs."""
-        return self.subgraph(filter_node = (
-            lambda n1: self.graph.nodes[n1].get('status', '') == 'failed'))
-    
-    def get_pending(self):
-        """Show pending jobs."""
-        return self.subgraph(filter_node = (
-            lambda n1: self.graph.nodes[n1].get('status', '') == 'pending'))
+            lambda n1: self.graph.nodes[n1].get('attr', '') == 'value'))
         
     def add_job(self, job):
         """Add job to graph."""
@@ -163,15 +137,18 @@ class JobGraph:
         """Get string representation of graph."""
         return str(self.graph.nodes)
 
-    def dump(self, filename=None):
+    def write(self, filename):
         """Dump graph to file."""
-        text = nx.generate_edgelist(self.graph, delimiter=' ', data=True)
-        if filename:
-            Path(filename).write_text('\n'.join(text))
-        else:
-            return '\n'.join(text)
+        json.dump(nx.node_link_data(self.graph, edges="edges"),
+                  open(filename, 'w'), indent=4)
+        
+    def read(self, filename):
+        """Read graph from file."""
+        self.graph = nx.node_link_graph(json.load(open(filename, 'r')),
+                                        edges="edges")
     
     def __str__(self) -> str:
+        """Get string representation of graph."""
         return '\n'.join(nx.generate_network_text(self.graph))
     
     def get_dependencies(self, node):
@@ -195,9 +172,6 @@ class JobGraph:
     @property
     def topological_map(self):
         """Get topological order of graph."""
-        #maps original node order to topological order
-        # get index of node in jobs
-        # and map to topological order
         node_to_index = {job.hash: i for i, job in enumerate(jobs)}
         return {node_to_index[node]: i for i, node in enumerate(self.topological)}
 
@@ -212,21 +186,28 @@ class JobGraph:
         pos = nx.multipartite_layout(self.graph, subset_key="layer")
 
         fig, ax = plt.subplots()
-        nx.draw_networkx(self.graph, pos=pos, ax=ax)
+        labels = {node: f'{node[0:7]}...' for node in self.graph.nodes}
+        nx.draw_networkx(self.graph, pos=pos, ax=ax, node_size=600,
+                           node_color='white', with_labels=True,
+                           node_shape='s', 
+                           arrowsize=20, font_size=10, font_weight='bold',
+                           labels=labels, edge_color='gray')
         # ax.set_title("DAG layout in topological order")
         fig.tight_layout()
         plt.show()
 
-    def remove_branch_by_weight(self, weight=0.0):
+    def prune_branches_by_weight(self, weight=0.0):
         """Remove branch of graph with weight < weight."""
+        graph = self.graph.copy()
         edges_to_remove = []
         nodes_to_remove = []
         for (u, v, wt) in self.graph.edges(data=True):
             if wt['weight'] < weight:
                 edges_to_remove.append((u, v))
                 nodes_to_remove.extend(self.get_dependents(u))
-        self.graph.remove_edges_from(edges_to_remove)
-        self.graph.remove_nodes_from(list(set(nodes_to_remove)))
+        graph.remove_edges_from(edges_to_remove)
+        graph.remove_nodes_from(list(set(nodes_to_remove)))
+        return graph
 
 
 
@@ -238,7 +219,7 @@ if __name__ == '__main__':
         hash: int = 0
         status: str = 'pending'
 
-    jobs = [Job(hash=f'qq{i}fg') for i in range(5, 12)]
+    jobs = [Job(hash=f'qq{i}fg56g4vw454w5g5w5ggwaa') for i in range(5, 12)]
 
     dependencies = [(0, 1), (1, 2), (1, 3), (2, 4)]
     weights = [(0, 1, 1), (1, 2, .6), (1, 3, .77), (2, 4, .2)]
@@ -254,7 +235,6 @@ if __name__ == '__main__':
 
 
     print(g)
-    print(g.dump())
 
     print(list(g.graph.nodes))
     for j in g:
@@ -284,21 +264,10 @@ if __name__ == '__main__':
     print(g.topological)
     print(g.topological_map)
     # plot topological graph
+    # g.write('graph.txt')
 
 
     # removes branch of graph with weight < 0.5
-    edges_to_remove= []
-    nodes_to_remove= []
-    for (u, v, wt ) in g.graph.edges(data=True):
-        if wt['weight'] < 0.5:
-            print('removing edge', u, v, wt)
-            print('descendants of',v,  g.get_dependents(v))
-            edges_to_remove.append((u, v))
-            nodes_to_remove.extend(g.get_dependents(u))
-    # remove edges with weight > 0.5d
-    # dependent_nodes= [j for j in g if g.get_dependencies(j)]
-    g.graph.remove_edges_from(edges_to_remove)
-    g.graph.remove_nodes_from(list(set(nodes_to_remove)))
-    print(g)
-
-    # g.show_topologicall()
+    cleangraph = g.prune_branches_by_weight(weight=0.5)
+    print(cleangraph.edges(data=True))
+    g.show_topological()
