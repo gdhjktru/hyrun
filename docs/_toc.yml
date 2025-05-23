@@ -1,16 +1,48 @@
 format: jb-book
 root: src/index.rst
 parts:
-  # ---------------------------- Part Setup ----------------------------
-  - caption: Setup
+  - caption: Introduction
     chapters:
-    - file: src/setup/setup
-      title: Setup
-      sections:
-        - file: src/setup/settings
-          title: Settings
-        - file: src/setup/jobs
-          title: Jobs
+      - file: src/intro/index.md
+        title: Introduction
+  - caption: User Guide
+    chapters:
+      - file: src/user_guide/index.md
+        title: User Guide
+        sections:
+          - file: src/user_guide/init.rst
+            title: Workflow creation
+          - file: src/user_guide/job_graph.rst
+            title: JobGraph
+
+# format: jb-book
+# root: src/index.rst
+# parts:
+#   # ---------------------------- Part Setup ----------------------------
+#   - caption: Introduction
+#     chapters:
+#     - file: src/setup/jobs
+#       title: Jobs
+#   # - caption: Introduction
+#   #   chapters:
+#   #   - file: src/index
+#   #     title: Introduction
+#   #     sections:
+#   #       - file: src/introduction/overview
+#   #         title: Overview
+#   #       - file: src/introduction/installation
+#   #         title: Installation
+#   #       - file: src/introduction/usage
+#   #         title: Usage
+#   - caption: Setup
+#     chapters:
+#     - file: src/setup/setup
+#       title: Setup
+#       sections:
+#         - file: src/setup/settings
+#           title: Settings
+
+
 
 
   # ----------------------------- Part Submission ---------------------------

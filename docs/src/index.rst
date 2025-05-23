@@ -14,56 +14,58 @@ This is the documentation for **hyrun**, a module for running computations using
  **Hylleraas Software Platform**
 (HSP) project.
 
-.. grid:: 3
-    :gutter: 3
-
-    .. grid-item-card::
-        :text-align: center
-        :margin: auto
-        :link: setup/settings.html
-
-        .. centered::
-            :material-regular:`settings;75px` **Setup**
-
-        ++++++++++
-
-        Setting up a calculation.
 
 
-    .. grid-item-card::
-        :link: submission/submission.html
+.. .. grid:: 3
+..     :gutter: 3
 
-        .. centered::
-            :material-regular:`rocket_launch;75px`
+..     .. grid-item-card::
+..         :text-align: center
+..         :margin: auto
+..         :link: setup/settings.html
 
-        .. centered:: **Submission**
+..         .. centered::
+..             :material-regular:`settings;75px` **Setup**
 
-        ++++++++++
+..         ++++++++++
 
-        Submitting a calculation.
+..         Setting up a calculation.
 
-    .. grid-item-card::
-        :link: results/results.html
 
-        .. centered::
-            :material-regular:`download;75px`
+..     .. grid-item-card::
+..         :link: submission/submission.html
 
-        .. centered:: **Results**
+..         .. centered::
+..             :material-regular:`rocket_launch;75px`
 
-        ++++++++++
+..         .. centered:: **Submission**
 
-        Fetching and processing results.
+..         ++++++++++
 
-    .. .. grid-item-card::
-    ..     :link: api/index.html
+..         Submitting a calculation.
 
-    ..     .. centered::
-    ..         :material-regular:`webhook;75px`
+..     .. grid-item-card::
+..         :link: results/results.html
 
-    ..     .. centered:: **API reference**
+..         .. centered::
+..             :material-regular:`download;75px`
 
-    ..     ++++++++++
+..         .. centered:: **Results**
 
-    ..     The API reference contains a detailed description of
-    ..     the HSP modules, classes, and functions, as well as their
-    ..     parameters and returned objects.
+..         ++++++++++
+
+..         Fetching and processing results.
+
+..     .. .. grid-item-card::
+..     ..     :link: api/index.html
+
+..     ..     .. centered::
+..     ..         :material-regular:`webhook;75px`
+
+..     ..     .. centered:: **API reference**
+
+..     ..     ++++++++++
+
+..     ..     The API reference contains a detailed description of
+..     ..     the HSP modules, classes, and functions, as well as their
+..     ..     parameters and returned objects.

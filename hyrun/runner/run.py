@@ -9,7 +9,7 @@ def run(*args, dependencies=None, **kwargs):
     """Run hsp job."""
     # # return Runner(*args, **kwargs).run(*args, **kwargs)
     aj = ArrayJob(*args, logger=get_logger(print_level='DEBUG'), **kwargs)
-    dependency_graph  = kwargs...
+    # dependency_graph  = kwargs...
     #     # check if jobs has an id in database
     # jobs = self.check_finished_jobs(jobs)
 

@@ -1,22 +1,29 @@
 hyrun
 *****
 
-!!! note "Nomenclature"
-    - **workflow**: set of jobs with optional dependencies, represented by `hyrun.job.JobGraph` class  
-    - **job**: set of tasks that can be run using a script, e.g. on a cluster, represented by `hyrun.job.Job` class  
-    - **task**: a single calculation or general procedure, represented by `hyset.RunSettings`
+> **Nomenclature**
+> 
+> - **workflow**: set of jobs with optional dependencies, represented by `hyrun.job.JobGraph` class  
+> - **job**: set of ordered tasks that can be run using a script, e.g. on a cluster, represented by `hyrun.job.Job` class  
+> - **task**: a single calculation or more general procedure that can be represented by `hyset.RunSettings`
+> - **result**: set of ordered outputs from a job, represented by a list.
+> - **output**: outputs from a job, represented by `hyrun.result.Result` class.
 
-
-
-    
 the `hyrun` module offers the following methods:
 
+1. `init()`: creating a workflow
 1. `run()` : running a workflow
 2. `check()` : checking on a workflow
 4. `fetch()` : fetch results from a workflow
 3. `update()` : combines `check()` and `fetch()`
 4. `stop()` : stops /  cancels a workflow
 
+All methods accept as input a workflow, a (list of) job(s), a (list of) task(s),
+a (list of) result(s), a (list of) output(s) or combination of that.
+As a first step, a workflow will be created.
+
+
+--
 
 
 

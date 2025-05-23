@@ -1,93 +1,180 @@
 import networkx as nx
+from hytools.graph import Graph
 from pathlib import Path
 from typing import Any, List, Optional, Union, Callable
 from hytools.logger import LoggerDummy
 import json
 
+
+edge_keys = ['edge', 'edges', 'dependencies', 'dependency', 'dependencies']
+node_keys = ['node', 'nodes', 'jobs', 'job', 'tasks', 'task']
+weight_keys = ['weight', 'weights', 'weighting', 'weighting']
+edge_attr = ['weight']
+node_attr = ['hash', 'status', 'db_id']
+
  
-class JobGraph:
+class JobGraph(Graph):
     """Class to create a job graph."""
 
-    def __init__(self,
-                 jobs=None,
-                 dependencies=None,
-                 weights=None,
-                 logger=None,
-                 **kwargs):
-        self.logger = logger or LoggerDummy()
+    def __init__(self, **kwargs):
+        """Initialize job graph."""
+        self.logger = kwargs.get('logger') or LoggerDummy()
         self.graph = nx.DiGraph()
-        self.jobs = jobs or []
-        self.graph.add_nodes_from([job.hash for job in self.jobs])
-        self.update_nodes(self.jobs, keys=['status', 'database'])
-        self.dependencies = self.convert_dependencies(dependencies)
-        self.graph.add_edges_from(self.dependencies)
-        self.weights = self.convert_weights(weights)
-        if self.weights:
-            self.graph.add_weighted_edges_from(self.weights)
+        self._nodes = self.make_list(
+            self.get_from_kwargs(kwargs, node_keys) or [])
+        self._edges = self.make_list(
+            self.get_from_kwargs(kwargs, edge_keys) or [])
+        self.weights = self.make_list(kwargs.get('weights') or [])
+        for n in self._nodes:
+            self.add_node(n)
+        for e in self._edges + self.weights:
+            if isinstance(e, (tuple, list)):
+                u, v = e[0], e[1]
+                attr_dict = {}
+                for i, attr in enumerate(edge_attr, start=2):
+                    if len(e) > i:
+                        attr_dict[attr] = e[i]
+                self.add_edge(u, v, **attr_dict)
+            elif isinstance(e, dict):
+                u, v = list(e.keys())[0], list(e.values())[0]
+                attr_dict = {k: v for k, v in e.items() if k in edge_attr}
+                self.add_edge(u, v, **attr_dict)
 
-    def update_nodes(self, jobs=None, keys=['status']):
-        """Add status to nodes."""
-        jobs = jobs or self.jobs
-        for job in jobs:
-            for key in keys:
-                self.graph.nodes[job.hash][key] = getattr(job, key, None)
+    def get_from_kwargs(self, kwargs, keys):
+        """Get value from kwargs."""
+        for key in keys:
+            if key in kwargs:
+                return kwargs[key]
+        return None
 
-    def update_edges(self, dependencies=None, weights=None):
-        """Update edges."""
-        dependencies = self.convert_dependencies(dependencies)
-        weights = self.convert_weights(weights)
-        if dependencies:
-            self.graph.add_edges_from(dependencies)
-        if weights:
-            self.graph.add_weighted_edges_from(weights)
+    def make_list(self, obj):
+        """Make object a list."""
+        if not isinstance(obj, list):
+            obj = [obj]
+        return obj
 
+    def add_node(self, node, keys: Optional[List[str]] = None):
+        """Add node to graph."""
+        idx = getattr(node, 'hash', None) or len(self.graph.nodes)
+        self.logger.debug(f"Adding node {idx} to graph")
+        if idx in self.graph.nodes:
+            self.logger.error(f"Node {idx} already exists in graph")
+            return
+        self.graph.add_node(idx)
+        keys = keys or node_attr
+        for attr in keys:
+            if hasattr(node, attr):
+                self.graph.nodes[node.hash][attr] = getattr(node, attr, None)
 
-    def num_to_hash(self, n: Union[str, int]) -> str:
-        """Convert number to hash."""
-        try:
-            hash = str(getattr(self.jobs[int(n)], 'hash', n))
-        except (IndexError, ValueError) as e:
-            hash = str(n)
+    def add_edge(self, u, v, **kwargs):
+        """Add edge to graph."""
+        self.logger.debug(f"Adding edge {u} -> {v} to graph")
+        if (u, v) in self.graph.edges:
+            return
+        self.graph.add_edge(u, v)
+        for key, value in kwargs.items():
+            if key not in self.graph.edges[u, v]:
+                self.logger.error(
+                    f"Key {key} does not exist in edge {u} -> {v}")
+                return
+            self.graph.edges[u, v][key] = value
 
-        self.logger.debug(f"Converted number {n} to hash: {hash}")
-        return hash
+    # def update(self, **kwargs):
+    #     """Update graph."""
+    #     new_nodes = self.make_list(
+    #         self.get_from_kwargs(kwargs, node_keys) or [])
+    #     for node in new_nodes:
+    #         self.update_node(node)
         
-    def convert_weights(self, weights):
-        """Convert weights to graph."""
-        if not weights:
-            return []
-        if isinstance(weights, list):
-            return [(self.num_to_hash(u), self.num_to_hash(v), d)
-                    for u, v, d in weights]
-        else:
-            raise ValueError("Weights must be a list or dict.")
+    #     new_deps = self.make_list(
+    #         self.get_from_kwargs(kwargs, edge_keys) or [])
+    #     for (u, v) in new_deps:
+    #         self.update_edge(u, v, **kwargs)
         
-    def convert_dependencies(self, dependencies):
-        """Convert dependencies to graph."""
-        if not dependencies:
-            return []
-        if isinstance(dependencies, list):
-            return [(self.num_to_hash(u), self.num_to_hash(v))
-                    for u, v in dependencies]
-        elif isinstance(dependencies, dict):
-            return [(self.num_to_hash(u), self.num_to_hash(v))
-                    for u, v in dependencies.items()]
-        else:
-            raise ValueError("Dependencies must be a list or dict.")
+    # def update_node(self, node=None, keys=None):
+    #     """Update node attributes in the graph from a list of job objects."""
+    #     if not node:
+    #         return
+    #     keys = keys or node_attr
+    #     idx = getattr(node, 'hash', None)
+    #     self.logger.debug(f"Updating node {idx} in graph")
+    #     if idx in self.graph.nodes:
+    #         for attr in keys:
+    #             if hasattr(node, attr):
+    #                 self.graph.nodes[idx][attr] = getattr(node, attr)
+    #                 self._nodes[idx][attr] = getattr(node, attr)
+    #     else:
+    #         self.logger.error(f"Node {idx} does not exist in graph")
+    #         self.add_node(node)
+    #         self._nodes = self.graph.nodes
 
-    def subgraph(self, filter_node: Optional[Callable] = None):
+    # def update_edge(self, u, v, **kwargs):
+    #     """Update edge in graph."""
+    #     idx = getattr(u, 'hash', None) or u
+    #     idx2 = getattr(v, 'hash', None) or v
+    #     if not idx or not idx2:
+    #         return
+    #     self.logger.debug(f"Updating edge {idx} -> {idx2} in graph")
+    #     if (idx, idx2) in self.graph.edges:
+    #         for key, value in kwargs.items():
+    #             if key not in self.graph.edges[idx, idx2]:
+    #                 self.logger.error(
+    #                     f"Key {key} does not exist in edge {idx} -> {idx2}")
+    #                 return
+    #             self.graph.edges[idx, idx2][key] = value
+    #             self._edges[idx, idx2][key] = value
+    #     elif (idx2, idx) in self.graph.edges:
+    #         for key, value in kwargs.items():
+    #             if key not in self.graph.edges[idx2, idx]:
+    #                 self.logger.error(
+    #                     f"Key {key} does not exist in edge {idx2} -> {idx}")
+    #                 return
+    #             self.graph.edges[idx2, idx][key] = value
+    #             self._edges[idx2, idx][key] = value
+    #     else:
+    #         self.logger.error(f"Edge {u} -> {v} does not exist in graph")
+    #         self.add_edge(u, v, **kwargs)
+    #         self._edges = self.graph.edges
+    
+    def remove_node(self, node):
+        """Remove node from graph."""
+        self.logger.debug(f"Removing node {node} from graph")
+        if node not in self.graph.nodes:
+            self.logger.error(f"Node {node} does not exist in graph")
+            return
+        self.graph.remove_node(node)
+    
+    def remove_edge(self, u, v, remove_descendants=False):
+        """Remove edge from graph."""
+        self.logger.debug(f"Removing edge {u} -> {v} from graph")
+        if (u, v) not in self.graph.edges:
+            self.logger.error(f"Edge {u} -> {v} does not exist in graph")
+            return
+        descendants = list(nx.descendants(self.graph, v))
+        self.graph.remove_edge(u, v)
+        if remove_descendants:
+            self.logger.debug(f"Removing descendants of {v} from graph")
+            self.graph.remove_node(v)
+            for d in descendants:
+                self.graph.remove_node(d)
+
+    def subgraph(self,
+                 filter_node: Optional[Callable] = None,
+                 filter_edge: Optional[Callable] = None):
         """Create subgraph."""
-        if filter_node is None:
+        if filter_node is None and filter_edge is None:
             return self.graph
         subgraph = JobGraph()
-        subgraph.graph = self.graph.subgraph(
-            nx.subgraph_view(self.graph, filter_node=filter_node).nodes())
+        if filter_node:
+            s = nx.subgraph_view(self.graph, filter_node=filter_node).nodes()
+        if filter_edge:
+            s = nx.subgraph_view(self.graph, filter_edge=filter_edge).edges()
+        if filter_node and filter_edge:
+            s = nx.subgraph_view(self.graph, filter_node=filter_node,
+                                 filter_edge=filter_edge).nodes()
+        subgraph.graph = self.graph.subgraph(s)   
         return subgraph
-    
-    def get_running(self):
-        """Show running jobs."""
-        return self.subgraph_from_jobattrs(attr='status', value='running')
-    
+
     def __add__(self, other):
         """Add two graphs."""
         if not isinstance(other, JobGraph):
@@ -96,33 +183,42 @@ class JobGraph:
         new_graph.graph = nx.compose(self.graph, other.graph)
         return new_graph
     
-    def subgraph_from_jobattrs(self, attr: str, value: Any):
-        """Show finished jobs."""
-        return self.subgraph(filter_node = (
-            lambda n1: self.graph.nodes[n1].get('attr', '') == 'value'))
-        
-    def add_job(self, job):
-        """Add job to graph."""
-        self.graph.add_node(len(self.graph.nodes))
-        
-    def add_dependency(self, u, v):
-        """Add edge to graph."""
-        self.graph.add_edge(u, v)
-        
-    def remove_job(self, job):
-        """Remove job from graph."""
-        self.graph.remove_node(job.hash)
-        
-    def remove_dependency(self, u, v):
-        """Remove edge from graph."""
-        self.graph.remove_edge(u, v)
-
+    def __sub__(self, other):
+        """Subtract two graphs."""
+        if not isinstance(other, JobGraph):
+            raise ValueError("Can only subtract JobGraph objects.")
+        new_graph = JobGraph()
+        new_graph.graph = nx.difference(self.graph, other.graph)
+        return new_graph
+    
+    # def subgraph_with_node_prop(self, **kwargs):
+    #     """Return subgraph with nodes matching all filters."""
+    #     def filter_node(n):
+    #         return all(self.graph.nodes[n].get(k, None) == v
+    #                    for k, v in kwargs.items())
+    #     return self.subgraph(filter_node=filter_node)
+    
+    # def subgraph_with_edge_prop(self, **kwargs):
+    #     """Return subgraph with edges matching all filters."""
+    #     def filter_edge(u, v):
+    #         return all(self.graph.edges[u, v].get(k, None) == v
+    #                    for k, v in kwargs.items())
+    #     return self.subgraph(filter_edge=filter_edge)
+    
     def __iter__(self):
         """Iterate over graph."""
         return iter(self.graph.nodes)
+    
+    def __copy__(self):
+        """Copy graph."""
+        new_graph = JobGraph()
+        new_graph.graph = self.graph.copy()
+        return new_graph
 
     def __getitem__(self, item):
         """Get item from graph."""
+        if isinstance(item, tuple):
+            return self.graph.edges[list(item)]
         return self.graph.nodes[item]
 
     def __len__(self):
@@ -137,10 +233,14 @@ class JobGraph:
         """Get string representation of graph."""
         return str(self.graph.nodes)
 
-    def write(self, filename):
+    def write(self, filename=None) -> Optional[str]:
         """Dump graph to file."""
-        json.dump(nx.node_link_data(self.graph, edges="edges"),
-                  open(filename, 'w'), indent=4)
+        graph_str = json.dumps(nx.node_link_data(self.graph, edges="edges"),
+                               indent=4)
+        if filename is not None:
+            Path(filename).write_text(graph_str)
+        else:
+            return graph_str
         
     def read(self, filename):
         """Read graph from file."""
@@ -151,11 +251,11 @@ class JobGraph:
         """Get string representation of graph."""
         return '\n'.join(nx.generate_network_text(self.graph))
     
-    def get_dependencies(self, node):
+    def ancestors(self, node):
         """Get all dependencies of a node."""
         return list(nx.ancestors(self.graph, node))
     
-    def get_dependents(self, node):
+    def descendants(self, node):
         """Get all dependents of a node."""
         return list(nx.descendants(self.graph, node))
     
@@ -165,19 +265,25 @@ class JobGraph:
         return list(self.graph.nodes)
     
     @property
+    def edges(self):
+        """Get all edges in graph."""
+        return list(self.graph.edges)
+    
+    @property
     def topological(self):
         """Get topological order of graph."""
         return list(nx.topological_sort(self.graph))
     
     @property
-    def topological_map(self):
-        """Get topological order of graph."""
+    def map_topology(self):
+        """Get map of topology."""
         node_to_index = {job.hash: i for i, job in enumerate(jobs)}
-        return {node_to_index[node]: i for i, node in enumerate(self.topological)}
-
+        return {node_to_index[node]: i
+                for i, node in enumerate(self.topological)}
     
-    def show_topological(self):
-        """Show graph in topological order."""
+    def show(self, title=None):
+        """Show graph."""
+        title = title or 'Job Graph'
         import matplotlib.pyplot as plt
         for layer, nodes in enumerate(nx.topological_generations(self.graph)):
             for node in nodes:
@@ -192,82 +298,6 @@ class JobGraph:
                            node_shape='s', 
                            arrowsize=20, font_size=10, font_weight='bold',
                            labels=labels, edge_color='gray')
-        # ax.set_title("DAG layout in topological order")
+        ax.set_title(title) 
         fig.tight_layout()
         plt.show()
-
-    def prune_branches_by_weight(self, weight=0.0):
-        """Remove branch of graph with weight < weight."""
-        graph = self.graph.copy()
-        edges_to_remove = []
-        nodes_to_remove = []
-        for (u, v, wt) in self.graph.edges(data=True):
-            if wt['weight'] < weight:
-                edges_to_remove.append((u, v))
-                nodes_to_remove.extend(self.get_dependents(u))
-        graph.remove_edges_from(edges_to_remove)
-        graph.remove_nodes_from(list(set(nodes_to_remove)))
-        return graph
-
-
-
-if __name__ == '__main__':
-    from dataclasses import dataclass
-    from hytools.logger import get_logger
-    @dataclass
-    class Job:
-        hash: int = 0
-        status: str = 'pending'
-
-    jobs = [Job(hash=f'qq{i}fg56g4vw454w5g5w5ggwaa') for i in range(5, 12)]
-
-    dependencies = [(0, 1), (1, 2), (1, 3), (2, 4)]
-    weights = [(0, 1, 1), (1, 2, .6), (1, 3, .77), (2, 4, .2)]
-    g = JobGraph(jobs, dependencies=dependencies,
-                    weights=weights,
-                 logger=get_logger(print_level='DEBUG'))
-    jobs[0].status = 'running'
-    jobs[1].status = 'running'
-    jobs[5].status = 'finished'
-    g.update_nodes(jobs)
-    print(g.graph.nodes)
-
-
-
-    print(g)
-
-    print(list(g.graph.nodes))
-    for j in g:
-        print(j)
-
-    dep = [g.get_dependencies(j) for j in g]
-    print(dep)
-    root_jobs = [j for j in g if not g.get_dependencies(j)]
-    print('ROOT JOBS without dependencies:', root_jobs)
-
-    # print(g.graph.nodes['qq10fg'])
-    # s = g.get_running()
-    # print(s)
-    # jobs[6].status = 'running'
-    # g.update_nodes(jobs)
-    # s = g.get_running()
-    # print(s)
-    import matplotlib.pyplot as plt
-    # plt.tight_layout()
-    # nx.draw_networkx(g.graph, arrows=True)
-    # plt.axis('off')
-    # plt.show()
-    # plt.savefig("g2.png", format="PNG")
-
-
-    
-    print(g.topological)
-    print(g.topological_map)
-    # plot topological graph
-    # g.write('graph.txt')
-
-
-    # removes branch of graph with weight < 0.5
-    cleangraph = g.prune_branches_by_weight(weight=0.5)
-    print(cleangraph.edges(data=True))
-    g.show_topological()
