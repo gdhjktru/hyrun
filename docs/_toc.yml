@@ -11,9 +11,11 @@ parts:
         title: User Guide
         sections:
           - file: src/user_guide/init.rst
-            title: Workflow creation
-          - file: src/user_guide/job_graph.rst
-            title: JobGraph
+            title: Introduction
+          - file: src/user_guide/workflow.ipynb
+            title: Workflows
+          - file: src/user_guide/job.ipynb
+            title: Jobs
 
 # format: jb-book
 # root: src/index.rst
