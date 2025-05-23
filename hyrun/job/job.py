@@ -1,8 +1,8 @@
 
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field, fields, asdict
 from pathlib import Path
 from typing import Any, List, Optional, Union
-from functools import singledispatch, register
+from functools import singledispatch
 
 from hydb import Database
 
@@ -29,8 +29,9 @@ class Job:
     def __post_init__(self):
         """Post init."""
         self.set_hash()
-        check_common(self.tasks, keys=['database', 'scheduler'])
-
+        self.tasks = [self.tasks] if not isinstance(self.tasks, list) else self.tasks
+        check_common_dataclass(self.tasks,
+                               keys=['database', 'scheduler', 'connection'])
 
     def set_hash(self):
         """Get hash of the job."""
@@ -85,19 +86,49 @@ def _(job: dict) -> Job:
     filtered = {k: v for k, v in job.items() if k in job_fields}
     return Job(**filtered)
 
-def check_common(tasks: List[Any], keys: List[str]):
+@get_job.register(list)
+def _(job: list) -> Job:
+    """Convert dictionary to Job."""
+    # if list or list of lists
+    if not job:
+        return Job()
+    return Job(tasks=job)
+
+
+def check_common_dataclass(tasks: List[Any], keys: List[str]):
     """Check that jobs have the same values for a list of attributes."""
-    for attr in keys:
+    if len(tasks) < 2:
+        return
+    for key in keys:
+        # Collect all non-None attribute values as dicts
         values = []
         for task in tasks:
-            value = getattr(task, attr, None)
-            if isinstance(value, dict):
-                # Convert dictionary to a tuple of sorted items
-                value = tuple(sorted(value.items()))
-            values.append(value)
-        if len(set(values)) > 1:
+            val = getattr(task, key, None)
+            if val is None:
+                continue
+            if hasattr(val, '__dataclass_fields__'):
+                val = asdict(val)
+            elif not isinstance(val, dict):
+                raise ValueError(
+                    f'Attribute {key} must be a dataclass or a dictionary'
+                )
+            values.append(val)
+        # If there are any values, they must all be the same
+        if values and any(v != values[0] for v in values[1:]):
             raise ValueError(
-                f'All tasks in a job must have the same {attr} attribute'
+                f'All tasks in a job must have the same {key} attribute'
             )
-    return 
+    return
+        
+        # values = []
+        # for task in tasks:
+        #     value = getattr(task, attr, None)
+        #     if isinstance(value, dict):
+        #         # Convert dictionary to a tuple of sorted items
+        #         value = tuple(sorted(value.items()))
+        #     values.append(value)
+        # if len(set(values)) > 1:
+        #     raise ValueError(
+        #         f'All tasks in a job must have the same {attr} attribute'
+        #     )
 
