@@ -1,15 +1,10 @@
 
-from dataclasses import dataclass, field, fields, asdict
-from pathlib import Path
-from typing import Any, List, Optional, Union
+from dataclasses import asdict, dataclass, field, fields
 from functools import singledispatch
-
-from hydb import Database
-
-from hyrun.scheduler.abc import Scheduler
+from hashlib import sha256
+from typing import Any, List, Optional
 
 from .output import Output
-from hashlib import sha256
 
 # from tqdm import tqdm
 
@@ -29,7 +24,8 @@ class Job:
     def __post_init__(self):
         """Post init."""
         self.set_hash()
-        self.tasks = [self.tasks] if not isinstance(self.tasks, list) else self.tasks
+        self.tasks = ([self.tasks]
+                      if not isinstance(self.tasks, list) else self.tasks)
         check_common_dataclass(self.tasks,
                                keys=['database', 'scheduler', 'connection'])
 
@@ -42,42 +38,17 @@ class Job:
             self.hash = sha256(txt.encode()).hexdigest()
 
 
-# @dataclass
-# class Job(JobInfo):
-#     """HSP job."""
-
-    
-#     job_script: Optional[str] = None
-#     database: Optional[Union[str, Path, Database]] = 'dummy'
-#     db_id: Optional[int] = None
-#     database_opt: Optional[dict] = field(default_factory=dict)
-#     scheduler: Optional[Union[str, Scheduler]] = 'local'
-#     scheduler_opt: Optional[dict] = field(default_factory=dict)
-#     connection_type: Optional[str] = None
-#     connection_opt: Optional[dict] = field(default_factory=dict)
-#     files: Optional[List[Union[Path, str]]] = None
-
-#     # def __post_init__(self):
-#     #     """Post init."""
-#     #     self.database = self.database or 'dummy'
-#     #     self.scheduler = self.scheduler or 'local'
-#     #     # not sure if this is the right place here
-#     #     if not self.tasks and not self.outputs and self.db_id:
-#     #         db = get_database(self.database, **self.database_opt)
-#     #         entry = db.search_one(id=self.db_id)
-#     #         # update all fields from self
-#     #         self.__dict__.update(entry)
-
-
 @singledispatch
 def get_job(job: Any) -> Job:
     """Convert input to Job."""
     raise TypeError(f'Cannot convert {type(job)} to Job')
 
+
 @get_job.register(Job)
 def _(job: Job) -> Job:
     """Convert Job to Job."""
     return job
+
 
 @get_job.register(dict)
 def _(job: dict) -> Job:
@@ -85,6 +56,7 @@ def _(job: dict) -> Job:
     job_fields = {f.name for f in fields(Job)}
     filtered = {k: v for k, v in job.items() if k in job_fields}
     return Job(**filtered)
+
 
 @get_job.register(list)
 def _(job: list) -> Job:
@@ -111,24 +83,11 @@ def check_common_dataclass(tasks: List[Any], keys: List[str]):
             elif not isinstance(val, dict):
                 raise ValueError(
                     f'Attribute {key} must be a dataclass or a dictionary'
-                )
+                    )
             values.append(val)
         # If there are any values, they must all be the same
         if values and any(v != values[0] for v in values[1:]):
             raise ValueError(
                 f'All tasks in a job must have the same {key} attribute'
-            )
+                )
     return
-        
-        # values = []
-        # for task in tasks:
-        #     value = getattr(task, attr, None)
-        #     if isinstance(value, dict):
-        #         # Convert dictionary to a tuple of sorted items
-        #         value = tuple(sorted(value.items()))
-        #     values.append(value)
-        # if len(set(values)) > 1:
-        #     raise ValueError(
-        #         f'All tasks in a job must have the same {attr} attribute'
-        #     )
-

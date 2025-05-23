@@ -2,9 +2,9 @@ hyrun
 *****
 
 > **Nomenclature**
-> 
-> - **workflow**: set of jobs with optional dependencies, represented by `hyrun.job.JobGraph` class  
-> - **job**: set of ordered tasks that can be run using a script, e.g. on a cluster, represented by `hyrun.job.Job` class  
+>
+> - **workflow**: set of jobs with optional dependencies, represented by `hyrun.job.JobGraph` class
+> - **job**: set of ordered tasks that can be run using a script, e.g. on a cluster, represented by `hyrun.job.Job` class
 > - **task**: a single calculation or more general procedure that can be represented by `hyset.RunSettings`
 > - **result**: set of ordered outputs from a job, represented by a list.
 > - **output**: outputs from a job, represented by `hyrun.result.Result` class.
@@ -53,6 +53,3 @@ loop over groups
 loop over subgroups
 combine data to be send
 establish connection
-
-
-
