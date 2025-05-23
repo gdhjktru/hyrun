@@ -52,6 +52,10 @@ class JobGraph(Graph):
         if not isinstance(obj, list):
             obj = [obj]
         return obj
+    
+    def relabel_nodes(self, mapping):
+        """Relabel nodes in graph."""
+        self.graph = nx.relabel_nodes(self.graph, mapping)
 
     def add_node(self, node, keys: Optional[List[str]] = None):
         """Add node to graph."""
@@ -64,7 +68,7 @@ class JobGraph(Graph):
         keys = keys or node_attr
         for attr in keys:
             if hasattr(node, attr):
-                self.graph.nodes[node.hash][attr] = getattr(node, attr, None)
+                self.graph.nodes[idx][attr] = getattr(node, attr, None)
 
     def add_edge(self, u, v, **kwargs):
         """Add edge to graph."""

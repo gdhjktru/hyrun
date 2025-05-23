@@ -5,6 +5,7 @@ from hashlib import sha256
 from typing import Any, List, Optional
 
 from .output import Output
+from hyset.v2 import RunSettings
 
 # from tqdm import tqdm
 
@@ -14,6 +15,7 @@ class Job:
     """Dataclass containing information about a job."""
 
     job_id: Optional[int] = None
+    db_id: Optional[int] = None
     job_script: Optional[str] = None
     status: Optional[str] = None
     hash: Optional[str] = None
@@ -43,20 +45,24 @@ def get_job(job: Any) -> Job:
     """Convert input to Job."""
     raise TypeError(f'Cannot convert {type(job)} to Job')
 
+@get_job.register(RunSettings)
+def _(job: RunSettings) -> Job:
+    """Convert Job to Job."""
+    return Job(tasks=job)
 
 @get_job.register(Job)
 def _(job: Job) -> Job:
     """Convert Job to Job."""
     return job
 
-
 @get_job.register(dict)
 def _(job: dict) -> Job:
     """Convert dictionary to Job."""
     job_fields = {f.name for f in fields(Job)}
     filtered = {k: v for k, v in job.items() if k in job_fields}
-    return Job(**filtered)
-
+    metadata = {k: v for k, v in job.items() if k not in job_fields}
+    return Job(**filtered,
+               metadata={**filtered.get('metadata', {}), **metadata})
 
 @get_job.register(list)
 def _(job: list) -> Job:

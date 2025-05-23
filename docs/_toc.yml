@@ -14,8 +14,12 @@ parts:
             title: Introduction
           - file: src/user_guide/workflow.ipynb
             title: Workflows
+          - file: src/user_guide/get_workflow.ipynb
+            title: Construct workflows
           - file: src/user_guide/job.ipynb
             title: Jobs
+          - file: src/user_guide/output.ipynb
+            title: Outputs
 
 # format: jb-book
 # root: src/index.rst
