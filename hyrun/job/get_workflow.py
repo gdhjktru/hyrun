@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any
 
 from ..job import JobGraph, get_job
@@ -25,6 +26,19 @@ def get_workflow(*args, **kwargs) -> JobGraph:
     """
     if len(args) == 0:
         raise ValueError('No arguments provided')
+
+    if isinstance(args[0], JobGraph):
+        # If the first argument is already a JobGraph, return it directly
+        return args[0]
+
+    if isinstance(args[0], (str, Path)):
+        try:
+            if Path(args[0]).exists():
+                workflow = JobGraph()
+                workflow.read(filename=args[0])
+                return workflow
+        except Exception as e:
+            raise ValueError(f'Error reading workflow from {args[0]}: {e}')
 
     jobs = normalize_input(*args)
     return JobGraph(jobs=jobs, **kwargs)
