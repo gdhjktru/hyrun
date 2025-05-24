@@ -4,8 +4,9 @@ from functools import singledispatch
 from hashlib import sha256
 from typing import Any, List, Optional
 
-from .output import Output
 from hyset.v2 import RunSettings
+
+from .output import Output
 
 # from tqdm import tqdm
 

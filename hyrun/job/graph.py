@@ -52,7 +52,7 @@ class JobGraph(Graph):
         if not isinstance(obj, list):
             obj = [obj]
         return obj
-    
+
     def relabel_nodes(self, mapping):
         """Relabel nodes in graph."""
         self.graph = nx.relabel_nodes(self.graph, mapping)
@@ -282,21 +282,25 @@ class JobGraph(Graph):
         return {node_to_index[node]: i
                 for i, node in enumerate(self.topological)}
 
-    def show(self, title=None):
+    def show(self, title=None, node_color=None, node_size=None,
+             node_shape=None):
         """Show graph."""
         title = title or 'Job Graph'
+        node_color = node_color or 'white'
+        node_size = node_size or 600
+        node_shape = node_shape or 's'
         import matplotlib.pyplot as plt
         for layer, nodes in enumerate(nx.topological_generations(self.graph)):
             for node in nodes:
                 self.graph.nodes[node]['layer'] = layer
-
         pos = nx.multipartite_layout(self.graph, subset_key='layer')
-
         fig, ax = plt.subplots()
-        labels = {node: f'{node[0:7]}...' for node in self.graph.nodes}
-        nx.draw_networkx(self.graph, pos=pos, ax=ax, node_size=600,
-                         node_color='white', with_labels=True,
-                         node_shape='s',
+        labels = {node: f'{node[0:7]}...'
+                  if len(node) > 7 else node
+                  for node in self.graph.nodes}
+        nx.draw_networkx(self.graph, pos=pos, ax=ax, node_size=node_size,
+                         node_color=node_color, with_labels=True,
+                         node_shape=node_shape,
                          arrowsize=20, font_size=10, font_weight='bold',
                          labels=labels, edge_color='gray')
         ax.set_title(title)
