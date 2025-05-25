@@ -16,11 +16,11 @@ SCHEDULER_MAPPING = {'pbs': PbsScheduler,  # type: ignore
                      'singularity': LocalScheduler}  # type: ignore
 
 
-def get_scheduler(scheduler_name: Optional[str] = None,
+def get_scheduler(scheduler_type: Optional[str] = None,
                   **kwargs) -> Scheduler:
     """Get scheduler."""
-    if scheduler_name not in SCHEDULER_MAPPING:
-        raise ValueError(f'Invalid scheduler: {scheduler_name}. '
+    if scheduler_type not in SCHEDULER_MAPPING:
+        raise ValueError(f'Invalid scheduler: {scheduler_type}. '
                          'Available schedulers: ',
                          f'{list(SCHEDULER_MAPPING.keys())}')
-    return SCHEDULER_MAPPING[scheduler_name](**kwargs)
+    return SCHEDULER_MAPPING[scheduler_type](**kwargs)

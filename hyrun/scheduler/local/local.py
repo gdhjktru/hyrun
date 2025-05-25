@@ -26,6 +26,29 @@ class LocalScheduler(Scheduler):
         self.default_data_path = 'data_path_local'
         self.name = 'local'
 
+
+    def get_cancel_cmd(self):
+        """Cancel job."""
+
+    def get_summary_cmd(self, *args, **kwargs):
+        """Get job summary."""
+        pass
+
+    def get_submit_cmd(self, *args, **kwargs):
+        """Submit job."""
+        pass
+
+    def get_job_script(self, *args, **kwargs):
+        """Get job script."""
+        pass
+
+    def get_status_cmd(self, *args, **kwargs):
+        """Get job status."""
+        pass
+
+
+
+
     def __repr__(self):
         """Represent."""
         return f'{self.__class__.__name__}()'
