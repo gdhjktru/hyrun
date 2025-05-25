@@ -16,23 +16,44 @@ class Scheduler(ABC):
         """Equal."""
         pass
 
-    @abstractmethod
-    def __enter__(self):
-        """Enter."""
-        pass
+    # @abstractmethod
+    # def __enter__(self):
+    #     """Enter."""
+    #     pass
+
+    # @abstractmethod
+    # def __exit__(self, *args):
+    #     """Exit."""
+    #     pass
 
     @abstractmethod
-    def __exit__(self, *args):
-        """Exit."""
-        pass
-
-    @abstractmethod
-    def cancel(self):
+    def get_cancel_cmd(self):
         """Cancel job."""
 
+    # @abstractmethod
+    # def is_finished(self, *args, **kwargs):
+    #     """Check if job finishes."""
+
     @abstractmethod
-    def is_finished(self, *args, **kwargs):
-        """Check if job finishes."""
+    def get_summary_cmd(self, *args, **kwargs):
+        """Get job summary."""
+        pass
+
+    @abstractmethod
+    def get_submit_cmd(self, *args, **kwargs):
+        """Submit job."""
+        pass
+
+    @abstractmethod
+    def get_job_script(self, *args, **kwargs):
+        """Get job script."""
+        pass
+
+
+    @abstractmethod
+    def get_status_cmd(self, *args, **kwargs):
+        """Get job status."""
+        pass
 
     # @abstractmethod
     # def fetch_results(self, *args, **kwargs):

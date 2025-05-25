@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import Any
 
-from ..job import JobGraph, get_job
+from .job import get_job
+from .graph import JobGraph
 
 
 def get_workflow(*args, **kwargs) -> JobGraph:
