@@ -10,6 +10,7 @@ from hyrun.remote import connect_to_remote, rsync
 
 from ..abc import Scheduler
 from .job_script import get_job_script as gjs
+from .job_script import gen_job_name
 
 ssh_kws = ['host', 'user', 'port', 'config', 'gateway', 'forward_agent',
            'connect_timeout', 'connect_kwargs', 'inline_ssh_env']
@@ -270,8 +271,8 @@ class SlurmScheduler(Scheduler):
         #  file = job.run_settings.get_full_file_path(
         #     file=job_script_name, dirname='submit_dir_remote'
         #     )
-        job_script_name = getattr(job.job_script, 'path', None) or f'job_script.sh'
-
+        job_name = kwargs.get('job_name', gen_job_name(job)) or ''
+        job_script_name = f'job_script_{job_name}.sh'
         file = job.tasks[0].get_full_file_path(
             file=job_script_name, dirname='submit_dir_remote'
             )
@@ -280,7 +281,7 @@ class SlurmScheduler(Scheduler):
 
     def get_job_script(self, job, **kwargs) -> str:
         """Get job script."""
-        return gjs(job, **kwargs)
+        return gjs(job, job_name=kwargs.get('job_name', gen_job_name(job)), **kwargs)
 
     def get_status_cmd(self, *args, **kwargs):
         """Get job status."""

@@ -13,7 +13,7 @@ def get_job_script(job, **kwargs) -> str:
     job_time = max([t.job_time.total_seconds()
                     for t in job.tasks])
     slurm_job_time = timedelta_to_slurmtime(timedelta(seconds=job_time))
-    job_name = gen_job_name(job)
+    job_name = kwargs.get('job_name') or gen_job_name(job)
     sdir = rs.get_full_dir_path(dirname='submit_dir_remote')
 
     job_script = '#!/bin/bash\n'
