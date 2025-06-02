@@ -6,7 +6,7 @@ from pathlib import Path
 from hytools.time import timedelta_to_slurmtime
 
 
-def get_job_script(job, *args, **kwargs) -> str:
+def get_job_script(job, **kwargs) -> str:
     """Generate SLURM job script for running the `program`."""
     njobs = range(len(job.tasks))
     rs = job.tasks[0]  # reference run_settings

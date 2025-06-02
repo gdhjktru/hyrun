@@ -265,20 +265,22 @@ class SlurmScheduler(Scheduler):
         """Get job summary."""
 
 
-    def get_submit_cmd(self, *args, **kwargs):
+    def get_submit_cmd(self, job, **kwargs):
         """Submit job."""
         #  file = job.run_settings.get_full_file_path(
         #     file=job_script_name, dirname='submit_dir_remote'
         #     )
-        job = args[0] if args else kwargs.get('job')
-        job_script_name = Path(job.job_script.get('path')).name  # type: ignore
-        self.logger.debug(f'submitting job with job script {job_script_name}')
-        cmd = f'sbatch ./{job_script_name}'
-        return cmd
+        job_script_name = getattr(job.job_script, 'path', None) or f'job_script.sh'
 
-    def get_job_script(self, *args, **kwargs) -> str:
+        file = job.tasks[0].get_full_file_path(
+            file=job_script_name, dirname='submit_dir_remote'
+            )
+        return f'sbatch {file}'
+
+
+    def get_job_script(self, job, **kwargs) -> str:
         """Get job script."""
-        return gjs(*args, **kwargs)
+        return gjs(job, **kwargs)
 
     def get_status_cmd(self, *args, **kwargs):
         """Get job status."""
