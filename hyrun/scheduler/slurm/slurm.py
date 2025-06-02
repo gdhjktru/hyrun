@@ -255,3 +255,25 @@ class SlurmScheduler(Scheduler):
     def run_ctx(self, *args, **kwargs):
         """Run context manager."""
         return connect_to_remote(self.connection)
+    
+
+
+    def get_cancel_cmd(self):
+        """Cancel job."""
+
+    def get_summary_cmd(self, *args, **kwargs):
+        """Get job summary."""
+        pass
+
+    def get_submit_cmd(self, *args, **kwargs):
+        """Submit job."""
+        pass
+
+    def get_job_script(self, *args, **kwargs):
+        """Get job script."""
+        pass
+
+    def get_status_cmd(self, *args, **kwargs):
+        """Get job status."""
+        pass
+

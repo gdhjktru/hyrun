@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
-from typing import Callable, List, Optional
-
+from typing import Callable, List, Optional, Union
+import operator
 import networkx as nx
 from hytools.graph import Graph
 from hytools.logger import LoggerDummy
@@ -24,7 +24,14 @@ class JobGraph(Graph):
             self.get_from_kwargs(kwargs, node_keys) or [])
         self._edges = self.make_list(
             self.get_from_kwargs(kwargs, edge_keys) or [])
+        default_run_requirements = {'element': 'node',
+                                  'property': 'status',
+                                 'operator': '==',
+                                 'value': 'COMPLETED'}
+        self.run_requirements = (kwargs.get('run_requirements')
+                               or [default_run_requirements])
         self.weights = self.make_list(kwargs.get('weights') or [])
+        self.set_weights(self.weights)
         for n in self._nodes:
             self.add_node(n)
         for e in self._edges + self.weights:
@@ -39,6 +46,61 @@ class JobGraph(Graph):
                 u, v = list(e.keys())[0], list(e.values())[0]
                 attr_dict = {k: v for k, v in e.items() if k in edge_attr}
                 self.add_edge(u, v, **attr_dict)
+
+    def set_weights(self, weights: List[Union[tuple, list, dict]]):
+        """Set weights for edges in the graph."""
+        if not weights:
+            return
+        for w in weights:
+            if isinstance(w, (tuple, list)):
+                u, v = w[0], w[1]
+                weight = w[2] if len(w) > 2 else 1.0
+                self.graph.add_edge(u, v, weight=weight)
+            elif isinstance(w, dict):
+                for (u, v), weight in w.items():
+                    self.graph.add_edge(u, v, weight=weight)
+            else:
+                raise ValueError(f'Unsupported weight format: {w}')
+
+    def is_ready_to_run(self, node: str) -> bool:
+        """Check if node will run based on run conditions."""
+        ops = {
+            '==': operator.eq,
+            '!=': operator.ne,
+            '<': operator.lt,
+            '<=': operator.le,
+            '>': operator.gt,
+            '>=': operator.ge,
+        }
+        if node not in self.graph.nodes:
+            self.logger.error(f'Node {node} does not exist in graph')
+            return False
+
+        direct_ancestors = [u for u, _ in self.graph.in_edges(node)]
+
+        for cond in self.run_requirements:
+            elem = cond.get('element', 'node')
+            prop = cond.get('property', 'status')
+            op_str = cond.get('operator', '==')
+            value = cond.get('value')
+            op_func = ops.get(op_str)
+            if op_func is None:
+                raise ValueError(f"Unsupported operator: {op_str}")
+
+            # Check node property
+            if (elem == 'node'
+                and op_func(self.graph.nodes[node].get(prop), value)):
+                return False
+
+            # Check ancestors
+            for n in direct_ancestors:
+                val = (self.graph.nodes[n].get(prop, None)
+                    if elem == 'node'
+                    else self.graph.edges[(n, node)].get(prop, None))
+                if not op_func(val, value):
+                    return False
+
+        return True
 
     def get_from_kwargs(self, kwargs, keys):
         """Get value from kwargs."""

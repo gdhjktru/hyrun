@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
 
-job_status_map = {'UNKNOWN': 0, 'PENDING': 10, 'RUNNING': 20, 'COMPLETED' : 30,
+job_status_map = {'UNKNOWN': 0, 'PENDING': 10, 'RUNNING': 20, 
+                  'COMPLETING': 20, 'COMPLETED' : 30,
                 'BOOT_FAIL': 40, 'CANCELLED': 40, 'DEADLINE': 40, 'FAILED': 40,
                 'NODE_FAIL': 40, 'OUT_OF_MEMORY': 40, 'PREEMPTED': 40,
                 'TIMEOUT': 40}

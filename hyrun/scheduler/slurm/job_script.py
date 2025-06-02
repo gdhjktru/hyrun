@@ -65,26 +65,26 @@ class SlurmJobScript:
             job_script += f'--mem-per-cpu={rs.memory_per_cpu}\n'
         job_script += f'#SBATCH --cpus-per-task={rs.cpus_per_task}\n'
         job_script += f'#SBATCH --ntasks={rs.ntasks}\n'
-        job_script += f'#SBATCH --account={rs.slurm_account}\n'
+        job_script += f'#SBATCH --account={rs.scheduler.slurm_account}\n'
         job_script += f'#SBATCH --output={s}/{job_name}.out\n'
         job_script += f'#SBATCH --error={s}/{job_name}.err\n'
 
-        if rs.qos_devel:
+        if rs.scheduler.qos_devel:
             job_script += '#SBATCH --qos=devel\n'
-        for slurm_option in rs.slurm_extra:
+        for slurm_option in rs.scheduler.slurm_extra:
             job_script += f'#SBATCH {slurm_option}\n'
         job_script += '\nset -o errexit\n\n'
         job_script += 'set -x\n\n'
 
-        modules = [t.modules for t in job.tasks]
+        modules = [t.scheduler.modules for t in job.tasks]
         if self._check_nested_list_equal(modules, modules, 2):
             modules = [[] for _ in range(len(job.tasks))]
-            modules[0] = rs.modules
+            modules[0] = rs.scheduler.modules
 
-        envs = [t.env for t in job.tasks]
+        envs = [t.shell_setup for t in job.tasks]
         if self._check_nested_list_equal(envs, envs, 2):
             envs = [[] for _ in range(len(job.tasks))]
-            envs[0] = rs.env
+            envs[0] = rs.shell_setup
         multiple_remote_dirs = (
             len(list({r.work_dir_remote for r in job.tasks})) > 1
         )
@@ -126,7 +126,7 @@ class SlurmJobScript:
                     job_script += f'{cmd}\n'
 
             symlinks_created = []
-            if run_settings.create_symlinks and len(
+            if run_settings.scheduler.create_symlinks and len(
                     run_settings.data_files) > 0:
                 job_script += '\n# Create symlinks\n'
                 data_dir_remote = run_settings.data_dir_remote
@@ -147,7 +147,8 @@ class SlurmJobScript:
                    and '/' in str(path)):
                     run_settings.args[i] = f'${{SCRATCH}}/{path.name}'
 
-            job_script += f'{run_settings.launcher} {run_settings.program} '
+            job_script += f'{" ".join(run_settings.launcher)} ' 
+            job_script += f'{run_settings.program} '
             job_script += f'{" ".join(run_settings.args)} '
             job_script += f'>> {run_settings.stdout_file.path} '
             job_script += f'2>> {run_settings.stderr_file.path}\n'
