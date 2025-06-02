@@ -17,7 +17,7 @@ def get_job_script(job, **kwargs) -> str:
     sdir = rs.get_full_dir_path(dirname='submit_dir_remote')
 
     job_script = '#!/bin/bash\n'
-    job_script += f'#SBATCH --job-name={job_name}\n'
+    job_script += '#SBATCH --job-name=__JOB_HASH__\n'
     job_script += f'#SBATCH --time={slurm_job_time}\n'
     if rs.memory_per_cpu is not None:
         job_script += '#SBATCH '

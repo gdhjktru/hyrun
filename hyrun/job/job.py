@@ -26,32 +26,32 @@ class Job:
 
     def __post_init__(self):
         """Post init."""
-        self.set_hash()
+        # self.set_hash()
         self.tasks = ([self.tasks]
                       if not isinstance(self.tasks, list) else self.tasks)
         check_common_dataclass(self.tasks,
                                keys=['database', 'scheduler', 'connection'])
 
-    def set_hash(self):
-        """Get hash of the job."""
-        if self.hash:
-            return
-        txt = ''
-        if self.job_script:
-            txt += getattr(self.job_script, 'content', '') or ''
-        if self.tasks:
-            task = self.tasks[0]
-            for attr, keys in [
-                ('connection', ['host', 'user']),
-                ('scheduler', ['scheduler_type', 'slurm_account']),
-                ('database', ['database_type', 'database_name']),
-            ]:
-                obj = getattr(task, attr, None)
-                if obj:
-                    d = asdict(obj) if hasattr(obj, '__dataclass_fields__') else obj
-                    for key in keys:
-                        txt += d.get(key, '') or ''
-        self.hash = sha256(txt.encode()).hexdigest()
+    # def set_hash(self):
+    #     """Get hash of the job."""
+    #     if self.hash:
+    #         return
+    #     txt = ''
+    #     if self.job_script:
+    #         txt += getattr(self.job_script, 'content', '') or ''
+    #     if self.tasks:
+    #         task = self.tasks[0]
+    #         for attr, keys in [
+    #             ('connection', ['host', 'user']),
+    #             ('scheduler', ['scheduler_type', 'slurm_account']),
+    #             ('database', ['database_type', 'database_name']),
+    #         ]:
+    #             obj = getattr(task, attr, None)
+    #             if obj:
+    #                 d = asdict(obj) if hasattr(obj, '__dataclass_fields__') else obj
+    #                 for key in keys:
+    #                     txt += d.get(key, '') or ''
+    #     self.hash = sha256(txt.encode()).hexdigest()
 
 @singledispatch
 def get_job(job: Any) -> Job:

@@ -3,6 +3,9 @@ import json
 from dataclasses import replace
 from pathlib import Path
 from typing import Optional, Union
+from hashlib import sha256
+from string import Template
+from subprocess import CompletedProcess
 
 from hytools.logger import LoggerDummy
 
@@ -259,31 +262,77 @@ class SlurmScheduler(Scheduler):
     
 
 
-    def get_cancel_cmd(self):
+    def get_cancel_cmd(self, job, **kwargs):
         """Cancel job."""
+        return f'scancel {job.job_id}'
+    
+    def parse_cancel_output(self, output: str) -> bool:
+        """Parse cancel output."""
+        if 'Cancelled job' in output:
+            self.logger.info(f'Job cancelled successfully: {output}')
+            return True
+        else:
+            self.logger.error(f'Failed to cancel job: {output}')
+            return False
 
-    def get_summary_cmd(self, *args, **kwargs):
+    def get_summary_cmd(self, job, **kwargs):
         """Get job summary."""
+        return f'seff {job.id}'
 
+    def parse_summary(self, summary_output: str) -> dict:
+        """Parse summary output."""
+        lines = summary_output.strip().split('\n')
+        if not lines:
+            return {}
+        headers = ['job_id', 'cluster', 'user_group', 'state', 'cores',
+                   'cpu_utilized', 'cpu_efficiency', 'wall_clock_time',
+                   'memory_utilized', 'memory_efficiency']
+        data = [line.split(': ', 1) for line in lines if ': ' in line]
+        return {headers[i]: data[i][1] for i in range(len(headers))
+                if i < len(data)}
 
+    def submit(self, job, connection, **kwargs) -> Union[str, int]:
+        """Submit job."""
+        # gen submit command, run it if there is an eecutor and return parsed   output
+        cmd = self.get_submit_cmd(job, **kwargs)
+        if executor is None:
+            return cmd
+        output = executor.run(cmd, hide='stdout')
+        return self.parse_submit_output(output.stdout)
+    
     def get_submit_cmd(self, job, **kwargs):
         """Submit job."""
-        #  file = job.run_settings.get_full_file_path(
-        #     file=job_script_name, dirname='submit_dir_remote'
-        #     )
-        job_name = kwargs.get('job_name', gen_job_name(job)) or ''
-        job_script_name = f'job_script_{job_name}.sh'
-        file = job.tasks[0].get_full_file_path(
-            file=job_script_name, dirname='submit_dir_remote'
+        file = job.tasks[0].run_settings.get_full_file_path(
+            file=job.job_script.name, dirname='submit_dir_remote'
             )
         return f'sbatch {file}'
-
+    
+    def parse_submit_output(self, output: str) -> Optional[str]:
+        """Parse submit output."""
+        try:
+            job_id = int(output.strip().split()[-1])
+            return str(job_id)
+        except (ValueError, IndexError):
+            self.logger.error(f'Failed to parse job ID from output: {output}')
+            return None
+        
 
     def get_job_script(self, job, **kwargs) -> str:
         """Get job script."""
-        return gjs(job, job_name=kwargs.get('job_name', gen_job_name(job)), **kwargs)
+        return gjs(job, **kwargs)
 
-    def get_status_cmd(self, *args, **kwargs):
+    def get_status_cmd(self, job, **kwargs):
         """Get job status."""
-        pass
+        return f'squeue -h -u {job.job_id} -o "%i %j %S %V %T %M %L"'
+    
+    def parse_status_output(self, status_output: str) -> dict:
+        """Parse status output."""
+        lines = status_output.strip().split('\n')
+        if not lines:
+            return {}
+        headers = ['job_id', 'job_name', 'start_time', 'submission_time', 'state', 'time_used', 'time_limit']
+        data = [line.split() for line in lines]
+        return {headers[i]: data[0][i] for i in range(len(headers)) if i < len(data[0])}
+    
+
 
