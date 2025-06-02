@@ -36,21 +36,22 @@ class Job:
         """Get hash of the job."""
         if self.hash:
             return
+        txt = ''
         if self.job_script:
-            txt = getattr(self.job_script, 'content', None) or ''
-            if self.tasks:
-                if getattr(self.tasks[0], 'connection', None):
-                    txt += asdict(getattr(self.tasks[0], 'connection', None) or {}).get('host') or ''
-                    txt += asdict(getattr(self.tasks[0], 'connection', None) or {}).get('user') or ''
-                if getattr(self.tasks[0], 'scheduler', None):
-                    txt += asdict(getattr(self.tasks[0], 'scheduler', None) or {}).get('scheduler_type') or ''
-                    txt += asdict(getattr(self.tasks[0], 'scheduler', None) or {}).get('slurm_account') or ''
-                if getattr(self.tasks[0], 'database', None):
-                    txt += asdict(getattr(self.tasks[0], 'database', None) or {}).get('database_type') or ''
-                    txt += asdict(getattr(self.tasks[0], 'database', None) or {}).get('database_name') or ''
-
-            self.hash = sha256(txt.encode()).hexdigest()
-
+            txt += getattr(self.job_script, 'content', '') or ''
+        if self.tasks:
+            task = self.tasks[0]
+            for attr, keys in [
+                ('connection', ['host', 'user']),
+                ('scheduler', ['scheduler_type', 'slurm_account']),
+                ('database', ['database_type', 'database_name']),
+            ]:
+                obj = getattr(task, attr, None)
+                if obj:
+                    d = asdict(obj) if hasattr(obj, '__dataclass_fields__') else obj
+                    for key in keys:
+                        txt += d.get(key, '') or ''
+        self.hash = sha256(txt.encode()).hexdigest()
 
 @singledispatch
 def get_job(job: Any) -> Job:
@@ -60,7 +61,7 @@ def get_job(job: Any) -> Job:
 @get_job.register(RunSettings)
 def _(job: RunSettings) -> Job:
     """Convert Job to Job."""
-    return Job(tasks=job)
+    return Job(tasks=[job])
 
 @get_job.register(Job)
 def _(job: Job) -> Job:

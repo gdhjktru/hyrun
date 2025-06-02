@@ -9,7 +9,7 @@ from hytools.logger import LoggerDummy
 from hyrun.remote import connect_to_remote, rsync
 
 from ..abc import Scheduler
-from .job_script import gen_job_script as gjs
+from .job_script import get_job_script as gjs
 
 ssh_kws = ['host', 'user', 'port', 'config', 'gateway', 'forward_agent',
            'connect_timeout', 'connect_kwargs', 'inline_ssh_env']
@@ -263,15 +263,22 @@ class SlurmScheduler(Scheduler):
 
     def get_summary_cmd(self, *args, **kwargs):
         """Get job summary."""
-        pass
+
 
     def get_submit_cmd(self, *args, **kwargs):
         """Submit job."""
-        pass
+        #  file = job.run_settings.get_full_file_path(
+        #     file=job_script_name, dirname='submit_dir_remote'
+        #     )
+        job = args[0] if args else kwargs.get('job')
+        job_script_name = Path(job.job_script.get('path')).name  # type: ignore
+        self.logger.debug(f'submitting job with job script {job_script_name}')
+        cmd = f'sbatch ./{job_script_name}'
+        return cmd
 
-    def get_job_script(self, *args, **kwargs):
+    def get_job_script(self, *args, **kwargs) -> str:
         """Get job script."""
-        pass
+        return gjs(*args, **kwargs)
 
     def get_status_cmd(self, *args, **kwargs):
         """Get job status."""
