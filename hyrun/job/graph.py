@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Callable, List, Optional, Union
 import operator
 import networkx as nx
+from dataclasses import fields
 from hytools.graph import Graph
 from hytools.logger import LoggerDummy
 
@@ -11,7 +12,6 @@ node_keys = ['node', 'nodes', 'jobs', 'job', 'tasks', 'task']
 weight_keys = ['weight', 'weights', 'weighting', 'weighting']
 edge_attr = ['weight']
 node_attr = ['hash', 'status', 'db_id']
-
 
 class JobGraph(Graph):
     """Class to create a job graph."""
@@ -76,8 +76,6 @@ class JobGraph(Graph):
             self.logger.error(f'Node {node} does not exist in graph')
             return False
 
-        direct_ancestors = [u for u, _ in self.graph.in_edges(node)]
-
         for cond in self.run_requirements:
             elem = cond.get('element', 'node')
             prop = cond.get('property', 'status')
@@ -93,7 +91,7 @@ class JobGraph(Graph):
                 return False
 
             # Check ancestors
-            for n in direct_ancestors:
+            for n in self.direct_ancestors(node):
                 val = (self.graph.nodes[n].get(prop, None)
                     if elem == 'node'
                     else self.graph.edges[(n, node)].get(prop, None))
@@ -127,6 +125,9 @@ class JobGraph(Graph):
             self.logger.error(f'Node {idx} already exists in graph')
             return
         self.graph.add_node(idx)
+        if not keys:
+            from hyrun.job import Job
+            node_attr = [f.name for f in fields(Job)]
         keys = keys or node_attr
         for attr in keys:
             if hasattr(node, attr):
@@ -313,6 +314,14 @@ class JobGraph(Graph):
     def __str__(self) -> str:
         """Get string representation of graph."""
         return '\n'.join(nx.generate_network_text(self.graph))
+    
+    def direct_ancestors(self, node):
+        """Get direct dependencies of a node."""
+        return [u for u, _ in self.graph.in_edges(node)]
+    
+    def direct_descendants(self, node):
+        """Get direct dependents of a node."""
+        return [v for _, v in self.graph.out_edges(node)]
 
     def ancestors(self, node):
         """Get all dependencies of a node."""
