@@ -89,6 +89,9 @@ class JobGraph(Graph):
             if (elem == 'node'
                 and op_func(self.graph.nodes[node].get(prop), value)):
                 return False
+            elif (elem == 'node' and prop not in self.graph.nodes[node]):
+                self.logger.error(f'Property {prop} not found in node {node}')
+                return True if prop == 'status' else False
 
             # Check ancestors
             for n in self.direct_ancestors(node):
@@ -123,7 +126,6 @@ class JobGraph(Graph):
         self.logger.debug(f'Adding node {idx} to graph')
         if idx in self.graph.nodes:
             self.logger.error(f'Node {idx} already exists in graph')
-            return
         self.graph.add_node(idx)
         if not keys:
             from hyrun.job import Job
